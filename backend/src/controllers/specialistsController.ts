@@ -19,3 +19,122 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+export const getSpecialistById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await query('SELECT * FROM specialists WHERE id = $1', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Специалист не найден'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Ошибка при получении специалиста:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};
+
+export const createSpecialist = async (req: Request, res: Response) => {
+  try {
+    const { name, specialty, experience, rating, location, price_per_hour }: CreateSpecialistDto = req.body;
+    
+    if (!name || !specialty || !location) {
+      return res.status(400).json({
+        success: false,
+        message: 'Обязательные поля: name, specialty, location'
+      });
+    }
+    
+    const result = await query(
+      `INSERT INTO specialists (name, specialty, experience, rating, location, price_per_hour) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING *`,
+      [name, specialty, experience, rating, location, price_per_hour]
+    );
+    
+    res.status(201).json({
+      success: true,
+      data: result.rows[0],
+      message: 'Специалист создан успешно'
+    });
+  } catch (error) {
+    console.error('Ошибка при создании специалиста:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};
+
+export const updateSpecialist = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, specialty, experience, rating, location, price_per_hour } = req.body;
+    
+    const result = await query(
+      `UPDATE specialists 
+       SET name = $1, specialty = $2, experience = $3, rating = $4, location = $5, price_per_hour = $6 
+       WHERE id = $7 
+       RETURNING *`,
+      [name, specialty, experience, rating, location, price_per_hour, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Специалист не найден'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Специалист обновлен успешно'
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении специалиста:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};
+
+export const deleteSpecialist = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await query('DELETE FROM specialists WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Специалист не найден'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Специалист удален успешно'
+    });
+  } catch (error) {
+    console.error('Ошибка при удалении специалиста:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};

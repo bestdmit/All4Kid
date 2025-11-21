@@ -1,12 +1,51 @@
+<<<<<<< Updated upstream
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+=======
+import React from "react";
+import { Layout } from "antd";
+import TableSpecialists from "./tableOfSpecialists";
+import AppHeader from "./AppHeader";
+const { Header, Footer, Content } = Layout;
+
+const contentStyle: React.CSSProperties = {
+  textAlign: "center",
+  minHeight: "calc(100vh - 128px)",
+  color: "#fff",
+  backgroundColor: "#0958d9",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "column",
+  width: "100%",
+  margin: 0,
+  padding: 0,
+};
+
+const footerStyle: React.CSSProperties = {
+  textAlign: "center",
+  color: "#fff",
+  backgroundColor: "#4096ff",
+  width: "100%",
+  margin: 0,
+  padding: 0,
+};
+
+const layoutStyle: React.CSSProperties = {
+  height: "100vh",
+  width: "100vw",
+  margin: 0,
+  padding: 0,
+};
+>>>>>>> Stashed changes
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
+<<<<<<< Updated upstream
     <>
       <div>
         <a href="https://vite.dev" target="_blank">
@@ -30,6 +69,16 @@ function App() {
       </p>
     </>
   )
+=======
+    <Layout style={layoutStyle}>
+      <AppHeader></AppHeader>
+      <Content style={contentStyle}>
+        <TableSpecialists />
+      </Content>
+      <Footer style={footerStyle}>Footer</Footer>
+    </Layout>
+  );
+>>>>>>> Stashed changes
 }
 
 export default App

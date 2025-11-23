@@ -6,7 +6,7 @@ import AuthorizationPage from "./AuthorizationPage.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {/* <App /> */}
-    <AuthorizationPage />
+     <App />
+    {/*<AuthorizationPage />*/}
   </StrictMode>
 );

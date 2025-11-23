@@ -5,7 +5,7 @@ import './App.css'
 import React from "react";
 import { Layout } from "antd";
 import TableSpecialists from "./tableOfSpecialists";
-import AppHeader from "./AppHeader";
+// import AppHeader from "./AppHeader"; // ЗАКОММЕНТИРОВАНО
 const { Header, Footer, Content } = Layout;
 
 const contentStyle: React.CSSProperties = {
@@ -42,34 +42,42 @@ function App() {
   const [count, setCount] = useState(0)
 
   return (
+    // ЗАКОММЕНТИРОВАННАЯ ЧАСТЬ (старый код)
+    // <>
+    //   <div>
+    //     <a href="https://vite.dev" target="_blank">
+    //       <img src={viteLogo} className="logo" alt="Vite logo" />
+    //     </a>
+    //     <a href="https://react.dev" target="_blank">
+    //       <img src={reactLogo} className="logo react" alt="React logo" />
+    //     </a>
+    //   </div>
+    //   <h1>Vite + React</h1>
+    //   <div className="card">
+    //     <button onClick={() => setCount((count) => count + 1)}>
+    //       count is {count}
+    //     </button>
+    //     <p>
+    //       Edit <code>src/App.tsx</code> and save to test HMR
+    //     </p>
+    //   </div>
+    //   <p className="read-the-docs">
+    //     Click on the Vite and React logos to learn more
+    //   </p>
+    // </>
+
+    // РАСКОММЕНТИРОВАННАЯ ЧАСТЬ (новый рабочий код)
     <Layout style={layoutStyle}>
-      <AppHeader></AppHeader>
+      {/* ВРЕМЕННО ЗАКОММЕНТИРОВАНО ВСЕ КРОМЕ TableSpecialists */}
+      {/* <AppHeader></AppHeader> */}
+      
       <Content style={contentStyle}>
-        <div>
-          <a href="https://vite.dev" target="_blank">
-            <img src={viteLogo} className="logo" alt="Vite logo" />
-          </a>
-          <a href="https://react.dev" target="_blank">
-            <img src={reactLogo} className="logo react" alt="React logo" />
-          </a>
-        </div>
-        <h1>Vite + React</h1>
-        <div className="card">
-          <button onClick={() => setCount((count) => count + 1)}>
-            count is {count}
-          </button>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test HMR
-          </p>
-        </div>
-        <p className="read-the-docs">
-          Click on the Vite and React logos to learn more
-        </p>
         <TableSpecialists />
       </Content>
-      <Footer style={footerStyle}>Footer</Footer>
+      
+      {/* <Footer style={footerStyle}>Footer</Footer> */}
     </Layout>
   );
 }
 
-export default App
+export default App;

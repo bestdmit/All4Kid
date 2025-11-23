@@ -14,13 +14,17 @@ const headerStyle: React.CSSProperties = {
 
 function AppHeader() {
   return (
-    <Header>
-      <Button ghost variant="outlined">
+    <Header style={headerStyle}>
+      {/* ВРЕМЕННО ЗАКОММЕНТИРОВАНЫ КНОПКИ МЕНЮ */}
+      {/* <Button ghost variant="outlined">
         Главная
       </Button>
       <Button ghost variant="outlined">
         Каталог
-      </Button>
+      </Button> */}
+      
+      {/* Оставляем только заголовок */}
+      <h1 style={{ color: 'white', margin: 0 }}>All4Kid - Детские специалисты</h1>
     </Header>
   );
 }

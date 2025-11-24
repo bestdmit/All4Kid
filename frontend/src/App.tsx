@@ -5,21 +5,19 @@ import './App.css'
 import React from "react";
 import { Layout } from "antd";
 import TableSpecialists from "./tableOfSpecialists";
+import AppHeader from "./AppHeader.tsx";
 // import AppHeader from "./AppHeader"; // ЗАКОММЕНТИРОВАНО
 const { Header, Footer, Content } = Layout;
 
 const contentStyle: React.CSSProperties = {
   textAlign: "center",
-  minHeight: "calc(100vh - 128px)",
   color: "#fff",
   backgroundColor: "#0958d9",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexDirection: "column",
+  display: "block",
+  overflow: "auto",
   width: "100%",
   margin: 0,
-  padding: 0,
+  padding: "1.5rem 1rem",
 };
 
 const footerStyle: React.CSSProperties = {
@@ -32,8 +30,8 @@ const footerStyle: React.CSSProperties = {
 };
 
 const layoutStyle: React.CSSProperties = {
-  height: "100vh",
   width: "100vw",
+  height: "100vh",
   margin: 0,
   padding: 0,
 };
@@ -69,7 +67,7 @@ function App() {
     // РАСКОММЕНТИРОВАННАЯ ЧАСТЬ (новый рабочий код)
     <Layout style={layoutStyle}>
       {/* ВРЕМЕННО ЗАКОММЕНТИРОВАНО ВСЕ КРОМЕ TableSpecialists */}
-      {/* <AppHeader></AppHeader> */}
+       <AppHeader></AppHeader>
       
       <Content style={contentStyle}>
         <TableSpecialists />

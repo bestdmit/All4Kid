@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { List, Card } from "antd";
+import React, { useState, useEffect } from "react";
+import {Card, Flex} from "antd";
 
 interface Specialist {
   id: number;
@@ -11,6 +11,10 @@ interface Specialist {
   price_per_hour: number;
   created_at: string;
 }
+
+const cardStyle: React.CSSProperties = {
+  width: "300px"
+};
 
 function TableSpecialists() {
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
@@ -59,22 +63,20 @@ function TableSpecialists() {
   }
 
   return (
-    <List
-      grid={{ gutter: 16, column: 4 }}
-      dataSource={specialists}
-      renderItem={(item) => (
-        <List.Item>
-          <Card title={item.name}>
-            {/* ИСПРАВЛЕНИЕ: specialty вместо speciality */}
-            <p><strong>Специальность:</strong> {item.specialty}</p>
-            <p><strong>Опыт:</strong> {item.experience} лет</p>
-            <p><strong>Рейтинг:</strong> ⭐ {item.rating}</p>
-            <p><strong>Местоположение:</strong> {item.location}</p>
-            <p><strong>Цена:</strong> {item.price_per_hour} ₽/час</p>
-          </Card>
-        </List.Item>
-      )}
-    />
+      <Flex align={"center"} justify={"center"} vertical>
+        <Flex wrap gap={'middle'} justify={"center"}>
+          {specialists.map((item) =>
+              <Card key={item.id} title={item.name} style={cardStyle}>
+                {/* ИСПРАВЛЕНИЕ: specialty вместо speciality */}
+                <p><strong>Специальность:</strong> {item.specialty}</p>
+                <p><strong>Опыт:</strong> {item.experience} лет</p>
+                <p><strong>Рейтинг:</strong> ⭐ {item.rating}</p>
+                <p><strong>Местоположение:</strong> {item.location}</p>
+                <p><strong>Цена:</strong> {item.price_per_hour} ₽/час</p>
+              </Card>
+          )}
+        </Flex>
+      </Flex>
   );
 }
 

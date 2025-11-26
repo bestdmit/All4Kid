@@ -1,6 +1,6 @@
 import { Layout, Button } from "antd";
 const { Header } = Layout;
-
+import { Link } from 'react-router-dom';
 const headerStyle: React.CSSProperties = {
   textAlign: "center",
   color: "#fff",
@@ -16,10 +16,13 @@ function AppHeader() {
   return (
     <Header style={headerStyle}>
       <Button ghost variant="outlined">
-        Главная
+        <Link to="/">Главная</Link>
+      </Button>
+      <Button variant="outlined">
+        <Link to="/create">Создать</Link>
       </Button>
       <Button ghost variant="outlined">
-        Каталог
+        <Link to="/authorization">Авторизация</Link>
       </Button>
     </Header>
   );

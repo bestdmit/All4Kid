@@ -1,0 +1,23 @@
+.header{
+    background-color: #FFFFFF;
+    height: auto;
+    align-items: center;
+    justify-content: space-between;
+    display: flex;
+    padding: 1vh;
+    padding-left: 10rem;
+}
+
+.buttonBlock{
+    margin-right: 15rem;
+    margin-left: auto;
+    width:fit-content;
+    display: flex;
+    gap: 2rem;
+}
+.title{
+    width:fit-content;
+    color: #6155F5 !important;
+    margin: 0 !important;
+    margin-left: 10rem;
+}

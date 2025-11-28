@@ -1,6 +1,7 @@
 import React from "react";
 import type { FormProps } from "antd";
 import { Button, Checkbox, Form, Input } from "antd";
+import AppHeader from "./Header/AppHeader";
 
 type FieldType = {
   username?: string;
@@ -23,7 +24,8 @@ const contentStyle: React.CSSProperties = {
 };
 
 function AuthorizationPage() {
-  return (
+  return (<>
+    <AppHeader/>
     <Form
       name="basic"
       labelCol={{ span: 8 }}
@@ -64,6 +66,7 @@ function AuthorizationPage() {
         </Button>
       </Form.Item>
     </Form>
+    </>
   );
 }
 export default AuthorizationPage;

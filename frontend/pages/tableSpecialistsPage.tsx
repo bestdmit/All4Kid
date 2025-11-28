@@ -2,7 +2,7 @@ import { useState } from 'react'
 import React from "react";
 import { Layout } from "antd";
 import TableSpecialists from "../src/tableOfSpecialists";
-import AppHeader from "../src/AppHeader";
+import AppHeader from "../src/Header/AppHeader";
 const { Header, Footer, Content } = Layout;
 
 const contentStyle: React.CSSProperties = {

@@ -3,15 +3,14 @@ import React from "react";
 import TableSpecialistsPage from '../pages/tableSpecialistsPage';
 import AuthorizationPage from './AuthorizationPage';
 import NewAdvertisementsPage from '../pages/NewAdvertisementsPage'
+import MainPage from '../pages/mainPage/MainPage'
 import { Routes, Route } from 'react-router-dom';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <div className="App">
       <Routes>
-        <Route path='/' element={< TableSpecialistsPage/>}/>
+        <Route path='/' element={< MainPage/>}/>
         <Route path="/specialists" element={< TableSpecialistsPage/>} />
         <Route path="/authorization" element={< AuthorizationPage/>} />
         <Route path="/create" element={<NewAdvertisementsPage/>} />

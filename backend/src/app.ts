@@ -1,9 +1,18 @@
 import express from 'express';
 import { connectDB } from './database/db';
 import specialistsRoutes from './routes/specialistsRoutes';
+import cors from 'cors';  // ← Добавляем эту строку
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Добавляем CORS middleware
+app.use(cors({
+  origin: 'http://localhost:5173', // URL фронтенда
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
 
@@ -26,6 +35,7 @@ const startServer = async () => {
       console.log(`Listening at http://localhost:${PORT}`);
       console.log(`Check health: http://localhost:${PORT}/api/health`);
       console.log(`Specialists API: http://localhost:${PORT}/api/specialists`);
+      console.log(`CORS enabled for: http://localhost:5173`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

@@ -20,7 +20,6 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
   }
 };
 
-
 export const getSpecialistById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -51,18 +50,46 @@ export const createSpecialist = async (req: Request, res: Response) => {
   try {
     const { name, specialty, experience, rating, location, price_per_hour }: CreateSpecialistDto = req.body;
     
-    if (!name || !specialty || !location) {
+    // Валидация обязательных полей
+    if (!name?.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Обязательные поля: name, specialty, location'
+        message: 'Поле "Имя" обязательно для заполнения'
       });
     }
     
+    if (!specialty?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Поле "Специальность" обязательно для заполнения'
+      });
+    }
+    
+    if (!location?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Поле "Местоположение" обязательно для заполнения'
+      });
+    }
+
+    // Безопасное преобразование числовых полей
+    const cleanExperience = experience !== undefined && experience !== null 
+      ? Math.max(0, parseInt(String(experience)) || 0)
+      : 0;
+    
+    const cleanRating = rating !== undefined && rating !== null
+      ? Math.max(0, Math.min(5, parseFloat(String(rating)) || 0))
+      : 0;
+    
+    const cleanPrice = price_per_hour !== undefined && price_per_hour !== null
+      ? Math.max(0, parseInt(String(price_per_hour)) || 0)
+      : 0;
+
     const result = await query(
       `INSERT INTO specialists (name, specialty, experience, rating, location, price_per_hour) 
        VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING *`,
-      [name, specialty, experience, rating, location, price_per_hour]
+      [name.trim(), specialty.trim(), cleanExperience, cleanRating, location.trim(), cleanPrice]
     );
     
     res.status(201).json({
@@ -74,7 +101,7 @@ export const createSpecialist = async (req: Request, res: Response) => {
     console.error('Ошибка при создании специалиста:', error);
     res.status(500).json({
       success: false,
-      message: 'Ошибка сервера'
+      message: 'Ошибка сервера при создании специалиста'
     });
   }
 };

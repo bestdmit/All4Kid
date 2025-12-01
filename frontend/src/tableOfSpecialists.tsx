@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Flex, Button, message } from "antd";
 import SearchBar from "./SearchBar";
+import { useSpecialists } from "../hooks/useSpecialists";
 
 const cardStyle: React.CSSProperties = {
   width: "300px"
@@ -8,98 +9,119 @@ const cardStyle: React.CSSProperties = {
 
 function TableSpecialists() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [specialists, setSpecialists] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [filteredSpecialists, setFilteredSpecialists] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  
+  const { specialists, loading, error, refetch } = useSpecialists();
 
-  // Загрузка всех специалистов
-  const fetchAllSpecialists = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/specialists');
-      const result = await response.json();
-      
-      if (result.success) {
-        setSpecialists(result.data);
-      }
-    } catch (err) {
-      message.error('Ошибка загрузки специалистов');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (specialists.length > 0 && !searchTerm) {
+      setFilteredSpecialists(specialists);
     }
-  };
+  }, [specialists, searchTerm]);
 
   // Поиск специалистов
   const handleSearch = async (search: string) => {
+    if (!search.trim()) {
+      // Если поиск пустой - показываем всех
+      setSearchTerm('');
+      setFilteredSpecialists(specialists);
+      return;
+    }
+
     try {
-      setLoading(true);
+      setSearchLoading(true);
       setSearchTerm(search);
       
-      const url = search 
-        ? `/api/specialists?search=${encodeURIComponent(search)}`
-        : '/api/specialists';
-      
+      const url = `/api/specialists?search=${encodeURIComponent(search)}`;
       const response = await fetch(url);
-      const result = await response.json();
       
+      if (!response.ok) throw new Error('Ошибка поиска');
+      
+      const result = await response.json();
       if (result.success) {
-        setSpecialists(result.data);
+        setFilteredSpecialists(result.data);
       }
     } catch (err) {
-      message.error('Ошибка при поиске');
+      message.error('Ошибка при поиске специалистов');
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
   };
 
-  // Загрузка при первом открытии
-  useEffect(() => {
-    fetchAllSpecialists();
-  }, []);
+  const handleResetSearch = () => {
+    setSearchTerm('');
+    setFilteredSpecialists(specialists);
+  };
+
+  if (loading && !filteredSpecialists.length) {
+    return <div style={{ color: 'white', textAlign: 'center' }}>Загрузка специалистов...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ color: 'red', textAlign: 'center' }}>
+        Ошибка: {error}
+        <br />
+        <Button type="primary" onClick={refetch} style={{ marginTop: 10 }}>
+          Попробовать снова
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Flex align={"center"} justify={"center"} vertical>
       <SearchBar 
         onSearch={handleSearch}
-        loading={loading}
+        loading={searchLoading || loading}
       />
       
-      {searchTerm && (
+      <div style={{ display: 'flex', gap: '10px', marginBottom: 20 }}>
         <Button 
-          onClick={() => {
-            setSearchTerm('');
-            fetchAllSpecialists();
-          }}
-          style={{ marginBottom: 20 }}
+          type="primary" 
+          onClick={refetch}
+          loading={loading}
         >
-          Сбросить поиск
+          Обновить список
         </Button>
-      )}
+        
+        {searchTerm && (
+          <Button 
+            onClick={handleResetSearch}
+            disabled={loading}
+          >
+            Сбросить поиск
+          </Button>
+        )}
+      </div>
       
-      {loading ? (
-        <div style={{ color: 'white' }}>Загрузка...</div>
-      ) : specialists.length === 0 ? (
-        <div style={{ color: 'white' }}>
-          {searchTerm ? 'Ничего не найдено' : 'Нет специалистов'}
+      {filteredSpecialists.length === 0 ? (
+        <div style={{ color: 'white', textAlign: 'center', marginTop: 40 }}>
+          {searchTerm 
+            ? `Не найдено специалистов по запросу: "${searchTerm}"`
+            : 'Специалисты не найдены'}
         </div>
       ) : (
-        <Flex wrap gap={'middle'} justify={"center"}>
-          {specialists.map((item) => (
-            <Card key={item.id} title={item.name} style={cardStyle}>
-              <p><strong>Специальность:</strong> {item.specialty}</p>
-              <p><strong>Категория:</strong> {item.category || 'Другое'}</p>
-              <p><strong>Опыт:</strong> {item.experience} лет</p>
-              <p><strong>Рейтинг:</strong> ⭐ {item.rating}</p>
-              <p><strong>Местоположение:</strong> {item.location}</p>
-              <p><strong>Цена:</strong> {item.price_per_hour} ₽/час</p>
-            </Card>
-          ))}
-        </Flex>
-      )}
-      
-      {specialists.length > 0 && !loading && (
-        <div style={{ color: 'white', marginTop: 20 }}>
-          Показано: {specialists.length} специалистов
-        </div>
+        <>
+          <div style={{ color: 'white', marginBottom: 20 }}>
+            Найдено специалистов: {filteredSpecialists.length}
+            {searchTerm && ` по запросу "${searchTerm}"`}
+          </div>
+          
+          <Flex wrap gap={'middle'} justify={"center"}>
+            {filteredSpecialists.map((item) => (
+              <Card key={item.id} title={item.name} style={cardStyle}>
+                <p><strong>Специальность:</strong> {item.specialty}</p>
+                <p><strong>Категория:</strong> {item.category || 'Другое'}</p>
+                <p><strong>Опыт:</strong> {item.experience} лет</p>
+                <p><strong>Рейтинг:</strong> ⭐ {item.rating}</p>
+                <p><strong>Местоположение:</strong> {item.location}</p>
+                <p><strong>Цена:</strong> {item.price_per_hour} ₽/час</p>
+              </Card>
+            ))}
+          </Flex>
+        </>
       )}
     </Flex>
   );

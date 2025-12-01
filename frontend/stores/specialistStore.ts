@@ -1,8 +1,7 @@
-// stores/specialistStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface Specialist {
+export interface Specialist {
   id: number;
   name: string;
   specialty: string;
@@ -20,6 +19,7 @@ interface SpecialistState {
   fetchSpecialists: () => Promise<void>;
   clearError: () => void;
   setSpecialists: (specialists: Specialist[]) => void;
+  getTopRatedSpecialists: (limit?: number) => Specialist[];
 }
 
 const API_BASE_URL = "";
@@ -58,7 +58,18 @@ export const useSpecialistStore = create<SpecialistState>()(
       clearError: () => set({ error: null }),
 
       setSpecialists: (specialists: Specialist[]) => set({ specialists }),
+
+
+      getTopRatedSpecialists: (limit: number = 4): Specialist[] =>{const { specialists } = get();
+        const sorted = [...specialists].sort((a, b) => {
+          if (b.rating !== a.rating) {
+            return b.rating - a.rating;
+          }
+          return b.experience - a.experience;
+        });
+        return sorted.slice(0, limit);},
     }),
+    
     {
       name: 'specialist-storage',
       partialize: (state) => ({ specialists: state.specialists }),

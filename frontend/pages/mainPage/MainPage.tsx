@@ -2,6 +2,8 @@ import React from "react";
 import AppHeader from '../../src/Header/AppHeader';
 import ReasonCard from "../../src/reasonCard";
 import KategoryCard from "../../src/kategoryCard";
+import SpecialistCard from "../../src/SpecialistCard";
+import BestSpecialistsCards from "../../src/bestSpecialistCards";
 import { Link } from 'react-router-dom';
 import { Layout, Card, Flex,Typography, Button } from 'antd';
 
@@ -40,7 +42,6 @@ export default function MainPage(){
                 </Card>
                 </section>
 
-                {/* Секция 2 - на всю ширину */}
                 <section >
                 <Card 
                     style={{ 
@@ -72,7 +73,8 @@ export default function MainPage(){
                     minHeight: '400px',
                     borderRadius: 0,
                     borderLeft: 'none',
-                    borderRight: 'none'
+                    borderRight: 'none',
+                    backgroundColor:"#E9E6E6"
                     }}
                 >
                     <Title style={{textAlign:"center"}}>Популярные категории</Title>
@@ -84,6 +86,20 @@ export default function MainPage(){
 
                     </Flex>
                 </Card>
+                </section>
+
+                <section>
+                    <Card 
+                    style={{ 
+                    minHeight: '400px',
+                    borderRadius: 0,
+                    borderLeft: 'none',
+                    borderRight: 'none'
+                    }}
+                >
+                    <Title style={{textAlign:"center"}}>Лучшие специалисты</Title>
+                        <BestSpecialistsCards></BestSpecialistsCards>
+                    </Card>
                 </section>
             </Content>
     </Layout>

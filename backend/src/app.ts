@@ -1,7 +1,8 @@
 import express from 'express';
 import { connectDB } from './database/db';
 import specialistsRoutes from './routes/specialistsRoutes';
-import cors from 'cors';  // ← Добавляем эту строку
+import categoriesRoutes from './routes/categoriesRoutes'; 
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,8 +17,8 @@ app.use(cors({
 
 app.use(express.json());
 
-// Все запросы к /api/specialists будут обрабатываться specialistsRoutes
 app.use('/api/specialists', specialistsRoutes);
+app.use('/api/categories', categoriesRoutes); 
 
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -36,6 +37,11 @@ const startServer = async () => {
       console.log(`Check health: http://localhost:${PORT}/api/health`);
       console.log(`Specialists API: http://localhost:${PORT}/api/specialists`);
       console.log(`CORS enabled for: http://localhost:5173`);
+      console.log(`Categories API: http://localhost:${PORT}/api/categories`);
+      console.log(`Examples:`);
+      console.log(`   • Search specialists: http://localhost:${PORT}/api/specialists?search=педиатр`);
+      console.log(`   • Filter by category: http://localhost:${PORT}/api/specialists?category=Врачи`);
+      console.log(`   • Search and filter: http://localhost:${PORT}/api/specialists?search=детский&category=Врачи`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

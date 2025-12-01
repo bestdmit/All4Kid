@@ -1,64 +1,56 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, Flex, Button, message } from "antd";
-import SearchBar from "./SearchBar";
 import { useSpecialists } from "../hooks/useSpecialists";
+import SearchBar from "./SearchBar"; // Простая компонента поиска
 
 const cardStyle: React.CSSProperties = {
   width: "300px"
 };
 
 function TableSpecialists() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredSpecialists, setFilteredSpecialists] = useState<any[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  
+  // Используем существующий хук для отображения всех специалистов
   const { specialists, loading, error, refetch } = useSpecialists();
+  
+  // Состояние для поиска
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    if (specialists.length > 0 && !searchTerm) {
-      setFilteredSpecialists(specialists);
-    }
-  }, [specialists, searchTerm]);
-
-  // Поиск специалистов
-  const handleSearch = async (search: string) => {
-    if (!search.trim()) {
-      // Если поиск пустой - показываем всех
+  // Функция поиска
+  const handleSearch = async (term: string) => {
+    if (!term.trim()) {
+      // Если поиск пустой - сбрасываем результаты
       setSearchTerm('');
-      setFilteredSpecialists(specialists);
+      setSearchResults([]);
       return;
     }
 
+    setIsSearching(true);
+    setSearchTerm(term);
+    
     try {
-      setSearchLoading(true);
-      setSearchTerm(search);
-      
-      const url = `/api/specialists?search=${encodeURIComponent(search)}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) throw new Error('Ошибка поиска');
-      
+      const response = await fetch(`/api/specialists?search=${encodeURIComponent(term)}`);
       const result = await response.json();
+      
       if (result.success) {
-        setFilteredSpecialists(result.data);
+        setSearchResults(result.data);
       }
     } catch (err) {
-      message.error('Ошибка при поиске специалистов');
+      message.error('Ошибка при поиске');
     } finally {
-      setSearchLoading(false);
+      setIsSearching(false);
     }
   };
 
-  const handleResetSearch = () => {
-    setSearchTerm('');
-    setFilteredSpecialists(specialists);
-  };
+  // Какие данные показывать?
+  const displayData = searchTerm ? searchResults : specialists;
+  const displayLoading = searchTerm ? isSearching : loading;
 
-  if (loading && !filteredSpecialists.length) {
-    return <div style={{ color: 'white', textAlign: 'center' }}>Загрузка специалистов...</div>;
+  if (displayLoading && displayData.length === 0) {
+    return <div style={{ color: 'white', textAlign: 'center' }}>Загрузка...</div>;
   }
 
-  if (error) {
+  if (error && !searchTerm) {
     return (
       <div style={{ color: 'red', textAlign: 'center' }}>
         Ошибка: {error}
@@ -72,31 +64,38 @@ function TableSpecialists() {
 
   return (
     <Flex align={"center"} justify={"center"} vertical>
+      {/* Поисковая строка */}
       <SearchBar 
         onSearch={handleSearch}
-        loading={searchLoading || loading}
+        loading={isSearching}
       />
       
+      {/* Кнопки управления */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: 20 }}>
         <Button 
           type="primary" 
           onClick={refetch}
-          loading={loading}
+          loading={loading && !searchTerm}
+          disabled={isSearching}
         >
           Обновить список
         </Button>
         
         {searchTerm && (
           <Button 
-            onClick={handleResetSearch}
-            disabled={loading}
+            onClick={() => {
+              setSearchTerm('');
+              setSearchResults([]);
+            }}
+            disabled={isSearching}
           >
             Сбросить поиск
           </Button>
         )}
       </div>
       
-      {filteredSpecialists.length === 0 ? (
+      {/* Отображение результатов */}
+      {displayData.length === 0 ? (
         <div style={{ color: 'white', textAlign: 'center', marginTop: 40 }}>
           {searchTerm 
             ? `Не найдено специалистов по запросу: "${searchTerm}"`
@@ -105,12 +104,13 @@ function TableSpecialists() {
       ) : (
         <>
           <div style={{ color: 'white', marginBottom: 20 }}>
-            Найдено специалистов: {filteredSpecialists.length}
-            {searchTerm && ` по запросу "${searchTerm}"`}
+            {searchTerm 
+              ? `Найдено ${displayData.length} специалистов по запросу "${searchTerm}"`
+              : `Всего специалистов: ${displayData.length}`}
           </div>
           
           <Flex wrap gap={'middle'} justify={"center"}>
-            {filteredSpecialists.map((item) => (
+            {displayData.map((item) => (
               <Card key={item.id} title={item.name} style={cardStyle}>
                 <p><strong>Специальность:</strong> {item.specialty}</p>
                 <p><strong>Категория:</strong> {item.category || 'Другое'}</p>

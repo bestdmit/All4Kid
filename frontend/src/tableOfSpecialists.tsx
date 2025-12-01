@@ -1,25 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Flex, Button, message } from "antd";
 import { useSpecialists } from "../hooks/useSpecialists";
-import SearchBar from "./SearchBar"; // Простая компонента поиска
+import SearchBar from "./SearchBar";
 
 const cardStyle: React.CSSProperties = {
   width: "300px"
 };
 
 function TableSpecialists() {
-  // Используем существующий хук для отображения всех специалистов
   const { specialists, loading, error, refetch } = useSpecialists();
-  
-  // Состояние для поиска
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  useEffect(() => {
+    if (specialists.length > 0 && !searchTerm) {
+      setSearchResults([]); // Сбрасываем результаты поиска при загрузке всех
+    }
+  }, [specialists, searchTerm]);
+
+
   // Функция поиска
   const handleSearch = async (term: string) => {
     if (!term.trim()) {
-      // Если поиск пустой - сбрасываем результаты
+
       setSearchTerm('');
       setSearchResults([]);
       return;

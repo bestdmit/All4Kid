@@ -1,6 +1,7 @@
 import React from "react";
 import AppHeader from '../../src/Header/AppHeader';
 import ReasonCard from "../../src/reasonCard";
+import KategoryCard from "../../src/kategoryCard";
 import { Link } from 'react-router-dom';
 import { Layout, Card, Flex,Typography, Button } from 'antd';
 
@@ -52,23 +53,21 @@ export default function MainPage(){
                     <Title style={{textAlign:"center"}}>Почему нас выбирают</Title>
                     
                     <Flex justify="center" align = "center" gap={"middle"}>
-                        <ReasonCard imagePath="../../src/images/MagnifyingGlass.png" 
+                        <ReasonCard imagePath="../../src/images/reasons/MagnifyingGlass.png" 
                         descriptionText="Врачи, педагоги, тренеры и творческие специалисты в едином каталоге" 
                         titleText="Все в одном месте"/>
-                        <ReasonCard imagePath="../../src/images/CommentLogo.png" titleText="Реальные отзывы"
+                        <ReasonCard imagePath="../../src/images/reasons/CommentLogo.png" titleText="Реальные отзывы"
                             descriptionText="Честные рейтинги и отзывы от других родителей"/>
-                        <ReasonCard imagePath="../../src/images/CalendarLogo.png" titleText="Удобная запись"
+                        <ReasonCard imagePath="../../src/images/reasons/CalendarLogo.png" titleText="Удобная запись"
                             descriptionText="Выбирайте удобное время онлайн без звонков и ожидания"/>
-                        <ReasonCard imagePath="../../src/images/FamilyLogo.png" titleText="Семейный профиль"
+                        <ReasonCard imagePath="../../src/images/reasons/FamilyLogo.png" titleText="Семейный профиль"
                             descriptionText="Управляйте записями всех детей из одного аккаунта"/>
                     </Flex>
                 </Card>
                 </section>
 
-                {/* Секция 3 - на всю ширину */}
-                <section style={{ marginBottom: '0' }}>
+                <section>
                 <Card 
-                    title="Секция 3"
                     style={{ 
                     minHeight: '400px',
                     borderRadius: 0,
@@ -76,8 +75,14 @@ export default function MainPage(){
                     borderRight: 'none'
                     }}
                 >
-                    <h2>Заголовок секции 3</h2>
-                    <p>Содержимое третьей секции...</p>
+                    <Title style={{textAlign:"center"}}>Популярные категории</Title>
+                    <Flex justify="center" align = "center" gap={"middle"}>
+                        <KategoryCard imagePath="../../src/images/kategories/sport.png" titleText="Спорт"/>
+                        <KategoryCard imagePath="../../src/images/kategories/Education.png" titleText="Образование"/>
+                        <KategoryCard imagePath="../../src/images/kategories/creativity.png" titleText="Творчество"/>
+                        <KategoryCard imagePath="../../src/images/kategories/Entertainment.png" titleText="Развлечения"/>
+
+                    </Flex>
                 </Card>
                 </section>
             </Content>

@@ -1,3 +1,12 @@
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    icon_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS specialists (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
@@ -8,17 +17,9 @@ CREATE TABLE IF NOT EXISTS specialists (
   price_per_hour DECIMAL(10,2) DEFAULT 0.0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   category VARCHAR(100) DEFAULT 'Другое',
+  FOREIGN KEY (category) REFERENCES categories(name),
   description TEXT DEFAULT '',
   avatar_url VARCHAR(500) DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    slug VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    icon_url VARCHAR(500),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO categories (name, slug, description, icon_url) VALUES

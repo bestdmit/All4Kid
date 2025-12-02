@@ -6,7 +6,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
   try {
     const { search, category } = req.query;
     
-    let sql = 'SELECT * FROM specialists spec INNER JOIN categories cat ON (spec.category = cat.name)';
+    let sql = 'SELECT spec.*, cat.slug FROM specialists spec INNER JOIN categories cat ON (spec.category = cat.name)';
     const params: any[] = [];
     let conditions: string[] = [];
     

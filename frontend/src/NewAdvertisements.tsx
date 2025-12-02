@@ -153,7 +153,7 @@ export default function NewAdvertisements() {
               ]}
             >
               <Input 
-                placeholder="Например: Логопед, Психолог, Дефектолог" 
+                placeholder="Например: репетитор по математике, тренер по футболу"
                 allowClear
               />
             </Form.Item>

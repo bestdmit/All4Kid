@@ -53,12 +53,12 @@ export default function MainPage(){
                     <Title style={{textAlign:"center"}}>Почему нас выбирают</Title>
                     
                     <Flex justify="center" align = "center" gap={"middle"}>
-                        <ReasonCard imagePath="../../src/images/MagnifyingGlass.png" 
+                        <ReasonCard imagePath="../../src/images/reasons/MagnifyingGlass.png"
                         descriptionText="Педагоги, тренеры, аниматоры и творческие специалисты в едином каталоге"
                         titleText="Все в одном месте"/>
                         <ReasonCard imagePath="../../src/images/reasons/CommentLogo.png" titleText="Реальные отзывы"
                             descriptionText="Честные рейтинги и отзывы от других родителей"/>
-                        <ReasonCard imagePath="../../src/images/FamilyLogo.png" titleText="Семейный профиль"
+                        <ReasonCard imagePath="../../src/images/reasons/FamilyLogo.png" titleText="Семейный профиль"
                             descriptionText="Прикрепляйте каждого специалиста к конкретному ребёнку"/>
                     </Flex>
                 </Card>

@@ -6,17 +6,17 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
   try {
     const { search, category } = req.query;
     
-    let sql = 'SELECT * FROM specialists';
+    let sql = 'SELECT * FROM specialists spec INNER JOIN categories cat ON (spec.category = cat.name)';
     const params: any[] = [];
     let conditions: string[] = [];
     
     if (search) {
-      conditions.push(`(name ILIKE $${params.length + 1} OR specialty ILIKE $${params.length + 1})`);
+      conditions.push(`(spec.name ILIKE $${params.length + 1} OR spec.specialty ILIKE $${params.length + 1})`);
       params.push(`%${search}%`);
     }
   
     if (category) {
-      conditions.push(`category = $${params.length + 1}`);
+      conditions.push(`cat.slug = $${params.length + 1}`);
       params.push(category);
     }
     
@@ -24,7 +24,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
       sql += ' WHERE ' + conditions.join(' AND ');
     }
     
-    sql += ' ORDER BY id DESC';
+    sql += ' ORDER BY spec.id DESC';
     
     const result = await query(sql, params);
     

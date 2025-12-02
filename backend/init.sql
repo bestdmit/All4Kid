@@ -31,13 +31,14 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 INSERT INTO categories (name, slug, description, icon_url) VALUES
-('Врачи', 'doctors', 'Медицинские специалисты для детей', '/icons/doctor.svg'),
-('Образование', 'education', 'Репетиторы и педагоги', '/icons/education.svg'),
-('Спорт', 'sports', 'Тренеры и спортивные секции', '/icons/sports.svg'),
-('Развитие', 'development', 'Психологи и логопеды', '/icons/development.svg'),
-('Творчество', 'creativity', 'Художественные и творческие кружки', '/icons/creativity.svg'),
-('Уход', 'care', 'Няни и сиделки', '/icons/care.svg')
-ON CONFLICT (name) DO NOTHING;
+('Врачи', 'Врачи', 'Медицинские специалисты для детей', '/icons/doctor.svg'),
+('Образование', 'Образование', 'Репетиторы и педагоги', '/icons/education.svg'),
+('Спорт', 'Спорт', 'Тренеры и спортивные секции', '/icons/sports.svg'),
+('Развитие', 'Развитие', 'Психологи и логопеды', '/icons/development.svg'),
+('Творчество', 'Творчество', 'Художественные и творческие кружки', '/icons/creativity.svg'),
+('Уход', 'Уход', 'Няни и сиделки', '/icons/care.svg'),
+('Другое', 'Другое', 'Другие специалисты', '/icons/other.svg')
+ON CONFLICT (slug) DO NOTHING;
 
 UPDATE specialists SET 
   category = CASE 

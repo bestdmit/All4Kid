@@ -1,30 +1,29 @@
 import { Router } from 'express';
-
+import upload from '../storage/storage';
 import {
   getAllSpecialists,
   getSpecialistById,
   createSpecialist,
   updateSpecialist,
-  deleteSpecialist
+  deleteSpecialist,
+  updateAvatar,
+  deleteAvatar,
+  getMySpecialists 
 } from '../controllers/specialistsController';
-
+import { authenticateToken, authorize } from '../middleware/auth';
 
 const router = Router();
 
-
-// GET /api/specialists - получить всех специалистов
+// Публичные роуты
 router.get('/', getAllSpecialists);
-
-// GET /api/specialists/1 - получить специалиста с ID 1
 router.get('/:id', getSpecialistById);
 
-// POST /api/specialists - создать нового специалиста
-router.post('/', createSpecialist);
-
-// PUT /api/specialists/1 - обновить специалиста с ID 1
-router.put('/:id', updateSpecialist);
-
-// DELETE /api/specialists/1 - удалить специалиста с ID 1
-router.delete('/:id', deleteSpecialist);
+// Защищенные роуты
+router.get('/my/list', authenticateToken, getMySpecialists); // НОВОЕ
+router.post('/', authenticateToken, authorize('admin'), upload.single('avatar'), createSpecialist);
+router.put('/:id', authenticateToken, authorize('admin'), updateSpecialist);
+router.delete('/:id', authenticateToken, authorize('admin'), deleteSpecialist);
+router.patch('/:id/avatar', authenticateToken, authorize('admin'), upload.single('avatar'), updateAvatar);
+router.delete('/:id/avatar', authenticateToken, authorize('admin'), deleteAvatar);
 
 export default router;

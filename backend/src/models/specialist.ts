@@ -21,9 +21,20 @@ export interface CreateSpecialistDto {
   rating: number;
   location: string;
   price_per_hour: number;
-  avatar_url: string;
+  avatar_url?: string;
 }
 
+export interface CreateSpecialistWithFileDto {
+  name: string;
+  specialty: string;
+  category: string;
+  description: string;
+  experience: number;
+  rating: number;
+  location: string;
+  price_per_hour: number;
+  avatar?: File; 
+}
 export interface Category {
   id: number;
   name: string;
@@ -31,3 +42,4 @@ export interface Category {
   description: string;
   icon_url: string;
 }
+

@@ -65,3 +65,44 @@ UPDATE specialists SET
     WHEN specialty = 'Массажист' THEN '/avatars/masseur1.jpg'
     ELSE '/avatars/default.jpg'
   END;
+
+  -- Создаем таблицу пользователей (родителей)
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  full_name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50),
+  avatar_url VARCHAR(500) DEFAULT '/avatars/default-user.jpg',
+  role VARCHAR(50) DEFAULT 'user', -- 'user', 'admin', 'specialist'
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Обновляем таблицу специалистов, связываем с пользователями
+ALTER TABLE specialists 
+ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS certificates JSONB DEFAULT '[]';
+
+-- Таблица для хранения refresh токенов
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(500) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Добавляем тестовых пользователей
+INSERT INTO users (email, password_hash, full_name, phone, role) VALUES
+('parent@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Анна Иванова', '+79001234567', 'user'),
+('admin@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Администратор', '+79007654321', 'admin'),
+('specialist@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Иван Петров', '+79001112233', 'specialist')
+ON CONFLICT (email) DO NOTHING;
+
+-- Обновляем существующих специалистов, привязываем к пользователю
+UPDATE specialists s
+SET user_id = (SELECT id FROM users WHERE email = 'specialist@example.com')
+WHERE s.name = 'Иван Петров';

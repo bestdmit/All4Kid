@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import {useEffect, useState} from 'react'
 import React from "react";
 import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
+import {type Category, useCategories} from "../hooks/useCategories.ts";
 
 export interface CreateSpecialistDto {
   name: string;
@@ -61,6 +62,11 @@ const { Title } = Typography;
 export default function NewAdvertisements() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const { error, loading: categoriesLoading, categories } = useCategories();
+
+  useEffect(() => {
+    if(error) message.error(error);
+  }, [error]);
 
   const handleSubmit = async (values: CreateSpecialistDto) => {
     setLoading(true);
@@ -72,7 +78,7 @@ export default function NewAdvertisements() {
         rating: values.rating || 0,
         price_per_hour: values.price_per_hour || 0
       };
-      
+
       console.log('📦 Отправляемые данные:', dataToSend);
       
       const result = await createSpecialist(dataToSend);
@@ -167,15 +173,12 @@ export default function NewAdvertisements() {
             >
               <Select 
                 placeholder="Выберите категорию специалиста"
+                loading={categoriesLoading}
                 allowClear
               >
-                <Select.Option value="Врачи">Врачи</Select.Option>
-                <Select.Option value="Образование">Образование</Select.Option>
-                <Select.Option value="Спорт">Спорт</Select.Option>
-                <Select.Option value="Развитие">Развитие</Select.Option>
-                <Select.Option value="Творчество">Творчество</Select.Option>
-                <Select.Option value="Уход">Уход</Select.Option>
-                <Select.Option value="Другое">Другое</Select.Option>
+                {categories.map((item: Category) => (
+                  <Select.Option value={item.name}>{item.name}</Select.Option>
+                ))}
               </Select>
             </Form.Item>
 

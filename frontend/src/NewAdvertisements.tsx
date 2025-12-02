@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import React from "react";
-import { Form, Input, InputNumber, Button, Card, message, Space, Typography } from "antd";
+import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
 
-// Типы и API функции в том же файле
 export interface CreateSpecialistDto {
   name: string;
   specialty: string;
+  category: string;
   experience?: number;
   rating?: number;
   location: string;
@@ -24,7 +24,6 @@ export interface ApiResponse<T> {
   total?: number;
 }
 
-// API функция
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const createSpecialist = async (
@@ -42,6 +41,8 @@ export const createSpecialist = async (
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ошибка сервера:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -65,17 +66,32 @@ export default function NewAdvertisements() {
     setLoading(true);
     
     try {
-      const result = await createSpecialist(values);
+      const dataToSend = {
+        ...values,
+        experience: values.experience || 0,
+        rating: values.rating || 0,
+        price_per_hour: values.price_per_hour || 0
+      };
+      
+      console.log('📦 Отправляемые данные:', dataToSend);
+      
+      const result = await createSpecialist(dataToSend);
       
       if (result.success) {
         message.success('Специалист успешно создан!');
         form.resetFields();
+        form.setFieldsValue({
+          category: 'Другое',
+          experience: 0,
+          rating: 0,
+          price_per_hour: 0
+        });
       } else {
         message.error(result.message || 'Ошибка при создании специалиста');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка при создании специалиста:', error);
-      message.error('Произошла ошибка при создании специалиста');
+      message.error(`Произошла ошибка: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -83,6 +99,12 @@ export default function NewAdvertisements() {
 
   const handleReset = () => {
     form.resetFields();
+    form.setFieldsValue({
+      category: 'Другое',
+      experience: 0,
+      rating: 0,
+      price_per_hour: 0
+    });
   };
 
   return (
@@ -98,8 +120,13 @@ export default function NewAdvertisements() {
           onFinish={handleSubmit}
           disabled={loading}
           size="large"
+          initialValues={{
+            category: 'Другое',
+            experience: 0,
+            rating: 0,
+            price_per_hour: 0
+          }}
         >
-          {/* Основная информация */}
           <div style={{ marginBottom: 24 }}>
             <Title level={4}>Основная информация</Title>
             
@@ -132,6 +159,27 @@ export default function NewAdvertisements() {
             </Form.Item>
 
             <Form.Item
+              label="Категория"
+              name="category"
+              rules={[
+                { required: true, message: 'Пожалуйста, выберите категорию' }
+              ]}
+            >
+              <Select 
+                placeholder="Выберите категорию специалиста"
+                allowClear
+              >
+                <Select.Option value="Врачи">Врачи</Select.Option>
+                <Select.Option value="Образование">Образование</Select.Option>
+                <Select.Option value="Спорт">Спорт</Select.Option>
+                <Select.Option value="Развитие">Развитие</Select.Option>
+                <Select.Option value="Творчество">Творчество</Select.Option>
+                <Select.Option value="Уход">Уход</Select.Option>
+                <Select.Option value="Другое">Другое</Select.Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
               label="Местоположение"
               name="location"
               rules={[
@@ -146,7 +194,6 @@ export default function NewAdvertisements() {
             </Form.Item>
           </div>
 
-          {/* Дополнительная информация */}
           <div style={{ marginBottom: 24 }}>
             <Title level={4}>Дополнительная информация</Title>
             
@@ -198,7 +245,6 @@ export default function NewAdvertisements() {
             </div>
           </div>
 
-          {/* Кнопки действий */}
           <Form.Item>
             <Space size="middle" style={{ width: '100%', justifyContent: 'center' }}>
               <Button 

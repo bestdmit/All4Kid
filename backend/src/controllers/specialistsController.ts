@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { query } from '../database/db';
 import { Specialist, CreateSpecialistDto } from '../models/specialist';
+import path from 'path';
+import fs from 'fs/promises';
 
 export const getAllSpecialists = async (req: Request, res: Response) => {
   try {
@@ -79,9 +81,11 @@ export const createSpecialist = async (req: Request, res: Response) => {
       experience, 
       rating, 
       location, 
-      price_per_hour,
-      avatar_url 
-    }: CreateSpecialistDto = req.body;
+      price_per_hour 
+    } = req.body;
+    
+    // Получаем загруженный файл
+    const avatarFile = req.file;
     
     // Валидация обязательных полей
     if (!name?.trim()) {
@@ -90,7 +94,7 @@ export const createSpecialist = async (req: Request, res: Response) => {
         message: 'Поле "Имя" обязательно для заполнения'
       });
     }
-    
+
     if (!specialty?.trim()) {
       return res.status(400).json({
         success: false,
@@ -118,6 +122,12 @@ export const createSpecialist = async (req: Request, res: Response) => {
       ? Math.max(0, parseInt(String(price_per_hour)) || 0)
       : 0;
 
+    
+    let avatarUrl = '/uploads/avatars/default.jpg';
+    if (avatarFile) {
+      avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
+    }
+
     const result = await query(
       `INSERT INTO specialists 
        (name, specialty, category, description, experience, rating, location, price_per_hour, avatar_url) 
@@ -125,14 +135,14 @@ export const createSpecialist = async (req: Request, res: Response) => {
        RETURNING *`,
       [
         name.trim(), 
-        specialty.trim(), 
+        specialty.trim() || '', 
         category || 'Другое',
         description || '',
         cleanExperience, 
         cleanRating, 
-        location.trim(), 
+        location.trim() || '', 
         cleanPrice,
-        avatar_url || '/avatars/default.jpg'
+        avatarUrl
       ]
     );
     
@@ -150,6 +160,108 @@ export const createSpecialist = async (req: Request, res: Response) => {
   }
 };
 
+export const updateAvatar = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const avatarFile = req.file;
+    
+    if (!avatarFile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Файл не загружен'
+      });
+    }
+    
+    // Получаем текущую аватарку
+    const currentResult = await query('SELECT avatar_url FROM specialists WHERE id = $1', [id]);
+    
+    if (currentResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Специалист не найден'
+      });
+    }
+    
+    const currentAvatar = currentResult.rows[0].avatar_url;
+    
+    // Удаляем старый файл, если это не дефолтная аватарка
+    if (currentAvatar && !currentAvatar.includes('default.jpg')) {
+      try {
+        const filePath = path.join('public', currentAvatar);
+        await fs.unlink(filePath);
+      } catch (error) {
+        console.warn('Не удалось удалить старый файл:', error);
+      }
+    }
+    
+    // Обновляем запись в базе
+    const avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
+    const result = await query(
+      'UPDATE specialists SET avatar_url = $1 WHERE id = $2 RETURNING *',
+      [avatarUrl, id]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Аватар обновлен успешно'
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении аватара:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};
+
+
+export const deleteAvatar = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Получаем текущую аватарку
+    const currentResult = await query('SELECT avatar_url FROM specialists WHERE id = $1', [id]);
+    
+    if (currentResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Специалист не найден'
+      });
+    }
+    
+    const currentAvatar = currentResult.rows[0].avatar_url;
+    
+    // Удаляем файл, если это не дефолтная аватарка
+    if (currentAvatar && !currentAvatar.includes('default.jpg')) {
+      try {
+        const filePath = path.join('public', currentAvatar);
+        await fs.unlink(filePath);
+      } catch (error) {
+        console.warn('Не удалось удалить файл:', error);
+      }
+    }
+    
+    // Устанавливаем дефолтную аватарку
+    const defaultAvatar = '/uploads/avatars/default.jpg';
+    const result = await query(
+      'UPDATE specialists SET avatar_url = $1 WHERE id = $2 RETURNING *',
+      [defaultAvatar, id]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Аватар удален'
+    });
+  } catch (error) {
+    console.error('Ошибка при удалении аватара:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};
 
 export const updateSpecialist = async (req: Request, res: Response) => {
   try {
@@ -218,14 +330,30 @@ export const deleteSpecialist = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const result = await query('DELETE FROM specialists WHERE id = $1 RETURNING *', [id]);
+    // Получаем специалиста перед удалением
+    const specialistResult = await query('SELECT * FROM specialists WHERE id = $1', [id]);
     
-    if (result.rows.length === 0) {
+    if (specialistResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Специалист не найден'
       });
     }
+    
+    const specialist = specialistResult.rows[0];
+    
+    // Удаляем файл аватарки, если это не дефолтная
+    if (specialist.avatar_url && !specialist.avatar_url.includes('default.jpg')) {
+      try {
+        const filePath = path.join('public', specialist.avatar_url);
+        await fs.unlink(filePath);
+      } catch (error) {
+        console.warn('Не удалось удалить файл аватарки:', error);
+      }
+    }
+    
+    // Удаляем запись из базы
+    await query('DELETE FROM specialists WHERE id = $1', [id]);
     
     res.json({
       success: true,

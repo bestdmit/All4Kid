@@ -1,6 +1,7 @@
 import React from "react";
 import AppHeader from '../../src/Header/AppHeader';
 import ReasonCard from "../../src/reasonCard";
+import KategoryCard from "../../src/kategoryCard";
 import { Link } from 'react-router-dom';
 import { Layout, Card, Flex,Typography, Button } from 'antd';
 
@@ -55,7 +56,7 @@ export default function MainPage(){
                         <ReasonCard imagePath="../../src/images/MagnifyingGlass.png" 
                         descriptionText="Педагоги, тренеры, аниматоры и творческие специалисты в едином каталоге"
                         titleText="Все в одном месте"/>
-                        <ReasonCard imagePath="../../src/images/CommentLogo.png" titleText="Реальные отзывы"
+                        <ReasonCard imagePath="../../src/images/reasons/CommentLogo.png" titleText="Реальные отзывы"
                             descriptionText="Честные рейтинги и отзывы от других родителей"/>
                         <ReasonCard imagePath="../../src/images/FamilyLogo.png" titleText="Семейный профиль"
                             descriptionText="Прикрепляйте каждого специалиста к конкретному ребёнку"/>
@@ -63,10 +64,8 @@ export default function MainPage(){
                 </Card>
                 </section>
 
-                {/* Секция 3 - на всю ширину */}
-                <section style={{ marginBottom: '0' }}>
+                <section>
                 <Card 
-                    title="Секция 3"
                     style={{ 
                     minHeight: '400px',
                     borderRadius: 0,
@@ -74,8 +73,14 @@ export default function MainPage(){
                     borderRight: 'none'
                     }}
                 >
-                    <h2>Заголовок секции 3</h2>
-                    <p>Содержимое третьей секции...</p>
+                    <Title style={{textAlign:"center"}}>Популярные категории</Title>
+                    <Flex justify="center" align = "center" gap={"middle"}>
+                        <KategoryCard imagePath="../../src/images/kategories/sport.png" titleText="Спорт"/>
+                        <KategoryCard imagePath="../../src/images/kategories/Education.png" titleText="Образование"/>
+                        <KategoryCard imagePath="../../src/images/kategories/creativity.png" titleText="Творчество"/>
+                        <KategoryCard imagePath="../../src/images/kategories/Entertainment.png" titleText="Развлечения"/>
+
+                    </Flex>
                 </Card>
                 </section>
             </Content>

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import React from "react";
+import { Form, Input, InputNumber, Button, Card, message, Space, Typography } from "antd";
 
-// types.ts - типы для специалиста
+// Типы и API функции в том же файле
 export interface CreateSpecialistDto {
   name: string;
   specialty: string;
@@ -23,13 +24,15 @@ export interface ApiResponse<T> {
   total?: number;
 }
 
-// specialistsApi.ts - API функции
+// API функция
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const createSpecialist = async (
   specialistData: CreateSpecialistDto
 ): Promise<ApiResponse<Specialist>> => {
   try {
+    console.log('📤 Отправляю данные на бэкенд:', specialistData);
+    
     const response = await fetch(`${API_BASE_URL}/specialists`, {
       method: 'POST',
       headers: {
@@ -38,140 +41,188 @@ export const createSpecialist = async (
       body: JSON.stringify(specialistData),
     });
 
-    const result: ApiResponse<Specialist> = await response.json();
-
     if (!response.ok) {
-      throw new Error(result.message || 'Ошибка при создании специалиста');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const result: ApiResponse<Specialist> = await response.json();
+    console.log('✅ Ответ от бэкенда:', result);
 
     return result;
   } catch (error) {
-    console.error('Ошибка при создании специалиста:', error);
+    console.error('❌ Ошибка при создании специалиста:', error);
     throw error;
   }
 };
 
-// Пример использования в компоненте React
-export default function NewAdvertisements(){
-  const [formData, setFormData] = useState<CreateSpecialistDto>({
-    name: '',
-    specialty: '',
-    experience: 0,
-    rating: 0,
-    location: '',
-    price_per_hour: 0,
-  });
+const { Title } = Typography;
+
+export default function NewAdvertisements() {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: CreateSpecialistDto) => {
     setLoading(true);
-    setMessage('');
-
+    
     try {
-      const result = await createSpecialist(formData);
+      const result = await createSpecialist(values);
       
       if (result.success) {
-        setMessage('Специалист успешно создан!');
-        // Очистка формы или перенаправление
-        setFormData({
-          name: '',
-          specialty: '',
-          experience: 0,
-          rating: 0,
-          location: '',
-          price_per_hour: 0,
-        });
+        message.success('Специалист успешно создан!');
+        form.resetFields();
+      } else {
+        message.error(result.message || 'Ошибка при создании специалиста');
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Произошла ошибка');
+      console.error('Ошибка при создании специалиста:', error);
+      message.error('Произошла ошибка при создании специалиста');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'name' || name === 'specialty' || name === 'location' 
-        ? value 
-        : Number(value)
-    }));
+  const handleReset = () => {
+    form.resetFields();
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Имя:</label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      
-      <div>
-        <label>Специальность:</label>
-        <input
-          type="text"
-          name="specialty"
-          value={formData.specialty}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      
-      <div>
-        <label>Местоположение:</label>
-        <input
-          type="text"
-          name="location"
-          value={formData.location}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      
-      <div>
-        <label>Опыт (лет):</label>
-        <input
-          type="number"
-          name="experience"
-          value={formData.experience}
-          onChange={handleChange}
-        />
-      </div>
-      
-      <div>
-        <label>Рейтинг:</label>
-        <input
-          type="number"
-          name="rating"
-          step="0.1"
-          value={formData.rating}
-          onChange={handleChange}
-        />
-      </div>
-      
-      <div>
-        <label>Цена за час:</label>
-        <input
-          type="number"
-          name="price_per_hour"
-          value={formData.price_per_hour}
-          onChange={handleChange}
-        />
-      </div>
-      
-      <button type="submit" disabled={loading}>
-        {loading ? 'Создание...' : 'Создать специалиста'}
-      </button>
-      
-      {message && <div>{message}</div>}
-    </form>
+    <div style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
+      <Card>
+        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
+          Добавить нового специалиста
+        </Title>
+        
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          disabled={loading}
+          size="large"
+        >
+          {/* Основная информация */}
+          <div style={{ marginBottom: 24 }}>
+            <Title level={4}>Основная информация</Title>
+            
+            <Form.Item
+              label="Имя специалиста"
+              name="name"
+              rules={[
+                { required: true, message: 'Пожалуйста, введите имя специалиста' },
+                { min: 2, message: 'Имя должно содержать минимум 2 символа' }
+              ]}
+            >
+              <Input 
+                placeholder="Введите полное имя специалиста" 
+                allowClear
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Специальность"
+              name="specialty"
+              rules={[
+                { required: true, message: 'Пожалуйста, введите специальность' },
+                { min: 2, message: 'Специальность должна содержать минимум 2 символа' }
+              ]}
+            >
+              <Input 
+                placeholder="Например: Логопед, Психолог, Дефектолог" 
+                allowClear
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Местоположение"
+              name="location"
+              rules={[
+                { required: true, message: 'Пожалуйста, введите местоположение' },
+                { min: 2, message: 'Местоположение должно содержать минимум 2 символа' }
+              ]}
+            >
+              <Input 
+                placeholder="Город или район оказания услуг" 
+                allowClear
+              />
+            </Form.Item>
+          </div>
+
+          {/* Дополнительная информация */}
+          <div style={{ marginBottom: 24 }}>
+            <Title level={4}>Дополнительная информация</Title>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <Form.Item
+                label="Опыт работы (лет)"
+                name="experience"
+                rules={[
+                  { type: 'number', min: 0, max: 50, message: 'Опыт должен быть от 0 до 50 лет' }
+                ]}
+              >
+                <InputNumber 
+                  min={0}
+                  max={50}
+                  placeholder="0"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Рейтинг"
+                name="rating"
+                rules={[
+                  { type: 'number', min: 0, max: 5, message: 'Рейтинг должен быть от 0 до 5' }
+                ]}
+              >
+                <InputNumber 
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  placeholder="0.0"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Цена за час (₽)"
+                name="price_per_hour"
+                rules={[
+                  { type: 'number', min: 0, message: 'Цена не может быть отрицательной' }
+                ]}
+              >
+                <InputNumber 
+                  min={0}
+                  placeholder="0"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </div>
+          </div>
+
+          {/* Кнопки действий */}
+          <Form.Item>
+            <Space size="middle" style={{ width: '100%', justifyContent: 'center' }}>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={loading}
+                size="large"
+                style={{ minWidth: 120 }}
+              >
+                {loading ? 'Создание...' : 'Создать'}
+              </Button>
+              
+              <Button 
+                htmlType="button" 
+                onClick={handleReset}
+                size="large"
+                disabled={loading}
+              >
+                Очистить
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+    </div>
   );
-};
+}

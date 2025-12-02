@@ -4,7 +4,29 @@ import { Specialist, CreateSpecialistDto } from '../models/specialist';
 
 export const getAllSpecialists = async (req: Request, res: Response) => {
   try {
-    const result = await query('SELECT * FROM specialists ORDER BY id DESC');
+    const { search, category } = req.query;
+    
+    let sql = 'SELECT * FROM specialists';
+    const params: any[] = [];
+    let conditions: string[] = [];
+    
+    if (search) {
+      conditions.push(`(name ILIKE $${params.length + 1} OR specialty ILIKE $${params.length + 1})`);
+      params.push(`%${search}%`);
+    }
+  
+    if (category) {
+      conditions.push(`category = $${params.length + 1}`);
+      params.push(category);
+    }
+    
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    sql += ' ORDER BY id DESC';
+    
+    const result = await query(sql, params);
     
     res.json({
       success: true,
@@ -49,20 +71,69 @@ export const getSpecialistById = async (req: Request, res: Response) => {
 
 export const createSpecialist = async (req: Request, res: Response) => {
   try {
-    const { name, specialty, experience, rating, location, price_per_hour }: CreateSpecialistDto = req.body;
+    const { 
+      name, 
+      specialty, 
+      category, 
+      description, 
+      experience, 
+      rating, 
+      location, 
+      price_per_hour,
+      avatar_url 
+    }: CreateSpecialistDto = req.body;
     
-    if (!name || !specialty || !location) {
+    // Валидация обязательных полей
+    if (!name?.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Обязательные поля: name, specialty, location'
+        message: 'Поле "Имя" обязательно для заполнения'
       });
     }
     
+    if (!specialty?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Поле "Специальность" обязательно для заполнения'
+      });
+    }
+    
+    if (!location?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Поле "Местоположение" обязательно для заполнения'
+      });
+    }
+    
+    // Безопасное преобразование числовых полей
+    const cleanExperience = experience !== undefined && experience !== null 
+      ? Math.max(0, parseInt(String(experience)) || 0)
+      : 0;
+    
+    const cleanRating = rating !== undefined && rating !== null
+      ? Math.max(0, Math.min(5, parseFloat(String(rating)) || 0))
+      : 0;
+    
+    const cleanPrice = price_per_hour !== undefined && price_per_hour !== null
+      ? Math.max(0, parseInt(String(price_per_hour)) || 0)
+      : 0;
+
     const result = await query(
-      `INSERT INTO specialists (name, specialty, experience, rating, location, price_per_hour) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO specialists 
+       (name, specialty, category, description, experience, rating, location, price_per_hour, avatar_url) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
        RETURNING *`,
-      [name, specialty, experience, rating, location, price_per_hour]
+      [
+        name.trim(), 
+        specialty.trim(), 
+        category || 'Другое',
+        description || '',
+        cleanExperience, 
+        cleanRating, 
+        location.trim(), 
+        cleanPrice,
+        avatar_url || '/avatars/default.jpg'
+      ]
     );
     
     res.status(201).json({
@@ -74,22 +145,52 @@ export const createSpecialist = async (req: Request, res: Response) => {
     console.error('Ошибка при создании специалиста:', error);
     res.status(500).json({
       success: false,
-      message: 'Ошибка сервера'
+      message: 'Ошибка сервера при создании специалиста'
     });
   }
 };
 
+
 export const updateSpecialist = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, specialty, experience, rating, location, price_per_hour } = req.body;
+    const { 
+      name, 
+      specialty, 
+      category, 
+      description, 
+      experience, 
+      rating, 
+      location, 
+      price_per_hour,
+      avatar_url 
+    } = req.body;
     
     const result = await query(
       `UPDATE specialists 
-       SET name = $1, specialty = $2, experience = $3, rating = $4, location = $5, price_per_hour = $6 
-       WHERE id = $7 
+       SET name = $1, 
+           specialty = $2, 
+           category = $3,
+           description = $4,
+           experience = $5, 
+           rating = $6, 
+           location = $7, 
+           price_per_hour = $8,
+           avatar_url = $9
+       WHERE id = $10 
        RETURNING *`,
-      [name, specialty, experience, rating, location, price_per_hour, id]
+      [
+        name, 
+        specialty, 
+        category, 
+        description, 
+        experience, 
+        rating, 
+        location, 
+        price_per_hour,
+        avatar_url,
+        id
+      ]
     );
     
     if (result.rows.length === 0) {

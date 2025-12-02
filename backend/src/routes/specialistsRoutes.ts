@@ -7,30 +7,23 @@ import {
   updateSpecialist,
   deleteSpecialist,
   updateAvatar,
-  deleteAvatar
+  deleteAvatar,
+  getMySpecialists 
 } from '../controllers/specialistsController';
+import { authenticateToken, authorize } from '../middleware/auth';
 
 const router = Router();
 
-// GET /api/specialists
+// Публичные роуты
 router.get('/', getAllSpecialists);
-
-// GET /api/specialists/:id
 router.get('/:id', getSpecialistById);
 
-// POST /api/specialists - создание с загрузкой файла
-router.post('/', upload.single('avatar'), createSpecialist);
-
-// PUT /api/specialists/:id
-router.put('/:id', updateSpecialist);
-
-// DELETE /api/specialists/:id
-router.delete('/:id', deleteSpecialist);
-
-// PATCH /api/specialists/:id/avatar - обновить аватар
-router.patch('/:id/avatar', upload.single('avatar'), updateAvatar);
-
-// DELETE /api/specialists/:id/avatar - удалить аватар
-router.delete('/:id/avatar', deleteAvatar);
+// Защищенные роуты
+router.get('/my/list', authenticateToken, getMySpecialists); // НОВОЕ
+router.post('/', authenticateToken, authorize('admin'), upload.single('avatar'), createSpecialist);
+router.put('/:id', authenticateToken, authorize('admin'), updateSpecialist);
+router.delete('/:id', authenticateToken, authorize('admin'), deleteSpecialist);
+router.patch('/:id/avatar', authenticateToken, authorize('admin'), upload.single('avatar'), updateAvatar);
+router.delete('/:id/avatar', authenticateToken, authorize('admin'), deleteAvatar);
 
 export default router;

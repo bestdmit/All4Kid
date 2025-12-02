@@ -39,9 +39,9 @@ const startServer = async () => {
       console.log(`CORS enabled for: http://localhost:5173`);
       console.log(`Categories API: http://localhost:${PORT}/api/categories`);
       console.log(`Examples:`);
-      console.log(`   • Search specialists: http://localhost:${PORT}/api/specialists?search=педиатр`);
-      console.log(`   • Filter by category: http://localhost:${PORT}/api/specialists?category=Врачи`);
-      console.log(`   • Search and filter: http://localhost:${PORT}/api/specialists?search=детский&category=Врачи`);
+      console.log(`   • Search specialists: http://localhost:${PORT}/api/specialists?search=реп`);
+      console.log(`   • Filter by category: http://localhost:${PORT}/api/specialists?category=entertainment`);
+      console.log(`   • Search and filter: http://localhost:${PORT}/api/specialists?search=реп&category=education`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

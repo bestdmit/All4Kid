@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Card, Flex, Button, message } from "antd";
+import React, { useState } from "react";
+import { Card, Flex, Button, message, Space } from "antd";
 import { useSpecialists } from "../hooks/useSpecialists";
 import SpecialistCard from "./SpecialistCard";
 import type { Specialist } from "../stores/specialistStore";
 import SearchBar from "./SearchBar";
+import CategoryFilter from "./CategoryFilter";
 
 const cardStyle: React.CSSProperties = {
   width: "300px"
@@ -14,30 +15,23 @@ function TableSpecialists() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  const [selectedCategory, setSelectedCategory] = useState('');
 
-  useEffect(() => {
-    if (specialists.length > 0 && !searchTerm) {
-      setSearchResults([]); // Сбрасываем результаты поиска при загрузке всех
-    }
-  }, [specialists, searchTerm]);
-
-
-  // Функция поиска
-  const handleSearch = async (term: string) => {
-    if (!term.trim()) {
-
-      setSearchTerm('');
-      setSearchResults([]);
-      return;
-    }
-
+  const performSearch = async (search: string, category: string) => {
     setIsSearching(true);
-    setSearchTerm(term);
     
     try {
-      const response = await fetch(`/api/specialists?search=${encodeURIComponent(term)}`);
-      const result = await response.json();
+      const params = new URLSearchParams();
+      if (search.trim()) params.append('search', search);
+      if (category) params.append('category', category);
       
+      const url = `/api/specialists${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) throw new Error('Ошибка поиска');
+      
+      const result = await response.json();
       if (result.success) {
         setSearchResults(result.data);
       }
@@ -48,15 +42,32 @@ function TableSpecialists() {
     }
   };
 
-  // Какие данные показывать?
-  const displayData = searchTerm ? searchResults : specialists;
-  const displayLoading = searchTerm ? isSearching : loading;
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    performSearch(term, selectedCategory);
+  };
+
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    performSearch(searchTerm, category);
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
+    setSearchResults([]);
+  };
+
+  const hasActiveFilters = searchTerm || selectedCategory;
+  const displayData = hasActiveFilters ? searchResults : specialists;
+  const displayLoading = hasActiveFilters ? isSearching : loading;
 
   if (displayLoading && displayData.length === 0) {
     return <div style={{ color: 'white', textAlign: 'center' }}>Загрузка...</div>;
   }
 
-  if (error && !searchTerm) {
+  if (error && !hasActiveFilters) {
     return (
       <div style={{ color: 'red', textAlign: 'center' }}>
         Ошибка: {error}
@@ -70,48 +81,63 @@ function TableSpecialists() {
 
   return (
     <Flex align={"center"} justify={"center"} vertical>
-      {/* Поисковая строка */}
-      <SearchBar 
-        onSearch={handleSearch}
-        loading={isSearching}
-      />
-      
-      {/* Кнопки управления */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: 20 }}>
-        <Button 
-          type="primary" 
-          onClick={refetch}
-          loading={loading && !searchTerm}
-          disabled={isSearching}
-        >
-          Обновить список
-        </Button>
+      {/* Панель фильтров */}
+      <div style={{ 
+        marginBottom: '24px',
+        width: '100%',
+        maxWidth: '800px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        {/* Строка с поиском и фильтром категорий */}
+        <Space size="middle" style={{ justifyContent: 'center', alignItems: 'flex-start' }}>
+          <SearchBar 
+            onSearch={handleSearch}
+            loading={isSearching}
+          />
+          <CategoryFilter 
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            disabled={isSearching}
+          />
+        </Space>
         
-        {searchTerm && (
+        {/* Кнопки управления */}
+        <Space size="middle">
           <Button 
-            onClick={() => {
-              setSearchTerm('');
-              setSearchResults([]);
-            }}
+            type="primary" 
+            onClick={refetch}
+            loading={loading && !hasActiveFilters}
             disabled={isSearching}
           >
-            Сбросить поиск
+            Обновить список
           </Button>
-        )}
+          
+          {hasActiveFilters && (
+            <Button 
+              onClick={handleResetFilters}
+              disabled={isSearching}
+            >
+              Сбросить все фильтры
+            </Button>
+          )}
+        </Space>
       </div>
       
       {/* Отображение результатов */}
       {displayData.length === 0 ? (
         <div style={{ color: 'white', textAlign: 'center', marginTop: 40 }}>
-          {searchTerm 
-            ? `Не найдено специалистов по запросу: "${searchTerm}"`
+          {hasActiveFilters 
+            ? `Не найдено специалистов${searchTerm ? ` по запросу "${searchTerm}"` : ''}${selectedCategory ? ' в выбранной категории' : ''}`
             : 'Специалисты не найдены'}
         </div>
       ) : (
         <>
-          <div style={{ color: 'white', marginBottom: 20 }}>
-            {searchTerm 
-              ? `Найдено ${displayData.length} специалистов по запросу "${searchTerm}"`
+          <div style={{ color: 'white', marginBottom: 20, textAlign: 'center' }}>
+            {hasActiveFilters 
+              ? `Найдено ${displayData.length} специалистов${searchTerm ? ` по запросу "${searchTerm}"` : ''}${selectedCategory ? ' в выбранной категории' : ''}`
               : `Всего специалистов: ${displayData.length}`}
           </div>
           

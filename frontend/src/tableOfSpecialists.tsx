@@ -1,7 +1,8 @@
 import React from "react";
 import { Card, Flex, Button } from "antd";
 import { useSpecialists } from "../hooks/useSpecialists";
-
+import SpecialistCard from "./SpecialistCard";
+import type { Specialist } from "../stores/specialistStore";
 const cardStyle: React.CSSProperties = {
   width: "300px"
 };
@@ -27,23 +28,9 @@ function TableSpecialists() {
 
   return (
     <Flex align={"center"} justify={"center"} vertical>
-      <Button 
-        type="primary" 
-        onClick={refetch}
-        style={{ marginBottom: 20 }}
-      >
-        Обновить список
-      </Button>
-      
       <Flex wrap gap={'middle'} justify={"center"}>
-        {specialists.map((item) =>
-          <Card key={item.id} title={item.name} style={cardStyle}>
-            <p><strong>Специальность:</strong> {item.specialty}</p>
-            <p><strong>Опыт:</strong> {item.experience} лет</p>
-            <p><strong>Рейтинг:</strong> ⭐ {item.rating}</p>
-            <p><strong>Местоположение:</strong> {item.location}</p>
-            <p><strong>Цена:</strong> {item.price_per_hour} ₽/час</p>
-          </Card>
+        {specialists.map((item:Specialist) =>
+          <SpecialistCard specialist={item}/>
         )}
       </Flex>
     </Flex>

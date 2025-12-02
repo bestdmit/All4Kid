@@ -2,7 +2,6 @@ import React from "react";
 import AppHeader from '../../src/Header/AppHeader';
 import ReasonCard from "../../src/reasonCard";
 import KategoryCard from "../../src/kategoryCard";
-import SpecialistCard from "../../src/SpecialistCard";
 import BestSpecialistsCards from "../../src/bestSpecialistCards";
 import { Link } from 'react-router-dom';
 import { Layout, Card, Flex,Typography, Button } from 'antd';

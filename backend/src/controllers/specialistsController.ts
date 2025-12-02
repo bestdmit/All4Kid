@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { query } from '../database/db';
 import { Specialist, CreateSpecialistDto } from '../models/specialist';
+import { AuthRequest } from '../middleware/auth'; 
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -71,8 +72,16 @@ export const getSpecialistById = async (req: Request, res: Response) => {
   }
 };
 
-export const createSpecialist = async (req: Request, res: Response) => {
+export const createSpecialist = async (req: AuthRequest, res: Response) => {
   try {
+
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Недостаточно прав для создания специалиста'
+      });
+    }
+
     const { 
       name, 
       specialty, 
@@ -326,8 +335,15 @@ export const updateSpecialist = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteSpecialist = async (req: Request, res: Response) => {
+export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
   try {
+    // Проверяем права доступа
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Недостаточно прав для удаления специалиста'
+      });
+    }
     const { id } = req.params;
     
     // Получаем специалиста перед удалением
@@ -361,6 +377,35 @@ export const deleteSpecialist = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Ошибка при удалении специалиста:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Ошибка сервера'
+    });
+  }
+};
+
+// Получение специалистов текущего пользователя
+export const getMySpecialists = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Пользователь не аутентифицирован'
+      });
+    }
+    
+    const result = await query(
+      'SELECT * FROM specialists WHERE user_id = $1 ORDER BY id DESC',
+      [req.user.id]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount
+    });
+  } catch (error) {
+    console.error('Ошибка при получении специалистов:', error);
     res.status(500).json({
       success: false,
       message: 'Ошибка сервера'

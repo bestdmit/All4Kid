@@ -2,7 +2,8 @@ import express from 'express';
 import { promises as fs } from 'fs';
 import { connectDB } from './database/db';
 import specialistsRoutes from './routes/specialistsRoutes';
-import categoriesRoutes from './routes/categoriesRoutes'; 
+import categoriesRoutes from './routes/categoriesRoutes';
+import authRoutes from './routes/authRoutes';
 import cors from 'cors';
 import path from 'path';
 
@@ -22,7 +23,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use(express.json());
 
 app.use('/api/specialists', specialistsRoutes);
-app.use('/api/categories', categoriesRoutes); 
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -59,6 +61,10 @@ const startServer = async () => {
       console.log(`   • Filter by category: http://localhost:${PORT}/api/specialists?category=Врачи`);
       console.log(`   • Search and filter: http://localhost:${PORT}/api/specialists?search=детский&category=Врачи`);
       console.log(`File uploads are available via multipart/form-data`);
+      console.log(`   • POST /register - register a new user`);
+      console.log(`   • POST /login - login a user`);
+      console.log(`   • POST /refresh - refresh access token`);
+      console.log(`   • GET /me - get current user`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

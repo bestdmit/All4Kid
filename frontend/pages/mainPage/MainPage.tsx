@@ -58,7 +58,7 @@ export default function MainPage(){
                         <ReasonCard imagePath="../../src/images/CommentLogo.png" titleText="Реальные отзывы"
                             descriptionText="Честные рейтинги и отзывы от других родителей"/>
                         <ReasonCard imagePath="../../src/images/FamilyLogo.png" titleText="Семейный профиль"
-                            descriptionText="Управляйте записями всех детей из одного аккаунта"/>
+                            descriptionText="Прикрепляйте каждого специалиста к конкретному ребёнку"/>
                     </Flex>
                 </Card>
                 </section>

@@ -31,7 +31,7 @@ export default function MainPage(){
                       width: '100%',
                     }}>
                       <Title level={1}>Все детские специалисты в одном месте</Title>
-                      <Text style={{fontSize:"1.5rem"}}>Найдите проверенного специалиста для вашего ребенка — от педиатра до тренера. Удобная онлайн-запись, реальные отзывы и семейный профиль.</Text>
+                      <Text style={{fontSize:"1.5rem"}}>Найдите проверенного специалиста для вашего ребенка — от репетитора до аниматора и тренера. Удобная система поиска, реальные отзывы и семейный профиль.</Text>
                       <div style={{ marginTop: '16px' }}>
                         <Button type="primary" size="large"><Link to="/specialists">Найти специалиста.</Link></Button>
                       </div>
@@ -53,12 +53,10 @@ export default function MainPage(){
                     
                     <Flex justify="center" align = "center" gap={"middle"}>
                         <ReasonCard imagePath="../../src/images/MagnifyingGlass.png" 
-                        descriptionText="Врачи, педагоги, тренеры и творческие специалисты в едином каталоге" 
+                        descriptionText="Педагоги, тренеры, аниматоры и творческие специалисты в едином каталоге"
                         titleText="Все в одном месте"/>
                         <ReasonCard imagePath="../../src/images/CommentLogo.png" titleText="Реальные отзывы"
                             descriptionText="Честные рейтинги и отзывы от других родителей"/>
-                        <ReasonCard imagePath="../../src/images/CalendarLogo.png" titleText="Удобная запись"
-                            descriptionText="Выбирайте удобное время онлайн без звонков и ожидания"/>
                         <ReasonCard imagePath="../../src/images/FamilyLogo.png" titleText="Семейный профиль"
                             descriptionText="Управляйте записями всех детей из одного аккаунта"/>
                     </Flex>

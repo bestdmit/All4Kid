@@ -22,7 +22,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       onChange={onChange}
       loading={loading}
       allowClear
-      style={{ width: 200 }}
+      style={{ width: "100%" }}
       size="large"
       disabled={disabled}
     >

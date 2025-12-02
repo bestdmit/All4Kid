@@ -20,7 +20,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '8px' }}>
+    <div style={{ 
+      display: 'flex', 
+      width: '100%',
+      borderRadius: '8px',
+      overflow: 'hidden', // Это важно для объединения
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+    }}>
       <Input
         placeholder="Поиск по имени или специальности..."
         value={searchTerm}
@@ -28,13 +34,26 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
         onKeyPress={handleKeyPress}
         disabled={loading}
         size="large"
-        style={{ width: '300px' }}
+        style={{ 
+          flex: 1,
+          borderRadius: '8px 0 0 8px', // Закругляем только левую сторону
+          borderRight: 'none', // Убираем правую границу
+          marginRight: 0,
+          border: '1px solid #d9d9d9',
+        }}
       />
       <Button 
         type="primary" 
         onClick={handleSearch}
         loading={loading}
         size="large"
+        style={{
+          borderRadius: '0 8px 8px 0', // Закругляем только правую сторону
+          marginLeft: 0,
+          border: '1px solid #1890ff',
+          borderLeft: 'none', // Убираем левую границу
+          boxShadow: 'none'
+        }}
       >
         Найти
       </Button>

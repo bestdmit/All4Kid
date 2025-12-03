@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import React from "react";
 import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
-
+import { useAuth } from '../hooks/useAuth';
 export interface CreateSpecialistDto {
   name: string;
   specialty: string;
@@ -61,7 +61,7 @@ const { Title } = Typography;
 export default function NewAdvertisements() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-
+  const {user,isAuthenticated} = useAuth();
   const handleSubmit = async (values: CreateSpecialistDto) => {
     setLoading(true);
     
@@ -121,6 +121,7 @@ export default function NewAdvertisements() {
           disabled={loading}
           size="large"
           initialValues={{
+            name: user?.fullName || '',
             category: 'Другое',
             experience: 0,
             rating: 0,
@@ -139,8 +140,8 @@ export default function NewAdvertisements() {
               ]}
             >
               <Input 
-                placeholder="Введите полное имя специалиста" 
                 allowClear
+                disabled
               />
             </Form.Item>
 
@@ -153,7 +154,7 @@ export default function NewAdvertisements() {
               ]}
             >
               <Input 
-                placeholder="Например: Логопед, Психолог, Дефектолог" 
+                placeholder="Например:Тренер, Бэйбиситтер, Аниматор ..." 
                 allowClear
               />
             </Form.Item>
@@ -253,6 +254,7 @@ export default function NewAdvertisements() {
                 loading={loading}
                 size="large"
                 style={{ minWidth: 120 }}
+                disabled = {!isAuthenticated}
               >
                 {loading ? 'Создание...' : 'Создать'}
               </Button>

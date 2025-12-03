@@ -1,16 +1,20 @@
 import React from "react";
-import { Card, Typography, Rate } from "antd";
+import { Card, Typography, Button, message, Popconfirm } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import type { Specialist } from "../stores/specialistStore";
 
-const { Title,Text } = Typography;
+const { Title, Text } = Typography;
 
 interface SpecialistCardProps {
   specialist: Specialist;
+  forDelete?: boolean;
+  onDelete?: (id: number) => void;
+  isLoading?: boolean;
 }
 
 const cardStyle: React.CSSProperties = {
   width: "15rem",
-  position: "relative", // Добавляем для контейнера
+  position: "relative",
 };
 
 const coverStyle: React.CSSProperties = {
@@ -19,7 +23,7 @@ const coverStyle: React.CSSProperties = {
   width: "auto",
   margin: 0,
   backgroundColor: "#E9E6E6",
-  position: "relative", // Для позиционирования рейтинга внутри
+  position: "relative",
 };
 
 const ratingBadgeStyle: React.CSSProperties = {
@@ -37,7 +41,28 @@ const ratingBadgeStyle: React.CSSProperties = {
   gap: "4px",
 };
 
-export default function SpecialistCard({ specialist }: SpecialistCardProps) {
+const deleteButtonStyle: React.CSSProperties = {
+  marginTop: "12px",
+  width: "100%",
+};
+
+export default function SpecialistCard({ 
+  specialist, 
+  forDelete = false, 
+  onDelete,
+  isLoading = false 
+}: SpecialistCardProps) {
+  
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(specialist.id);
+    }
+  };
+
+  const confirmDelete = () => {
+    handleDelete();
+  };
+
   return (
     <Card variant="borderless" style={cardStyle} 
       cover={
@@ -50,9 +75,29 @@ export default function SpecialistCard({ specialist }: SpecialistCardProps) {
       }
     >
       <Title level={4} style={{ marginTop: 0 }}>{specialist.name}</Title>
-      <Text >{specialist.specialty}</Text>
+      <Text>{specialist.specialty}</Text>
       <br />
-      <Text >{specialist.price_per_hour} ₽/час</Text>
+      <Text>{specialist.price_per_hour} ₽/час</Text>
+      
+      {forDelete && (
+        <Popconfirm
+          title="Удалить специалиста"
+          description="Вы уверены, что хотите удалить этого специалиста?"
+          onConfirm={confirmDelete}
+          okText="Да"
+          cancelText="Нет"
+        >
+          <Button 
+            type="primary" 
+            danger
+            icon={<DeleteOutlined />}
+            loading={isLoading}
+            style={deleteButtonStyle}
+          >
+            Удалить
+          </Button>
+        </Popconfirm>
+      )}
     </Card>
   );
 }

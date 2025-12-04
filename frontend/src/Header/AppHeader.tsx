@@ -3,8 +3,10 @@ const { Header } = Layout;
 import { Link } from 'react-router-dom';
 const {Title} = Typography;
 import styles from './appHeader.module.css';
-
+import { useAuth } from "../../hooks/useAuth";
 function AppHeader() {
+  const { user, isAuthenticated} = useAuth();
+  
   return (
     <Header className={styles.header}>
       <Title className={styles.title}>All4Kid</Title>
@@ -16,11 +18,16 @@ function AppHeader() {
         <Link to="/create">Создать</Link>
       </Button>
       <Button type="text" size="large">
-        <Link to="/authorization">Профиль</Link>
-      </Button>
-      <Button type="text" size="large">
         <Link to="/specialists">Специалисты</Link>
       </Button>
+      {isAuthenticated && user ? 
+        (<Button type="text" size="large">
+          <Link to="/profile">Профиль</Link>
+          </Button>):
+        <Button type="text" size="large">
+          <Link to="/auth">Вход</Link>
+        </Button>
+      }
       </div>
     </Header>
   );

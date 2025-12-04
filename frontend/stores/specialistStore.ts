@@ -20,6 +20,7 @@ interface SpecialistState {
   clearError: () => void;
   setSpecialists: (specialists: Specialist[]) => void;
   getTopRatedSpecialists: (limit?: number) => Specialist[];
+  getSpecialistsByName:(name:String) => Specialist[];
 }
 
 const API_BASE_URL = "";
@@ -59,7 +60,6 @@ export const useSpecialistStore = create<SpecialistState>()(
 
       setSpecialists: (specialists: Specialist[]) => set({ specialists }),
 
-
       getTopRatedSpecialists: (limit: number = 4): Specialist[] =>{const { specialists } = get();
         const sorted = [...specialists].sort((a, b) => {
           if (b.rating !== a.rating) {
@@ -68,6 +68,11 @@ export const useSpecialistStore = create<SpecialistState>()(
           return b.experience - a.experience;
         });
         return sorted.slice(0, limit);},
+
+      getSpecialistsByName:(name : String): Specialist[] =>{const{specialists} = get();
+        const filtered = [...specialists].filter((specialist:Specialist)=> specialist.name == name);
+        return filtered;
+      },
     }),
     
     {

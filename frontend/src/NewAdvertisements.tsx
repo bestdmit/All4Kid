@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import React from "react";
 import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
 import {type Category, useCategories} from "../hooks/useCategories.ts";
+import { useAuth } from '../hooks/useAuth';
 
 export interface CreateSpecialistDto {
   name: string;
@@ -28,20 +29,33 @@ export interface ApiResponse<T> {
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const createSpecialist = async (
-  specialistData: CreateSpecialistDto
+  specialistData: CreateSpecialistDto,
+  accessToken: string | null
 ): Promise<ApiResponse<Specialist>> => {
   try {
     console.log('📤 Отправляю данные на бэкенд:', specialistData);
     
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Добавляем токен авторизации, если он есть
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    } else {
+      throw new Error('Требуется авторизация');
+    }
+    
     const response = await fetch(`${API_BASE_URL}/specialists`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(specialistData),
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Неавторизован. Пожалуйста, войдите в систему');
+      }
       const errorText = await response.text();
       console.error('❌ Ошибка сервера:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -68,7 +82,14 @@ export default function NewAdvertisements() {
     if(error) message.error(error);
   }, [error]);
 
+  const {user, isAuthenticated, logout} = useAuth(); // Добавили logout для очистки невалидного токена
+  
   const handleSubmit = async (values: CreateSpecialistDto) => {
+    if (!isAuthenticated) {
+      message.error('Для создания специалиста необходимо войти в систему');
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -81,12 +102,22 @@ export default function NewAdvertisements() {
 
       console.log('📦 Отправляемые данные:', dataToSend);
       
-      const result = await createSpecialist(dataToSend);
+      // Получаем токен из localStorage
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        message.error('Токен авторизации не найден. Пожалуйста, войдите заново');
+        logout(); // Очищаем состояние
+        return;
+      }
+      
+      const result = await createSpecialist(dataToSend, accessToken);
       
       if (result.success) {
         message.success('Специалист успешно создан!');
         form.resetFields();
         form.setFieldsValue({
+          name: user?.fullName || '',
           category: 'Другое',
           experience: 0,
           rating: 0,
@@ -97,7 +128,13 @@ export default function NewAdvertisements() {
       }
     } catch (error: any) {
       console.error('Ошибка при создании специалиста:', error);
-      message.error(`Произошла ошибка: ${error.message}`);
+      
+      if (error.message.includes('401') || error.message.includes('Неавторизован')) {
+        message.error('Сессия истекла. Пожалуйста, войдите заново');
+        logout(); // Очищаем невалидную сессию
+      } else {
+        message.error(`Произошла ошибка: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -106,6 +143,7 @@ export default function NewAdvertisements() {
   const handleReset = () => {
     form.resetFields();
     form.setFieldsValue({
+      name: user?.fullName || '',
       category: 'Другое',
       experience: 0,
       rating: 0,
@@ -120,13 +158,28 @@ export default function NewAdvertisements() {
           Добавить нового специалиста
         </Title>
         
+        {!isAuthenticated && (
+          <div style={{ 
+            backgroundColor: '#fff7e6', 
+            padding: '16px', 
+            borderRadius: '8px', 
+            marginBottom: '24px',
+            border: '1px solid #ffd591'
+          }}>
+            <p style={{ margin: 0, color: '#d46b08' }}>
+              ⚠️ Для создания специалиста необходимо войти в систему
+            </p>
+          </div>
+        )}
+        
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          disabled={loading}
+          disabled={loading || !isAuthenticated}
           size="large"
           initialValues={{
+            name: user?.fullName || '',
             category: 'Другое',
             experience: 0,
             rating: 0,
@@ -145,8 +198,9 @@ export default function NewAdvertisements() {
               ]}
             >
               <Input 
-                placeholder="Введите полное имя специалиста" 
                 allowClear
+                disabled={loading}
+                placeholder="Имя будет автоматически заполнено из вашего профиля"
               />
             </Form.Item>
 
@@ -159,8 +213,9 @@ export default function NewAdvertisements() {
               ]}
             >
               <Input 
-                placeholder="Например: репетитор по математике, тренер по футболу"
+                placeholder="Например: Тренер, Бэйбиситтер, Аниматор ..." 
                 allowClear
+                disabled={loading || !isAuthenticated}
               />
             </Form.Item>
 
@@ -175,6 +230,7 @@ export default function NewAdvertisements() {
                 placeholder="Выберите категорию специалиста"
                 loading={categoriesLoading}
                 allowClear
+                disabled={loading || !isAuthenticated}
               >
                 {categories.map((item: Category) => (
                   <Select.Option value={item.name}>{item.name}</Select.Option>
@@ -193,6 +249,7 @@ export default function NewAdvertisements() {
               <Input 
                 placeholder="Город или район оказания услуг" 
                 allowClear
+                disabled={loading || !isAuthenticated}
               />
             </Form.Item>
           </div>
@@ -213,6 +270,7 @@ export default function NewAdvertisements() {
                   max={50}
                   placeholder="0"
                   style={{ width: '100%' }}
+                  disabled={loading || !isAuthenticated}
                 />
               </Form.Item>
 
@@ -229,6 +287,7 @@ export default function NewAdvertisements() {
                   step={0.1}
                   placeholder="0.0"
                   style={{ width: '100%' }}
+                  disabled={loading || !isAuthenticated}
                 />
               </Form.Item>
 
@@ -243,6 +302,7 @@ export default function NewAdvertisements() {
                   min={0}
                   placeholder="0"
                   style={{ width: '100%' }}
+                  disabled={loading || !isAuthenticated}
                 />
               </Form.Item>
             </div>
@@ -256,6 +316,7 @@ export default function NewAdvertisements() {
                 loading={loading}
                 size="large"
                 style={{ minWidth: 120 }}
+                disabled={!isAuthenticated}
               >
                 {loading ? 'Создание...' : 'Создать'}
               </Button>
@@ -264,7 +325,7 @@ export default function NewAdvertisements() {
                 htmlType="button" 
                 onClick={handleReset}
                 size="large"
-                disabled={loading}
+                disabled={loading || !isAuthenticated}
               >
                 Очистить
               </Button>

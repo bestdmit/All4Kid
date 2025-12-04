@@ -10,7 +10,7 @@ export default function BestSpecialistsCards(){
     return(
         <Flex wrap gap={'middle'} justify={"center"}>
         {topSpecialists.map((spec: Specialist) =>
-          <SpecialistCard specialist={spec}/>
+          <SpecialistCard specialist={spec} key = {spec.id}/>
         )}
       </Flex>
     )

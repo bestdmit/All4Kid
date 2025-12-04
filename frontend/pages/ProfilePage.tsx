@@ -10,16 +10,17 @@ const { Title, Text } = Typography;
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { getSpecialistsByName } = useSpecialistStore();
+  const { getSpecialistsById} = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.fullName) {
-      const specialists = getSpecialistsByName(user.fullName);
+      const specialists = getSpecialistsById(user.id);
+      console.log(user.id,getSpecialistsById(user.id).length);
       setUserSpecialists(specialists);
     }
-  }, [user, getSpecialistsByName]);
+  }, [user, getSpecialistsById]);
 
   if (!isAuthenticated && !isLoading) {
     return <Navigate to="/auth" />;
@@ -38,7 +39,8 @@ export default function ProfilePage() {
       message.success("Специалист удален");
       
       if (user?.fullName) {
-        const specialists = getSpecialistsByName(user.fullName);
+        
+        const specialists = getSpecialistsById(user.id);
         setUserSpecialists(specialists);
       }
     } catch (error) {

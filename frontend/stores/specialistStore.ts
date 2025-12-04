@@ -10,6 +10,7 @@ export interface Specialist {
   location: string;
   price_per_hour: number;
   created_at: string;
+  created_by: number;
 }
 
 interface SpecialistState {
@@ -20,7 +21,7 @@ interface SpecialistState {
   clearError: () => void;
   setSpecialists: (specialists: Specialist[]) => void;
   getTopRatedSpecialists: (limit?: number) => Specialist[];
-  getSpecialistsByName:(name:String) => Specialist[];
+  getSpecialistsById:(authId : Number) => Specialist[];
 }
 
 const API_BASE_URL = "";
@@ -69,8 +70,8 @@ export const useSpecialistStore = create<SpecialistState>()(
         });
         return sorted.slice(0, limit);},
 
-      getSpecialistsByName:(name : String): Specialist[] =>{const{specialists} = get();
-        const filtered = [...specialists].filter((specialist:Specialist)=> specialist.name == name);
+      getSpecialistsById:(authId : Number): Specialist[] =>{const{specialists} = get();
+        const filtered = [...specialists].filter((specialist:Specialist)=>specialist.created_by === authId);
         return filtered;
       },
     }),

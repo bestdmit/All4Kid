@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { authApi, type AuthResponse, type LoginData, type RegisterData } from "../src/api/auth";
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   fullName: string;
   phone?: string;

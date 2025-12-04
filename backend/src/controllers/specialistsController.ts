@@ -140,17 +140,17 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
     }
 
     // Проверяем, не создал ли пользователь уже профиль специалиста
-    const existingSpecialist = await query(
-      'SELECT id FROM specialists WHERE user_id = $1',
-      [req.user.id]
-    );
+    // const existingSpecialist = await query(
+    //   'SELECT id FROM specialists WHERE user_id = $1',
+    //   [req.user.id]
+    // );
 
-    if (existingSpecialist.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: 'Вы уже создали профиль специалиста'
-      });
-    }
+    // if (existingSpecialist.rows.length > 0) {
+    //   return res.status(409).json({
+    //     success: false,
+    //     message: 'Вы уже создали профиль специалиста'
+    //   });
+    // }
     
     // Создаем специалиста с привязкой к пользователю
     const result = await query(

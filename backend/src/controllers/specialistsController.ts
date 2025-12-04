@@ -75,10 +75,10 @@ export const getSpecialistById = async (req: Request, res: Response) => {
 export const createSpecialist = async (req: AuthRequest, res: Response) => {
   try {
 
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({
+     if (!req.user) {
+      return res.status(401).json({
         success: false,
-        message: 'Недостаточно прав для создания специалиста'
+        message: 'Требуется авторизация'
       });
     }
 
@@ -117,6 +117,8 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
         message: 'Поле "Местоположение" обязательно для заполнения'
       });
     }
+
+     const specialistName = name.trim() || req.user.fullName;
     
     // Безопасное преобразование числовых полей
     const cleanExperience = experience !== undefined && experience !== null 
@@ -137,13 +139,28 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
       avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
     }
 
+    // Проверяем, не создал ли пользователь уже профиль специалиста
+    const existingSpecialist = await query(
+      'SELECT id FROM specialists WHERE user_id = $1',
+      [req.user.id]
+    );
+
+    if (existingSpecialist.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Вы уже создали профиль специалиста'
+      });
+    }
+    
+    // Создаем специалиста с привязкой к пользователю
     const result = await query(
       `INSERT INTO specialists 
-       (name, specialty, category, description, experience, rating, location, price_per_hour, avatar_url) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+       (name, specialty, category, description, experience, rating, location, 
+        price_per_hour, avatar_url, user_id, created_by, is_approved) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
        RETURNING *`,
       [
-        name.trim(), 
+        specialistName, 
         specialty.trim() || '', 
         category || 'Другое',
         description || '',
@@ -151,14 +168,27 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
         cleanRating, 
         location.trim() || '', 
         cleanPrice,
-        avatarUrl
+        avatarUrl,
+        req.user.id,           // user_id - владелец профиля
+        req.user.id,           // created_by - кто создал
+        req.user.role === 'admin' // админы сразу одобрены
       ]
     );
+    
+    // Если пользователь стал специалистом, обновляем его роль
+    if (req.user.role === 'user') {
+      await query(
+        'UPDATE users SET role = $1 WHERE id = $2',
+        ['specialist', req.user.id]
+      );
+    }
     
     res.status(201).json({
       success: true,
       data: result.rows[0],
-      message: 'Специалист создан успешно'
+      message: req.user.role === 'admin' 
+        ? 'Специалист создан успешно' 
+        : 'Ваш профиль специалиста создан и ожидает подтверждения'
     });
   } catch (error) {
     console.error('Ошибка при создании специалиста:', error);

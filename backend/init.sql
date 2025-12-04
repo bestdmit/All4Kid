@@ -106,3 +106,7 @@ ON CONFLICT (email) DO NOTHING;
 UPDATE specialists s
 SET user_id = (SELECT id FROM users WHERE email = 'specialist@example.com')
 WHERE s.name = 'Иван Петров';
+
+ALTER TABLE specialists 
+ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE CASCADE;

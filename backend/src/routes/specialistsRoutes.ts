@@ -10,7 +10,7 @@ import {
   deleteAvatar,
   getMySpecialists 
 } from '../controllers/specialistsController';
-import { authenticateToken, authorize } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
@@ -19,11 +19,11 @@ router.get('/', getAllSpecialists);
 router.get('/:id', getSpecialistById);
 
 // Защищенные роуты
-router.get('/my/list', authenticateToken, getMySpecialists); // НОВОЕ
-router.post('/', authenticateToken, authorize('admin'), upload.single('avatar'), createSpecialist);
-router.put('/:id', authenticateToken, authorize('admin'), updateSpecialist);
-router.delete('/:id', authenticateToken, authorize('admin'), deleteSpecialist);
-router.patch('/:id/avatar', authenticateToken, authorize('admin'), upload.single('avatar'), updateAvatar);
-router.delete('/:id/avatar', authenticateToken, authorize('admin'), deleteAvatar);
+router.get('/my/list', authenticateToken, getMySpecialists);
+router.post('/', authenticateToken, upload.single('avatar'), createSpecialist); // УБРАЛИ authorize('admin')
+router.put('/:id', authenticateToken, updateSpecialist);
+router.delete('/:id', authenticateToken, deleteSpecialist);
+router.patch('/:id/avatar', authenticateToken, upload.single('avatar'), updateAvatar);
+router.delete('/:id/avatar', authenticateToken, deleteAvatar);
 
 export default router;

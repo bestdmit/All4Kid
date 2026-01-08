@@ -16,7 +16,7 @@ type LoginFormProps = {
 
 const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onTabChange }) => {
   const [form] = Form.useForm();
-  const { login } = useAuth();
+  const { isAuthenticated,login } = useAuth();
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     try {
@@ -24,7 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onTabChange }) => {
         email: values.email!,
         password: values.password!,
       });
-      message.success("Вход выполнен успешно!");
+      if (isAuthenticated) message.success("Вход выполнен успешно!");
     } catch (err) {
       // Ошибка уже обработана в сторе
     }

@@ -1,42 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Flex, Button, message, Space, Layout } from "antd";
-import { useSpecialists } from "../hooks/useSpecialists";
+import { useSpecialistStore } from "../stores/specialistStore";
 import SpecialistCard from "./SpecialistCard";
-import type { Specialist } from "../stores/specialistStore";
+import type { Specialist } from "./api/specialists";
 import SearchBar from "./SearchBar";
 import CategoryFilter from "./CategoryFilter";
 
 const { Content, Sider } = Layout;
 
-const cardStyle: React.CSSProperties = {
-  width: "300px"
-};
-
 function TableSpecialists() {
-  const { specialists, loading, error, refetch } = useSpecialists();
+  const { 
+    specialists, 
+    loading, 
+    error, 
+    fetchSpecialists, 
+    searchSpecialists 
+  } = useSpecialistStore();
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   
-  const [selectedCategory, setSelectedCategory] = useState('');
+  // Загружаем специалистов при монтировании компонента
+  useEffect(() => {
+    fetchSpecialists();
+  }, []);
 
   const performSearch = async (search: string, category: string) => {
     setIsSearching(true);
     
     try {
-      const params = new URLSearchParams();
-      if (search.trim()) params.append('search', search);
-      if (category) params.append('category', category);
-      
-      const url = `/api/specialists${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) throw new Error('Ошибка поиска');
-      
-      const result = await response.json();
-      if (result.success) {
-        setSearchResults(result.data);
-      }
+      await searchSpecialists(search, category);
     } catch (err) {
       message.error('Ошибка при поиске');
     } finally {
@@ -57,11 +51,11 @@ function TableSpecialists() {
   const handleResetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('');
-    setSearchResults([]);
+    fetchSpecialists(); // Загружаем всех специалистов заново
   };
 
   const hasActiveFilters = searchTerm || selectedCategory;
-  const displayData = hasActiveFilters ? searchResults : specialists;
+  const displayData = specialists;
   const displayLoading = hasActiveFilters ? isSearching : loading;
 
   if (displayLoading && displayData.length === 0) {
@@ -73,7 +67,7 @@ function TableSpecialists() {
       <div style={{ color: 'red', textAlign: 'center', padding: '40px' }}>
         Ошибка: {error}
         <br />
-        <Button type="primary" onClick={refetch} style={{ marginTop: 10 }}>
+        <Button type="primary" onClick={fetchSpecialists} style={{ marginTop: 10 }}>
           Попробовать снова
         </Button>
       </div>
@@ -97,7 +91,6 @@ function TableSpecialists() {
             backgroundColor: 'transparent',
             marginRight: '24px',
             paddingTop: '0',
-           
           }}
         >
           <Card
@@ -106,9 +99,9 @@ function TableSpecialists() {
               background: 'rgba(255, 255, 255, 0.05)',
               border: '1px solid rgba(105, 103, 103, 0.98)',
               color: 'white',
-              marginTop:"15vh",
-              paddingTop:0,
-               boxShadow:"3px 3px 3px rgba(105, 103, 103, 0.98)"
+              marginTop: "15vh",
+              paddingTop: 0,
+              boxShadow: "3px 3px 3px rgba(105, 103, 103, 0.98)"
             }}
             styles={{
               header: { 
@@ -130,7 +123,7 @@ function TableSpecialists() {
             <Space direction="vertical" style={{ width: '100%', marginBottom: '16px' }}>
               <Button 
                 type="primary" 
-                onClick={refetch}
+                onClick={fetchSpecialists}
                 loading={loading && !hasActiveFilters}
                 disabled={isSearching}
                 block
@@ -148,7 +141,6 @@ function TableSpecialists() {
                 </Button>
               )}
             </Space>
-            
           </Card>
         </Sider>
 

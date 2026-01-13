@@ -1,17 +1,33 @@
 import React from "react";
-import { Flex  } from "antd";
+import { Flex, Spin, Empty } from "antd";
 import SpecialistCard from "./SpecialistCard";
-import { useSpecialistStore } from "../stores/specialistStore";
-import type { Specialist } from "../stores/specialistStore";
-export default function BestSpecialistsCards(){
-    const {getTopRatedSpecialists} = useSpecialistStore();
+import { useSpecialists } from "../hooks/useSpecialists";
+import type { Specialist } from "./api/specialists";
 
-    const topSpecialists = getTopRatedSpecialists(4);
-    return(
-        <Flex wrap gap={'middle'} justify={"center"}>
-        {topSpecialists.map((spec: Specialist) =>
-          <SpecialistCard specialist={spec} key = {spec.id}/>
-        )}
-      </Flex>
-    )
+export default function BestSpecialistsCards(){
+  const { specialists, loading } = useSpecialists();
+
+  const topSpecialists = [...specialists]
+    .sort((a, b) => b.rating - a.rating || b.experience - a.experience)
+    .slice(0, 4);
+
+  if (loading && specialists.length === 0) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
+        <Spin />
+      </div>
+    );
+  }
+
+  if (!loading && topSpecialists.length === 0) {
+    return <Empty description="Специалисты временно недоступны" />;
+  }
+
+  return (
+    <Flex wrap gap={'middle'} justify={"center"}>
+      {topSpecialists.map((spec: Specialist) => (
+        <SpecialistCard specialist={spec} key={spec.id} />
+      ))}
+    </Flex>
+  );
 }

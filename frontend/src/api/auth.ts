@@ -25,6 +25,11 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface UpdateProfileData {
+  fullName?: string;
+  phone?: string;
+}
+
 export const authApi = {
   async register(data: RegisterData) {
     const response = await fetch(`${API_URL}/register`, {
@@ -76,6 +81,18 @@ export const authApi = {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
+    });
+    return response.json();
+  },
+
+  async updateProfile(data: UpdateProfileData) {
+    const response = await fetch(`${API_URL}/me`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+      body: JSON.stringify(data),
     });
     return response.json();
   },

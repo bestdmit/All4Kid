@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authApi, type AuthResponse, type LoginData, type RegisterData } from "../src/api/auth";
+import { authApi, type AuthResponse, type LoginData, type RegisterData, type UpdateProfileData } from "../src/api/auth";
 
 export interface User {
   id: number;
@@ -30,6 +30,7 @@ export interface AuthActions {
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearError: () => void;
   initializeAuth: () => void;
+  updateProfile: (data: UpdateProfileData) => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -226,6 +227,39 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         } catch (error) {
           console.error('Token refresh error:', error);
           get().logout();
+        }
+      },
+
+      updateProfile: async (data: UpdateProfileData) => {
+        set({ error: null });
+
+        try {
+          const response = await authApi.updateProfile(data);
+
+          if (response.success) {
+            const updatedUser = response.data as User;
+
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            set({
+              user: updatedUser,
+              error: null,
+            });
+
+            return true;
+          }
+
+          set({
+            error: response.message || 'Не удалось обновить профиль'
+          });
+
+          return false;
+        } catch (error: any) {
+          console.error('Update profile error:', error);
+          set({
+            error: error.message || 'Ошибка соединения с сервером'
+          });
+          return false;
         }
       },
     }),

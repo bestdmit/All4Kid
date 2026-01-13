@@ -115,6 +115,20 @@ export const validateRefreshToken = [
     .notEmpty().withMessage('Refresh токен обязателен')
 ];
 
+export const validateProfileUpdate = [
+  body('fullName')
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[а-яА-ЯёЁ\- ]+$/).withMessage('Имя должно содержать только кириллицу, пробелы и дефисы')
+    .isLength({ min: 2 }).withMessage('Имя должно быть не менее 2 символов')
+    .isLength({ max: 50 }).withMessage('Имя не должно превышать 50 символов'),
+
+  body('phone')
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[\d\s\-+()]{10,15}$/).withMessage('Неверный формат телефона')
+];
+
 /**
  * Контроллер: регистрация
  */
@@ -361,6 +375,95 @@ export const logout = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Ошибка при выходе:', error);
     return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+/**
+ * Контроллер: обновление профиля текущего пользователя
+ */
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Пользователь не аутентифицирован' });
+    }
+
+    const formattedErrors = formatValidationErrors(req);
+    if (formattedErrors) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ошибка валидации',
+        errors: formattedErrors
+      });
+    }
+
+    const { fullName, phone } = req.body as { fullName?: string; phone?: string | null };
+
+    // Проверяем, что есть что обновлять
+    if (typeof fullName === 'undefined' && typeof phone === 'undefined') {
+      return res.status(400).json({ success: false, message: 'Нет полей для обновления' });
+    }
+
+    const updates: string[] = [];
+    const values: Array<string | number | null> = [];
+    let normalizedName: string | undefined;
+
+    if (typeof fullName !== 'undefined') {
+      normalizedName = (fullName ?? '')
+        .trim()
+        .replace(/\s{2,}/g, ' ');
+      updates.push(`full_name = $${updates.length + 1}`);
+      values.push(normalizedName);
+    }
+
+    if (typeof phone !== 'undefined') {
+      updates.push(`phone = $${updates.length + 1}`);
+      values.push(phone ? phone.trim() : null);
+    }
+
+    updates.push(`updated_at = NOW()`);
+
+    // Добавляем id пользователя для WHERE
+    values.push(req.user.id);
+
+    const placeholdersCount = values.length;
+    const updateQuery = `
+      UPDATE users
+      SET ${updates.join(', ')}
+      WHERE id = $${placeholdersCount}
+      RETURNING id, email, full_name, phone, avatar_url, role, created_at
+    `;
+
+    const result = await query(updateQuery, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+    }
+
+    const user = result.rows[0];
+
+    if (normalizedName !== undefined) {
+      await query(
+        'UPDATE specialists SET name = $1 WHERE created_by = $2',
+        [normalizedName, req.user.id]
+      );
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        phone: user.phone,
+        avatarUrl: user.avatar_url,
+        role: user.role,
+        createdAt: user.created_at
+      },
+      message: 'Профиль обновлен'
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении профиля:', error);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера при обновлении профиля' });
   }
 };
 

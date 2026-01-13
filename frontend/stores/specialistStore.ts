@@ -11,6 +11,7 @@ interface SpecialistState {
   setSpecialists: (specialists: Specialist[]) => void;
   getTopRatedSpecialists: (limit?: number) => Specialist[];
   getSpecialistsById: (authId: number) => Specialist[];
+  updateNameForCreator: (creatorId: number, name: string) => void;
 }
 
 export const useSpecialistStore = create<SpecialistState>((set, get) => ({
@@ -62,5 +63,13 @@ export const useSpecialistStore = create<SpecialistState>((set, get) => ({
   getSpecialistsById: (authId: number): Specialist[] => {
     const { specialists } = get();
     return specialists.filter(specialist => specialist.created_by === authId);
+  },
+
+  updateNameForCreator: (creatorId: number, name: string) => {
+    const { specialists } = get();
+    const updated = specialists.map((spec) =>
+      spec.created_by === creatorId ? { ...spec, name } : spec
+    );
+    set({ specialists: updated });
   },
 }));

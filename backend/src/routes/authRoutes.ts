@@ -4,7 +4,9 @@ import {
   login,
   refreshToken,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  updateProfile,
+  validateProfileUpdate
 } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -24,5 +26,8 @@ router.post('/logout', authenticateToken, logout);
 
 // GET /api/auth/me - получение текущего пользователя (требует аутентификации)
 router.get('/me', authenticateToken, getCurrentUser);
+
+// PATCH /api/auth/me - обновление профиля (требует аутентификации)
+router.patch('/me', authenticateToken, validateProfileUpdate, updateProfile);
 
 export default router;

@@ -13,6 +13,7 @@ export const useAuth = () => {
     refreshAuthToken,
     clearError,
     initializeAuth,
+    updateProfile,
   } = useAuthStore();
 
   // Инициализируем аутентификацию при монтировании
@@ -39,6 +40,7 @@ export const useAuth = () => {
     login,
     register,
     logout,
+    updateProfile,
     clearError,
   };
 };

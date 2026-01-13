@@ -1,11 +1,11 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  user: 'postgres',        
-  host: 'localhost',       
-  database: 'kids_specialists', 
-  password: 'password',    
-  port: 5432,              
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'kids_specialists',
+  password: process.env.DB_PASSWORD || 'password',
+  port: Number(process.env.DB_PORT) || 5432,
 });
 
 
@@ -15,6 +15,7 @@ export const query = (text: string, params?: any[]) => {
 
 export const connectDB = async () => {
   try {
+    console.log(`Connecting to DB at ${process.env.DB_HOST}:${process.env.DB_PORT} as ${process.env.DB_USER}`);
     const client = await pool.connect();
     console.log('PostgreSQL connected');
 

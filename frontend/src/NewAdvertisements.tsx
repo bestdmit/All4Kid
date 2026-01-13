@@ -26,7 +26,10 @@ export interface ApiResponse<T> {
   total?: number;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
+
+const sanitizeText = (value?: string) =>
+  value ? value.replace(/[<>]/g, '').trim() : '';
 
 export const createSpecialist = async (
   specialistData: CreateSpecialistDto,
@@ -85,60 +88,57 @@ export default function NewAdvertisements() {
   const {user, isAuthenticated, logout} = useAuth(); // Добавили logout для очистки невалидного токена
   
   const handleSubmit = async (values: CreateSpecialistDto) => {
-    if (!isAuthenticated) {
-      message.error('Для создания специалиста необходимо войти в систему');
+  if (!isAuthenticated || loading) {
+    message.error('Необходимо войти в систему');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      message.error('Сессия истекла. Войдите заново');
+      logout();
       return;
     }
-    
-    setLoading(true);
-    
-    try {
-      const dataToSend = {
-        ...values,
-        experience: values.experience || 0,
-        rating: values.rating || 0,
-        price_per_hour: values.price_per_hour || 0
-      };
 
-      console.log('📦 Отправляемые данные:', dataToSend);
-      
-      // Получаем токен из localStorage
-      const accessToken = localStorage.getItem('accessToken');
-      
-      if (!accessToken) {
-        message.error('Токен авторизации не найден. Пожалуйста, войдите заново');
-        logout(); // Очищаем состояние
-        return;
-      }
-      
-      const result = await createSpecialist(dataToSend, accessToken);
-      
-      if (result.success) {
-        message.success('Специалист успешно создан!');
-        form.resetFields();
-        form.setFieldsValue({
-          name: user?.fullName || '',
-          category: 'Другое',
-          experience: 0,
-          rating: 0,
-          price_per_hour: 0
-        });
-      } else {
-        message.error(result.message || 'Ошибка при создании специалиста');
-      }
-    } catch (error: any) {
-      console.error('Ошибка при создании специалиста:', error);
-      
-      if (error.message.includes('401') || error.message.includes('Неавторизован')) {
-        message.error('Сессия истекла. Пожалуйста, войдите заново');
-        logout(); // Очищаем невалидную сессию
-      } else {
-        message.error(`Произошла ошибка: ${error.message}`);
-      }
-    } finally {
-      setLoading(false);
+    const dataToSend: CreateSpecialistDto = {
+      name: sanitizeText(values.name),
+      specialty: sanitizeText(values.specialty),
+      category: values.category,
+      location: sanitizeText(values.location),
+      experience: values.experience ?? 0,
+      rating: values.rating ?? 0,
+      price_per_hour: values.price_per_hour ?? 0,
+    };
+
+    await createSpecialist(dataToSend, accessToken);
+
+    message.success('Специалист успешно создан');
+    form.resetFields();
+    form.setFieldsValue({
+      name: user?.fullName || '',
+      category: 'Другое',
+      experience: 0,
+      price_per_hour: 0,
+    });
+
+  } catch (error: any) {
+    if (
+      error.message?.includes('401') ||
+      error.message?.includes('UNAUTHORIZED')
+    ) {
+      message.error('Сессия истекла. Войдите заново');
+      logout();
+    } else {
+      message.error('Ошибка при создании специалиста');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleReset = () => {
     form.resetFields();
@@ -233,7 +233,9 @@ export default function NewAdvertisements() {
                 disabled={loading || !isAuthenticated}
               >
                 {categories.map((item: Category) => (
-                  <Select.Option value={item.name}>{item.name}</Select.Option>
+                  <Select.Option key={item.name} value={item.name}>
+                    {item.name}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>

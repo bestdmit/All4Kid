@@ -1,14 +1,25 @@
 import express from 'express';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Загружаем переменные окружения с явным указанием пути
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 import { promises as fs } from 'fs';
 import { connectDB } from './database/db';
 import specialistsRoutes from './routes/specialistsRoutes';
 import categoriesRoutes from './routes/categoriesRoutes';
 import authRoutes from './routes/authRoutes';
 import cors from 'cors';
-import path from 'path';
+import helmet from 'helmet';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Добавляем Helmet для безопасности заголовков
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // Добавляем CORS middleware
 app.use(cors({

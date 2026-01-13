@@ -18,9 +18,12 @@ type RegisterFormProps = {
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) => {
   const [form] = Form.useForm();
-  const { register } = useAuth();
+  const { isAuthenticated, register } = useAuth();
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
+    if (values.fullName) {
+      values.fullName = values.fullName.trim().replace(/\s{2,}/g, ' ');
+    }
     try {
       if (values.password !== values.confirmPassword) {
         message.error("Пароли не совпадают");
@@ -33,7 +36,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         fullName: values.fullName!,
         phone: values.phone,
       });
-      message.success("Регистрация успешна! Добро пожаловать!");
+      if (isAuthenticated) message.success("Регистрация успешна! Добро пожаловать!");
     } catch (err) {
       // Ошибка уже обработана в сторе
     }
@@ -43,6 +46,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
     console.log("Failed:", errorInfo);
     message.error("Пожалуйста, заполните все обязательные поля правильно");
   };
+
+  // Регулярное выражение для email
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  
+  // Регулярное выражение для проверки кириллицы
+  const cyrillicRegex = /^[\sа-яА-ЯёЁ\-]+$/;
+  
+  // Регулярное выражение для телефона (более строгое)
+  const phoneRegex = /^[\d\s\-+()]{10,15}$/;
 
   return (
     <Form
@@ -57,7 +69,39 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
       <Form.Item<FieldType>
         label="Полное имя"
         name="fullName"
-        rules={[{ required: true, message: "Пожалуйста, введите ваше имя!" }]}
+        rules={[
+          { required: true, message: "Пожалуйста, введите ваше имя!" },
+          { 
+            pattern: cyrillicRegex, 
+            message: "Имя должно содержать только кириллицу, пробелы и дефисы!" 
+          },
+          { 
+            min: 2, 
+            message: "Имя должно быть не менее 2 символов!" 
+          },
+          { 
+            max: 50, 
+            message: "Имя должно быть не более 50 символов!" 
+          },
+          {
+            validator: (_, value) => {
+              if (!value) return Promise.resolve();
+              
+              // Проверка, что имя содержит хотя бы одну букву (не только пробелы)
+              const hasLetters = /[a-zA-Zа-яА-ЯёЁ]/.test(value);
+              if (!hasLetters) {
+                return Promise.reject(new Error("Имя должно содержать буквы!"));
+              }
+              
+              // Проверка, что нет множественных пробелов подряд
+              if (/\s{2,}/.test(value)) {
+                return Promise.reject(new Error("Не используйте несколько пробелов подряд!"));
+              }
+              
+              return Promise.resolve();
+            },
+          }
+        ]}
       >
         <Input />
       </Form.Item>
@@ -67,7 +111,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         name="email"
         rules={[
           { required: true, message: "Пожалуйста, введите ваш email!" },
-          { type: "email", message: "Введите корректный email!" },
+          { pattern: emailRegex, message: "Введите корректный email!" },
         ]}
       >
         <Input />
@@ -77,7 +121,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         label="Телефон"
         name="phone"
         rules={[
-          { pattern: /^[\d+\-\s()]+$/, message: "Введите корректный номер телефона" },
+          { pattern: phoneRegex, message: "Введите корректный номер телефона" },
         ]}
       >
         <Input />

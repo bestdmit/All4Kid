@@ -3,9 +3,9 @@ services:
     image: postgres:15-alpine
     container_name: kids_specialists_db
     environment:
-      POSTGRES_DB: kids_specialists
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${DB_NAME:-kids_specialists}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
     ports:
       - "5432:5432"
     volumes:

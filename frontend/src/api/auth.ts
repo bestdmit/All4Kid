@@ -19,6 +19,7 @@ export interface AuthResponse {
     fullName: string;
     phone?: string;
     avatarUrl?: string;
+    children?: { name: string; birthDate?: string }[];
     role: string;
   };
   accessToken: string;
@@ -76,6 +77,18 @@ export const authApi = {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
+    });
+    return response.json();
+  },
+
+  async updateCurrentUser(data: any) {
+    const response = await fetch(`${API_URL}/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+      body: JSON.stringify(data),
     });
     return response.json();
   },

@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(50),
   avatar_url VARCHAR(500) DEFAULT '/avatars/default-user.jpg',
+  children JSONB DEFAULT '[]',
   role VARCHAR(50) DEFAULT 'user', -- 'user', 'admin', 'specialist'
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -122,3 +123,6 @@ WHERE s.name = 'Иван Петров';
 ALTER TABLE specialists 
 ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE CASCADE;
+
+-- Добавляем колонку для хранения детей пользователя (имя + дата рождения) в формате JSONB
+ALTER TABLE users ADD COLUMN IF NOT EXISTS children JSONB DEFAULT '[]';

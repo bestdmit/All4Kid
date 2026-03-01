@@ -9,6 +9,7 @@ export interface User {
   phone?: string;
   avatarUrl?: string;
   role: string;
+  children?: { name: string; birthDate?: string }[];
   createdAt?: string;
 }
 
@@ -30,6 +31,7 @@ export interface AuthActions {
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearError: () => void;
   initializeAuth: () => void;
+  updateProfile: (data: any) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -226,6 +228,23 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         } catch (error) {
           console.error('Token refresh error:', error);
           get().logout();
+        }
+      },
+      
+      updateProfile: async (data: any) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.updateCurrentUser(data);
+          if (response.success) {
+            const user = response.data as any;
+            localStorage.setItem('user', JSON.stringify(user));
+            set({ user, isLoading: false });
+            return;
+          }
+          set({ isLoading: false, error: response.message || 'Не удалось обновить профиль' });
+        } catch (error: any) {
+          console.error('Update profile error:', error);
+          set({ isLoading: false, error: error.message || 'Ошибка соединения' });
         }
       },
     }),

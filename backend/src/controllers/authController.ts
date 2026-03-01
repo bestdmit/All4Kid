@@ -346,7 +346,7 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      `SELECT id, email, full_name, phone, avatar_url, role, created_at 
+      `SELECT id, email, full_name, phone, avatar_url, role, created_at, children 
        FROM users WHERE id = $1`,
       [req.user.id]
     );
@@ -369,7 +369,8 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
         phone: user.phone,
         avatarUrl: user.avatar_url,
         role: user.role,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        children: user.children || []
       }
     });
 
@@ -379,5 +380,53 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
       success: false,
       message: 'Ошибка сервера'
     });
+  }
+};
+
+// Обновление данных текущего пользователя (включая детей)
+export const updateCurrentUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Пользователь не аутентифицирован' });
+    }
+
+    const { fullName, phone, children } = req.body as {
+      fullName?: string;
+      phone?: string;
+      children?: { name: string; birthDate?: string }[];
+    };
+
+    // Only allow children array or basic fields to be updated
+    const result = await query(
+      `UPDATE users SET full_name = COALESCE($1, full_name), phone = COALESCE($2, phone), children = COALESCE($3, children) , updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING id, email, full_name, phone, avatar_url, role, created_at, children`,
+      [fullName?.trim() || null, phone?.trim() || null, children ? JSON.stringify(children) : null, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+    }
+
+    const user = result.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        phone: user.phone,
+        avatarUrl: user.avatar_url,
+        role: user.role,
+        createdAt: user.created_at,
+        children: user.children || []
+      },
+      message: 'Профиль обновлен'
+    });
+
+  } catch (error) {
+    console.error('Ошибка при обновлении пользователя:', error);
+    res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 };

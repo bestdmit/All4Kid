@@ -2,17 +2,22 @@ import React, { useEffect, useState } from "react";
 import AppHeader from "../src/Header/AppHeader";
 import { useAuth } from "../hooks/useAuth";
 import { Navigate } from 'react-router-dom';
-import { Button, Flex, message, Card, Typography, Space, Spin } from "antd";
+import { Button, Flex, message, Card, Typography, Space, Spin, Input } from "antd";
 import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
+import { useAuthStore } from "../stores/auth.store";
 
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const updateProfile = useAuthStore(state => state.updateProfile);
   const { getSpecialistsById} = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [childName, setChildName] = useState('');
+  const [childBirth, setChildBirth] = useState('');
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (user?.fullName) {
@@ -90,7 +95,42 @@ export default function ProfilePage() {
               <Text strong>Роль: </Text>
               <Text>{user.role}</Text>
             </div>
-            
+            <div>
+              <Text strong>Дети: </Text>
+              <div style={{ marginTop: 8 }}>
+                {(user.children && user.children.length > 0) ? (
+                  <Space direction="vertical">
+                    {user.children.map((c: any, idx: number) => (
+                      <div key={idx}>
+                        <Text>{c.name}</Text>
+                        <Text style={{ marginLeft: 8, color: '#888' }}>{c.birthDate ? ` — ${c.birthDate}` : ''}</Text>
+                      </div>
+                    ))}
+                  </Space>
+                ) : (
+                  <Text>Не добавлены</Text>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 8 }}>
+              <Input placeholder="Имя ребенка" value={childName} onChange={e => setChildName(e.target.value)} style={{ width: 240, marginRight: 8 }} />
+              <Input type="date" value={childBirth} onChange={e => setChildBirth(e.target.value)} style={{ width: 180, marginRight: 8 }} />
+              <Button type="primary" onClick={async () => {
+                if (!childName.trim()) { message.error('Введите имя ребенка'); return; }
+                try {
+                  setAdding(true);
+                  const newChildren = [ ...(user.children || []), { name: childName.trim(), birthDate: childBirth || null } ];
+                  await updateProfile({ children: newChildren });
+                  message.success('Ребенок добавлен');
+                  setChildName(''); setChildBirth('');
+                } catch (err) {
+                  console.error(err);
+                  message.error('Ошибка при добавлении');
+                } finally { setAdding(false); }
+              }} loading={adding}>Добавить</Button>
+            </div>
+
             <Button type="primary" danger onClick={handleLogout}>
               Выйти
             </Button>

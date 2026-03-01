@@ -4,7 +4,8 @@ import {
   login,
   refreshToken,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  updateCurrentUser
 } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -24,5 +25,8 @@ router.post('/logout', authenticateToken, logout);
 
 // GET /api/auth/me - получение текущего пользователя (требует аутентификации)
 router.get('/me', authenticateToken, getCurrentUser);
+
+// PUT /api/auth/me - обновление профиля (дети и т.д.)
+router.put('/me', authenticateToken, updateCurrentUser);
 
 export default router;

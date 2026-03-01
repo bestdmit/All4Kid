@@ -31,7 +31,7 @@ export interface AuthActions {
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearError: () => void;
   initializeAuth: () => void;
-  updateProfile: (data: any) => Promise<void>;
+  updateProfile: (data: any) => Promise<any>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -234,17 +234,32 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       updateProfile: async (data: any) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.updateCurrentUser(data);
+          const token = localStorage.getItem('accessToken');
+          console.debug('updateProfile using accessToken', token);
+          if (!token) {
+            set({ isLoading: false, error: 'Нет accessToken, пожалуйста войдите снова' });
+            return { success: false, message: 'Нет accessToken' };
+          }
+          let response: any = await authApi.updateCurrentUser(data);
+          // если токен устарел, попытаемся обновить и выполнить запрос снова
+          if (!response.success && response.message && response.message.toLowerCase().includes('токен')) {
+            await get().refreshAuthToken();
+            response = await authApi.updateCurrentUser(data);
+          }
+
           if (response.success) {
             const user = response.data as any;
             localStorage.setItem('user', JSON.stringify(user));
             set({ user, isLoading: false });
-            return;
+            return response;
           }
+
           set({ isLoading: false, error: response.message || 'Не удалось обновить профиль' });
+          return response;
         } catch (error: any) {
           console.error('Update profile error:', error);
           set({ isLoading: false, error: error.message || 'Ошибка соединения' });
+          return { success: false, message: error.message };
         }
       },
     }),

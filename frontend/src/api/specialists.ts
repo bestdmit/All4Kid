@@ -10,6 +10,7 @@ export interface Specialist {
   price_per_hour: number;
   created_at: string;
   created_by: number;
+  description: string;
 }
 
 export interface ApiResponse<T> {

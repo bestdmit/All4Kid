@@ -12,6 +12,7 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
                 width: '100%',
                 border: '1px solid #d9d9d9',
                 borderRadius: 8,
+                marginBottom: 30
             }}
             styles={{
                 body: {

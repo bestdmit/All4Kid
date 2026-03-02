@@ -1,11 +1,13 @@
-import {Layout} from "antd";
+import {Layout, Row, Col} from "antd";
 import AppHeader from "../src/Header/AppHeader";
 import {useParams} from "react-router-dom";
 import {specialistApi} from "../src/api/specialists.ts";
 import type {Specialist} from "../src/api/specialists.ts";
 import {useEffect, useState} from "react";
 import {SpecialistMainInfoCard} from "../src/components/specialist/SpecialistMainInfoCard.tsx";
+import {SpecialistDescription} from "../src/components/specialist/SpecialistDescription.tsx";
 const { Content } = Layout;
+
 
 const SpecialistPage = () => {
     const { id } = useParams();
@@ -20,7 +22,8 @@ const SpecialistPage = () => {
         name: "",
         price_per_hour: 0,
         rating: 0,
-        specialty: ""
+        specialty: "",
+        description: ""
     });
 
     useEffect(() => {
@@ -32,6 +35,14 @@ const SpecialistPage = () => {
             <AppHeader/>
             <Content style={{padding: "30px 12rem 30px 12rem", background: "#FFFFFF"}}>
                 <SpecialistMainInfoCard specialist={specialist}/>
+
+                <Row gutter={24}>
+                    <Col xs={24} lg={16}>
+                        <SpecialistDescription specialist={specialist}/>
+                    </Col>
+
+
+                </Row>
             </Content>
         </Layout>
     );

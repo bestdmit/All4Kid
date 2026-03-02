@@ -14,7 +14,7 @@ function App() {
       <Routes>
         <Route path='/' element={< MainPage/>}/>
         <Route path="/specialists" element={< TableSpecialistsPage/>} />
-          <Route path="/specialist/:id" element={<SpecialisPage />} />
+        <Route path="/specialist/:id" element={<SpecialisPage />} />
         <Route path="/auth" element={< AuthorizationPage/>} />
         <Route path="/create" element={<NewAdvertisementsPage/>} />
         <Route path="/profile" element={<ProfilePage />} />

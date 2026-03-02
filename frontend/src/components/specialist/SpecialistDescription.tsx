@@ -1,12 +1,13 @@
 import type {Specialist} from "../../api/specialists.ts";
 import {Card, Space} from "antd";
 import { Typography } from 'antd';
+import {Content} from "antd/es/layout/layout";
 
 const { Text, Paragraph } = Typography;
 
 export const SpecialistDescription = ({specialist} : {specialist: Specialist}) => {
     return (
-        <div>
+        <>
             {/* About Section */}
             <Card
                 title="О специалисте"
@@ -46,6 +47,6 @@ export const SpecialistDescription = ({specialist} : {specialist: Specialist}) =
             >
                 <Text style={{fontSize: 18}}>{specialist.experience} года</Text>
             </Card>
-        </div>
+        </>
     )
 }

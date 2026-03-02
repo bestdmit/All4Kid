@@ -1,7 +1,6 @@
 import type {Specialist} from "../../api/specialists.ts";
 import {Card, Space} from "antd";
 import { Typography } from 'antd';
-import {Content} from "antd/es/layout/layout";
 
 const { Text, Paragraph } = Typography;
 

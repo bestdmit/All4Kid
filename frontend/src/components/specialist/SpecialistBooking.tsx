@@ -1,4 +1,4 @@
-import {Button, Calendar, Card, Col, Space} from "antd";
+import {Button, Calendar, Card, Space} from "antd";
 import { Typography } from 'antd';
 import type {Specialist} from "../../api/specialists.ts";
 

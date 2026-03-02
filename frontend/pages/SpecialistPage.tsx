@@ -7,6 +7,7 @@ import {useEffect, useState} from "react";
 import {SpecialistMainInfoCard} from "../src/components/specialist/SpecialistMainInfoCard.tsx";
 import {SpecialistDescription} from "../src/components/specialist/SpecialistDescription.tsx";
 import {SpecialistBooking} from "../src/components/specialist/SpecialistBooking.tsx";
+import SpecialistGallery from "../src/components/specialist/SpecialistGallery.tsx";
 const { Content } = Layout;
 
 
@@ -40,6 +41,7 @@ const SpecialistPage = () => {
                 <Row gutter={24}>
                     <Col xs={24} lg={16}>
                         <SpecialistDescription specialist={specialist}/>
+                        <SpecialistGallery specialist={specialist}/>
                     </Col>
 
                     <Col xs={24} lg={8}>

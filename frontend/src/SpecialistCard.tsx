@@ -9,12 +9,14 @@ interface SpecialistCardProps {
   specialist: Specialist;
   forDelete?: boolean;
   onDelete?: (id: number) => void;
+  onClick?: (id: number) => void;
   isLoading?: boolean;
 }
 
 const cardStyle: React.CSSProperties = {
   width: "15rem",
   position: "relative",
+  cursor: "pointer"
 };
 
 const coverStyle: React.CSSProperties = {
@@ -49,7 +51,7 @@ const deleteButtonStyle: React.CSSProperties = {
 export default function SpecialistCard({ 
   specialist, 
   forDelete = false, 
-  onDelete,
+  onDelete, onClick,
   isLoading = false 
 }: SpecialistCardProps) {
   
@@ -59,12 +61,18 @@ export default function SpecialistCard({
     }
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(specialist.id);
+    }
+  };
+
   const confirmDelete = () => {
     handleDelete();
   };
 
   return (
-    <Card variant="borderless" style={cardStyle} 
+    <Card variant="borderless" style={cardStyle} onClick={handleClick}
       cover={
         <div style={coverStyle}>
           <div style={ratingBadgeStyle}>

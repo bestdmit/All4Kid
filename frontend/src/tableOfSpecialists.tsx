@@ -5,6 +5,7 @@ import SpecialistCard from "./SpecialistCard";
 import type { Specialist } from "./api/specialists";
 import SearchBar from "./SearchBar";
 import CategoryFilter from "./CategoryFilter";
+import {useNavigate} from "react-router-dom";
 
 const { Content, Sider } = Layout;
 
@@ -20,6 +21,7 @@ function TableSpecialists() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
   
   // Загружаем специалистов при монтировании компонента
   useEffect(() => {
@@ -52,6 +54,10 @@ function TableSpecialists() {
     setSearchTerm('');
     setSelectedCategory('');
     fetchSpecialists(); // Загружаем всех специалистов заново
+  };
+
+  const handleSpecialistSelect = (id: number) => {
+    navigate(`/specialists/${id}`)
   };
 
   const hasActiveFilters = searchTerm || selectedCategory;
@@ -191,7 +197,7 @@ function TableSpecialists() {
           ) : (
             <Flex wrap gap="middle" justify="start">
               {displayData.map((item: Specialist) => (
-                <SpecialistCard key={item.id} specialist={item} />
+                <SpecialistCard key={item.id} specialist={item} onClick={handleSpecialistSelect}/>
               ))}
             </Flex>
           )}

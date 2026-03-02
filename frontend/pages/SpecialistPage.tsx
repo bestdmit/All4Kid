@@ -1,20 +1,27 @@
-import {Card, Flex, Layout, Space} from "antd";
+import {Layout} from "antd";
 import AppHeader from "../src/Header/AppHeader";
 import {useParams} from "react-router-dom";
-import {Specialist, specialistApi} from "../src/api/specialists.ts";
+import {specialistApi} from "../src/api/specialists.ts";
+import type {Specialist} from "../src/api/specialists.ts";
 import {useEffect, useState} from "react";
-import {BorderOutlined, EnvironmentOutlined, HeartOutlined, StarFilled} from "@ant-design/icons";
+import {SpecialistMainInfoCard} from "../src/components/specialist/SpecialistMainInfoCard.tsx";
 const { Content } = Layout;
-import { Typography } from 'antd';
-
-const { Title, Text } = Typography;
-
 
 const SpecialistPage = () => {
     const { id } = useParams();
     const { fetchByID } = specialistApi;
 
-    const [specialist, setSpecialist] = useState<Specialist>();
+    const [specialist, setSpecialist] = useState<Specialist>({
+        created_at: "",
+        created_by: 0,
+        experience: 0,
+        id: 0,
+        location: "",
+        name: "",
+        price_per_hour: 0,
+        rating: 0,
+        specialty: ""
+    });
 
     useEffect(() => {
         fetchByID(Number(id)).then(data => setSpecialist(data));
@@ -24,7 +31,7 @@ const SpecialistPage = () => {
         <Layout >
             <AppHeader/>
             <Content style={{padding: "30px 12rem 30px 12rem", background: "#FFFFFF"}}>
-
+                <SpecialistMainInfoCard specialist={specialist}/>
             </Content>
         </Layout>
     );

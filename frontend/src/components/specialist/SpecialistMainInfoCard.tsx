@@ -62,6 +62,7 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
                     <Space>
                         <StarFilled style={{ color: '#FFD700', fontSize: 20 }} />
                         <Text strong style={{ fontSize: 20 }}>{specialist?.rating}</Text>
+                        {/* TODO: исправить счётчик после добавления системы отзывов */}
                         <Text type="secondary" style={{ fontSize: 20 }}>157 отзывов</Text>
                     </Space>
                 </Space>

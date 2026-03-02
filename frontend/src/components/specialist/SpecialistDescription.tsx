@@ -19,6 +19,7 @@ export const SpecialistDescription = ({specialist} : {specialist: Specialist}) =
             </Card>
 
             {/* Education Section */}
+            {/* TODO: заменить шаблоны, после добавления образования на бэкенде */}
             <Card
                 title="Образование"
                 style={{ marginBottom: 30, borderRadius: 8 }}

@@ -30,7 +30,7 @@ const SpecialistGallery = ({specialist} : {specialist: Specialist}) => {
         <Card
             title="Галерея"
             style={{ borderRadius: 8, marginTop: 16 }}
-            styles={{ body: {padding: 20} }}
+            styles={{ body: {padding: 20}, title: {fontSize: 28} }}
         >
             <div style={{ position: 'relative' }}>
                 {/* Main Image */}

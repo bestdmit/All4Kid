@@ -8,6 +8,7 @@ import {SpecialistMainInfoCard} from "../src/components/specialist/SpecialistMai
 import {SpecialistDescription} from "../src/components/specialist/SpecialistDescription.tsx";
 import {SpecialistBooking} from "../src/components/specialist/SpecialistBooking.tsx";
 import SpecialistGallery from "../src/components/specialist/SpecialistGallery.tsx";
+import SpecialistReviews from "../src/components/specialist/SpecialistReviews.tsx";
 const { Content } = Layout;
 
 
@@ -47,6 +48,8 @@ const SpecialistPage = () => {
                     <Col xs={24} lg={8}>
                         <SpecialistBooking specialist={specialist}/>
                     </Col>
+
+                    <SpecialistReviews specialist={specialist}/>
                 </Row>
             </Content>
         </Layout>

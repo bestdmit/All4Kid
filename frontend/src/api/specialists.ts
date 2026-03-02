@@ -33,6 +33,20 @@ export const specialistApi = {
     return result.data;
   },
 
+  fetchByID: async (id: number): Promise<Specialist> => {
+    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`);
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP при получении специалистов: ${response.status}`);
+    }
+    const result: ApiResponse<Specialist> = await response.json();
+
+    if (!result.success || !result.data) {
+      throw new Error(result.message || "Ошибка формата данных");
+    }
+
+    return result.data;
+  },
+
   search: async (searchTerm?: string, category?: string): Promise<Specialist[]> => {
     const params = new URLSearchParams();
     if (searchTerm?.trim()) params.append('search', searchTerm.trim());

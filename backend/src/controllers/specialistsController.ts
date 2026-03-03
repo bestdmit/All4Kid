@@ -428,10 +428,10 @@ export const updateSpecialist = async (req: Request, res: Response) => {
 
 export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
+    if (!req.user) {
+      return res.status(401).json({
         success: false,
-        message: "Недостаточно прав",
+        message: "Требуется авторизация",
       });
     }
 
@@ -442,7 +442,21 @@ export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: "Специалист не найден" });
     }
 
-    await safeDeleteFile(result.rows[0].avatar_url);
+    const specialist = result.rows[0];
+
+    const isAdmin = req.user.role === "admin";
+    const isOwner =
+      specialist.user_id === req.user.id ||
+      specialist.created_by === req.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: "Недостаточно прав для удаления этого специалиста",
+      });
+    }
+
+    await safeDeleteFile(specialist.avatar_url);
 
     await query("DELETE FROM specialists WHERE id = $1", [id]);
 

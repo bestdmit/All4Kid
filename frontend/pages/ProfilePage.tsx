@@ -64,8 +64,15 @@ export default function ProfilePage() {
       }
 
       message.success("Специалист удален");
-    } catch (error) {
-      message.error("Ошибка при удалении специалиста");
+    } catch (error: any) {
+      if (error?.message === 'UNAUTHORIZED') {
+        message.error("Сессия истекла. Войдите заново");
+        logout();
+      } else if (error instanceof Error && error.message) {
+        message.error(error.message);
+      } else {
+        message.error("Ошибка при удалении специалиста");
+      }
     } finally {
       setDeleting(null);
     }

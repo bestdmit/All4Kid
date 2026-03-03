@@ -87,8 +87,14 @@ export const specialistApi = {
     }
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(text || `Ошибка HTTP при удалении специалиста: ${response.status}`);
+      // Пытаемся вытащить понятное сообщение об ошибке с бэкенда
+      try {
+        const json: ApiResponse<null> = await response.json();
+        throw new Error(json.message || `Ошибка HTTP при удалении специалиста: ${response.status}`);
+      } catch {
+        const text = await response.text().catch(() => '');
+        throw new Error(text || `Ошибка HTTP при удалении специалиста: ${response.status}`);
+      }
     }
 
     const result: ApiResponse<null> = await response.json().catch(() => ({ success: true }));

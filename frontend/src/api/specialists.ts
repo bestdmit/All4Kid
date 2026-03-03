@@ -72,6 +72,29 @@ export const specialistApi = {
   fetchByAuthorId: async (authId: number): Promise<Specialist[]> => {
     const all = await specialistApi.fetchAll();
     return all.filter(s => s.created_by === authId);
+  },
+
+  deleteById: async (id: number, accessToken: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `Ошибка HTTP при удалении специалиста: ${response.status}`);
+    }
+
+    const result: ApiResponse<null> = await response.json().catch(() => ({ success: true }));
+    if (result.success === false) {
+      throw new Error(result.message || 'Не удалось удалить специалиста');
+    }
   }
 };
 

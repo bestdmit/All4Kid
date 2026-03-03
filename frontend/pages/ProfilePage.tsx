@@ -5,12 +5,13 @@ import { Navigate } from 'react-router-dom';
 import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input } from "antd";
 import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
+import { specialistApi } from "../src/api/specialists";
 
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout, updateProfile, clearError } = useAuth();
-  const { specialists, getSpecialistsById, updateNameForCreator } = useSpecialistStore();
+  const { specialists, getSpecialistsById, updateNameForCreator, removeSpecialistById } = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,15 +47,23 @@ export default function ProfilePage() {
   const handleDeleteSpecialist = async (id: number) => {
     try {
       setDeleting(id);
-      // Здесь будет реальный вызов API
-      await deleteSpecialist(id);
-      message.success("Специалист удален");
       
-      if (user?.fullName) {
-        
-        const specialists = getSpecialistsById(user.id);
-        setUserSpecialists(specialists);
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        message.error("Сессия истекла. Войдите заново");
+        logout();
+        return;
       }
+
+      await specialistApi.deleteById(id, accessToken);
+      removeSpecialistById(id);
+
+      if (user) {
+        const updated = getSpecialistsById(user.id);
+        setUserSpecialists(updated);
+      }
+
+      message.success("Специалист удален");
     } catch (error) {
       message.error("Ошибка при удалении специалиста");
     } finally {
@@ -175,11 +184,4 @@ export default function ProfilePage() {
       </div>
     </>
   );
-}
-
-// Временные функции-заглушки (нужно будет заменить на реальные API вызовы)
-async function deleteSpecialist(id: number) {
-  // Здесь должен быть реальный API вызов
-  console.log(`Удаление специалиста с ID: ${id}`);
-  throw new Error("API для удаления еще не реализован");
 }

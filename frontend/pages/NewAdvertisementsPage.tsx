@@ -8,7 +8,7 @@ const { Header, Footer, Content } = Layout;
 const contentStyle: React.CSSProperties = {
   textAlign: "center",
   color: "#fff",
-  backgroundColor: "#0958d9",
+  backgroundColor: "#D9E5FF",
   display: "block",
   overflow: "auto",
   width: "100%",

@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS specialists (
   category VARCHAR(100) DEFAULT 'Другое',
   FOREIGN KEY (category) REFERENCES categories(name),
   description TEXT DEFAULT '',
-  avatar_url VARCHAR(500) DEFAULT ''
+  avatar_url VARCHAR(500) DEFAULT '/uploads/avatars/default.jpg'
 );
 
 INSERT INTO categories (name, slug, description, icon_url) VALUES
@@ -67,15 +67,15 @@ UPDATE specialists SET
     ELSE 'Специалист по работе с детьми'
   END,
   avatar_url = CASE
-    WHEN specialty = 'Преподаватель рисования' THEN '/avatars/art-teacher1.jpg'
-    WHEN specialty = 'Преподаватель вокала' THEN '/avatars/vocal-teacher1.jpg'
-    WHEN specialty = 'Репетитор по математике' THEN '/avatars/math-teacher1.jpg'
-    WHEN specialty = 'Репетитор по английскому языку для детей' THEN '/avatars/eng-teacher1.jpg'
-    WHEN specialty = 'Аниматор-ведущая' THEN '/avatars/animator1.jpg'
-    WHEN specialty = 'Фокусник-иллюзионист для детей' THEN '/avatars/illusionist1.jpg'
-    WHEN specialty = 'Хореограф для детей' THEN '/avatars/choreographer1.jpg'
-    WHEN specialty = 'Тренер по футболу' THEN '/avatars/trainer1.jpg'
-    ELSE '/avatars/default.jpg'
+    WHEN specialty = 'Преподаватель рисования' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Преподаватель вокала' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Репетитор по математике' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Репетитор по английскому языку для детей' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Аниматор-ведущая' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Фокусник-иллюзионист для детей' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Хореограф для детей' THEN '/uploads/avatars/default.jpg'
+    WHEN specialty = 'Тренер по футболу' THEN '/uploads/avatars/default.jpg'
+    ELSE '/uploads/avatars/default.jpg'
   END;
 
   -- Создаем таблицу пользователей (родителей)
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(50),
-  avatar_url VARCHAR(500) DEFAULT '/avatars/default-user.jpg',
+  avatar_url VARCHAR(500) DEFAULT '/uploads/avatars/default.jpg',
   role VARCHAR(50) DEFAULT 'user', -- 'user', 'admin', 'specialist'
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -1,16 +1,24 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: kids_specialists_db
+    container_name: all4kid_postgres_db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-kids_specialists}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      PGPORT: ${DB_PORT:-5432}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - all4kid_network
+
+networks:
+  all4kid_network:
+    name: all4kid_network
 
 volumes:
   postgres_data:

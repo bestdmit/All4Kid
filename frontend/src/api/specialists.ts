@@ -8,6 +8,7 @@ export interface Specialist {
   rating: number;
   location: string;
   price_per_hour: number;
+  avatar_url: string;
   created_at: string;
   created_by: number;
 }

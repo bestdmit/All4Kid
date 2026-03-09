@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Typography, Button, message, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
-import type { Specialist } from "../stores/specialistStore";
+import type { Specialist } from "../src/api/specialists";
 
 const { Title, Text } = Typography;
 
@@ -18,7 +18,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 const coverStyle: React.CSSProperties = {
-  height: "11vh",
+  height: "120px",
   objectFit: 'cover',
   width: "auto",
   margin: 0,
@@ -66,7 +66,20 @@ export default function SpecialistCard({
   return (
     <Card variant="borderless" style={cardStyle} 
       cover={
-        <div style={coverStyle}>
+        <div style={{ ...coverStyle, position: 'relative' }}>
+          <img 
+            src={specialist.avatar_url}
+            alt={specialist.name}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              objectPosition: 'center 18%'
+            }}
+            onError={(e) => {
+              e.currentTarget.src = '/uploads/avatars/default.jpg';
+            }}
+          />
           <div style={ratingBadgeStyle}>
             <span>★</span>
             <span>{specialist.rating}</span>

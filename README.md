@@ -25,3 +25,21 @@ All4Kid — это удобный и современный агрегатор, 
 - **Фронтенд:** TypeScript, React, Tailwind CSS
 - **Бэкенд:** Node.js, Express.js
 - **База данных:** PostgreSQL
+
+## Настройка проверки email
+
+Валидация email при регистрации выполняется через сервис apilayer (MailboxLayer):
+`http://apilayer.net/api/check?smtp=1&format=1`.
+
+Чтобы включить проверку доставляемости email, добавьте в файл окружения backend `.env` переменную:
+
+```
+EMAIL_VALIDATION_ACCESS_KEY=ваш_access_key_из_apilayer
+# Опционально: таймаут запроса в миллисекундах
+EMAIL_VALIDATION_TIMEOUT_MS=5000
+```
+
+При отсутствии ключа проверка будет отклонена с сообщением о некорректной конфигурации. Логика интеграции находится в:
+
+- Сервис: [backend/src/services/emailValidation.ts](backend/src/services/emailValidation.ts)
+- Использование при регистрации: [backend/src/controllers/authController.ts](backend/src/controllers/authController.ts)

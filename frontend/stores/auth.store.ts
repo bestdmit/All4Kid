@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authApi, type AuthResponse, type LoginData, type RegisterData } from "../src/api/auth";
+import { authApi, type AuthResponse, type LoginData, type RegisterData, type UpdateProfileData } from "../src/api/auth";
 
 export interface User {
   id: number;
@@ -9,7 +9,6 @@ export interface User {
   phone?: string;
   avatarUrl?: string;
   role: string;
-  children?: { name: string; birthDate?: string }[];
   createdAt?: string;
 }
 
@@ -31,7 +30,7 @@ export interface AuthActions {
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearError: () => void;
   initializeAuth: () => void;
-  updateProfile: (data: any) => Promise<any>;
+  updateProfile: (data: UpdateProfileData) => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -230,36 +229,37 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           get().logout();
         }
       },
-      
-      updateProfile: async (data: any) => {
-        set({ isLoading: true, error: null });
+
+      updateProfile: async (data: UpdateProfileData) => {
+        set({ error: null });
+
         try {
-          const token = localStorage.getItem('accessToken');
-          console.debug('updateProfile using accessToken', token);
-          if (!token) {
-            set({ isLoading: false, error: 'Нет accessToken, пожалуйста войдите снова' });
-            return { success: false, message: 'Нет accessToken' };
-          }
-          let response: any = await authApi.updateCurrentUser(data);
-          // если токен устарел, попытаемся обновить и выполнить запрос снова
-          if (!response.success && response.message && response.message.toLowerCase().includes('токен')) {
-            await get().refreshAuthToken();
-            response = await authApi.updateCurrentUser(data);
-          }
+          const response = await authApi.updateProfile(data);
 
           if (response.success) {
-            const user = response.data as any;
-            localStorage.setItem('user', JSON.stringify(user));
-            set({ user, isLoading: false });
-            return response;
+            const updatedUser = response.data as User;
+
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            set({
+              user: updatedUser,
+              error: null,
+            });
+
+            return true;
           }
 
-          set({ isLoading: false, error: response.message || 'Не удалось обновить профиль' });
-          return response;
+          set({
+            error: response.message || 'Не удалось обновить профиль'
+          });
+
+          return false;
         } catch (error: any) {
           console.error('Update profile error:', error);
-          set({ isLoading: false, error: error.message || 'Ошибка соединения' });
-          return { success: false, message: error.message };
+          set({
+            error: error.message || 'Ошибка соединения с сервером'
+          });
+          return false;
         }
       },
     }),

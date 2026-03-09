@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "/api/auth";
 
 export interface RegisterData {
   email: string;
@@ -19,11 +19,15 @@ export interface AuthResponse {
     fullName: string;
     phone?: string;
     avatarUrl?: string;
-    children?: { name: string; birthDate?: string }[];
     role: string;
   };
   accessToken: string;
   refreshToken: string;
+}
+
+export interface UpdateProfileData {
+  fullName?: string;
+  phone?: string;
 }
 
 export const authApi = {
@@ -81,12 +85,12 @@ export const authApi = {
     return response.json();
   },
 
-  async updateCurrentUser(data: any) {
+  async updateProfile(data: UpdateProfileData) {
     const response = await fetch(`${API_URL}/me`, {
-      method: 'PUT',
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
       body: JSON.stringify(data),
     });

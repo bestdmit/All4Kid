@@ -120,7 +120,7 @@ function TableSpecialists() {
             </div>
             
             {/* Кнопки управления */}
-            <Space direction="vertical" style={{ width: '100%', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginBottom: '16px' }}>
               <Button 
                 type="primary" 
                 onClick={fetchSpecialists}
@@ -140,7 +140,8 @@ function TableSpecialists() {
                   Сбросить все фильтры
                 </Button>
               )}
-            </Space>
+            </div>
+            
           </Card>
         </Sider>
 

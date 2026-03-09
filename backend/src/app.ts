@@ -10,6 +10,7 @@ import { connectDB } from './database/db';
 import specialistsRoutes from './routes/specialistsRoutes';
 import categoriesRoutes from './routes/categoriesRoutes';
 import authRoutes from './routes/authRoutes';
+import reviewsRoutes from './routes/reviewsRoutes';
 import cors from 'cors';
 import helmet from 'helmet';
 
@@ -36,6 +37,7 @@ app.use(express.json());
 app.use('/api/specialists', specialistsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 

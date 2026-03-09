@@ -109,9 +109,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 
 -- Добавляем тестовых пользователей
 INSERT INTO users (email, password_hash, full_name, phone, role) VALUES
-('parent@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Анна Иванова', '+79001234567', 'user'),
-('admin@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Администратор', '+79007654321', 'admin'),
-('specialist@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Иван Петров', '+79001112233', 'specialist')
+('parent@example.com', '$2b$10$HvApX8AdKYAXoYNlV6SWlOuhHGckOiEZrFHFx1nP3yd298bhieq0O', 'Анна Иванова', '+79001234567', 'user'),
+('admin@example.com', '$2b$10$x8hRXl/35bWZBb/pZCWo.u5/HKTIUF35V7nr0GTyD0HPqdxpB5pqS', 'Администратор', '+79007654321', 'admin'),
+('specialist@example.com', '$2b$10$l6ixMIso0JM1JijftqKZn.MpKJPXjqkHiDIX9/M2x8QTdbk.0TtB2', 'Иван Петров', '+79001112233', 'specialist')
 ON CONFLICT (email) DO NOTHING;
 
 -- Обновляем существующих специалистов, привязываем к пользователю
@@ -122,3 +122,62 @@ WHERE s.name = 'Иван Петров';
 ALTER TABLE specialists 
 ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE CASCADE;
+
+-- Таблица отзывов
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  specialist_id INTEGER NOT NULL REFERENCES specialists(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT NOT NULL,
+  is_verified BOOLEAN DEFAULT FALSE,
+  is_approved BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (specialist_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_specialist_id ON reviews(specialist_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
+
+-- Функция пересчета рейтинга специалиста по подтвержденным отзывам
+CREATE OR REPLACE FUNCTION refresh_specialist_rating_from_reviews()
+RETURNS TRIGGER AS $$
+DECLARE
+  target_specialist_id INTEGER;
+BEGIN
+  target_specialist_id := COALESCE(NEW.specialist_id, OLD.specialist_id);
+
+  UPDATE specialists
+  SET rating = COALESCE((
+    SELECT ROUND(AVG(r.rating)::numeric, 2)
+    FROM reviews r
+    WHERE r.specialist_id = target_specialist_id
+      AND r.is_approved = TRUE
+  ), 0)
+  WHERE id = target_specialist_id;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_refresh_specialist_rating_on_reviews ON reviews;
+
+CREATE TRIGGER trg_refresh_specialist_rating_on_reviews
+AFTER INSERT OR UPDATE OR DELETE ON reviews
+FOR EACH ROW
+EXECUTE FUNCTION refresh_specialist_rating_from_reviews();
+
+-- Тестовые отзывы
+INSERT INTO reviews (specialist_id, user_id, rating, comment, is_verified, is_approved)
+SELECT 1, u.id, 5, 'Готовились к ОГЭ всего 3 месяца, результат превзошел ожидания.', TRUE, TRUE
+FROM users u
+WHERE u.email = 'parent@example.com'
+ON CONFLICT (specialist_id, user_id) DO NOTHING;
+
+INSERT INTO reviews (specialist_id, user_id, rating, comment, is_verified, is_approved)
+SELECT 1, u.id, 4, 'Занимаемся уже год. Профессионал своего дела, ребенку очень нравится.', TRUE, TRUE
+FROM users u
+WHERE u.email = 'admin@example.com'
+ON CONFLICT (specialist_id, user_id) DO NOTHING;

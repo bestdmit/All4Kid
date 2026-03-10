@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { specialistApi, type Specialist } from '../src/api/specialists';
 
+export type { Specialist };
+
 interface SpecialistState {
   specialists: Specialist[];
   loading: boolean;

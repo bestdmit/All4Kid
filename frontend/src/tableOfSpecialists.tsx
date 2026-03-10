@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Card, Flex, Button, message, Space, Layout } from "antd";
+import { useState, useEffect } from "react";
+import { Card, Flex, Button, message, Layout } from "antd";
 import { useSpecialistStore } from "../stores/specialistStore";
 import SpecialistCard from "./SpecialistCard";
 import type { Specialist } from "./api/specialists";

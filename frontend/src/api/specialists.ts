@@ -6,6 +6,7 @@ export interface Specialist {
   specialty: string;
   experience: number;
   rating: number;
+  reviews_total?: number;
   location: string;
   price_per_hour: number;
   avatar_url: string;

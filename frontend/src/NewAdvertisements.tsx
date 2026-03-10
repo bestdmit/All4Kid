@@ -1,5 +1,4 @@
 import {useEffect, useState} from 'react'
-import React from "react";
 import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
 import {type Category, useCategories} from "../hooks/useCategories.ts";
 import { useAuth } from '../hooks/useAuth';
@@ -9,7 +8,6 @@ export interface CreateSpecialistDto {
   specialty: string;
   category: string;
   experience?: number;
-  rating?: number;
   location: string;
   price_per_hour?: number;
 }
@@ -109,7 +107,6 @@ export default function NewAdvertisements() {
       category: values.category,
       location: sanitizeText(values.location),
       experience: values.experience ?? 0,
-      rating: values.rating ?? 0,
       price_per_hour: values.price_per_hour ?? 0,
     };
 
@@ -146,7 +143,6 @@ export default function NewAdvertisements() {
       name: user?.fullName || '',
       category: 'Другое',
       experience: 0,
-      rating: 0,
       price_per_hour: 0
     });
   };
@@ -182,7 +178,6 @@ export default function NewAdvertisements() {
             name: user?.fullName || '',
             category: 'Другое',
             experience: 0,
-            rating: 0,
             price_per_hour: 0
           }}
         >
@@ -271,23 +266,6 @@ export default function NewAdvertisements() {
                   min={0}
                   max={50}
                   placeholder="0"
-                  style={{ width: '100%' }}
-                  disabled={loading || !isAuthenticated}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Рейтинг"
-                name="rating"
-                rules={[
-                  { type: 'number', min: 0, max: 5, message: 'Рейтинг должен быть от 0 до 5' }
-                ]}
-              >
-                <InputNumber 
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  placeholder="0.0"
                   style={{ width: '100%' }}
                   disabled={loading || !isAuthenticated}
                 />

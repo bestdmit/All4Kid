@@ -4,7 +4,7 @@ import type {Specialist} from "../../api/specialists.ts";
 
 const { Text } = Typography;
 
-export const SpecialistBooking = ({specialist} : {specialist: Specialist}) => {
+export const SpecialistBooking = ({ specialist: _specialist } : { specialist: Specialist }) => {
     return (
                 <Card
                     title="Выберите дату и время"

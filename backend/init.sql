@@ -122,3 +122,20 @@ WHERE s.name = 'Иван Петров';
 ALTER TABLE specialists 
 ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE CASCADE;
+
+-- Отзывы о специалистах
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  specialist_id INTEGER NOT NULL REFERENCES specialists(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT NOT NULL DEFAULT '',
+  is_verified BOOLEAN DEFAULT FALSE,
+  is_approved BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_specialist_id ON reviews(specialist_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(is_approved);

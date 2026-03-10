@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import React from "react";
 import TableSpecialistsPage from '../pages/tableSpecialistsPage';
 import AuthorizationPage from '../pages/AuthorizationPage';
 import NewAdvertisementsPage from '../pages/NewAdvertisementsPage'

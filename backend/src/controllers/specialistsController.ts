@@ -122,7 +122,6 @@ export const validateCreateSpecialist = [
     .isLength({ max: 2000 }),
 
   body("experience").optional().isNumeric(),
-  body("rating").optional().isNumeric(),
   body("price_per_hour").optional().isNumeric(),
 ];
 
@@ -136,7 +135,26 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
     const category = sanitizeString(req.query.category);
 
     let sql =
-      "SELECT spec.*, cat.slug FROM specialists spec INNER JOIN categories cat ON (spec.category = cat.name)";
+      `SELECT
+         spec.id,
+         spec.name,
+         spec.specialty,
+         spec.category,
+         spec.description,
+         spec.experience,
+         COALESCE(AVG(r.rating), 0)::numeric(3,2) AS rating,
+         spec.location,
+         spec.price_per_hour,
+         spec.avatar_url,
+         spec.created_at,
+         spec.user_id,
+         spec.created_by,
+         spec.is_approved,
+         cat.slug,
+         COUNT(r.id)::int AS reviews_total
+       FROM specialists spec
+       INNER JOIN categories cat ON (spec.category = cat.name)
+       LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)`;
     const params: any[] = [];
     const cond: string[] = [];
 
@@ -151,6 +169,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
     }
 
     if (cond.length) sql += " WHERE " + cond.join(" AND ");
+    sql += " GROUP BY spec.id, cat.slug";
     sql += " ORDER BY spec.id DESC";
 
     const result = await query(sql, params);
@@ -177,7 +196,29 @@ export const getSpecialistById = async (req: Request, res: Response) => {
   try {
     const id = sanitizeNumber(req.params.id);
 
-    const result = await query("SELECT * FROM specialists WHERE id = $1", [id]);
+    const result = await query(
+      `SELECT
+         spec.id,
+         spec.name,
+         spec.specialty,
+         spec.category,
+         spec.description,
+         spec.experience,
+         COALESCE(AVG(r.rating), 0)::numeric(3,2) AS rating,
+         spec.location,
+         spec.price_per_hour,
+         spec.avatar_url,
+         spec.created_at,
+         spec.user_id,
+         spec.created_by,
+         spec.is_approved,
+         COUNT(r.id)::int AS reviews_total
+       FROM specialists spec
+       LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)
+       WHERE spec.id = $1
+       GROUP BY spec.id`,
+      [id]
+    );
     if (!result.rows.length) {
       return res.status(404).json({
         success: false,
@@ -223,7 +264,6 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
       category,
       description,
       experience,
-      rating,
       location,
       price_per_hour,
     } = req.body;
@@ -237,7 +277,7 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
     const cleanLocation = sanitizeString(location);
 
     const cleanExp = sanitizeNumber(experience);
-    const cleanRating = sanitizeNumber(rating, 0, 5);
+    const cleanRating = 0;
     const cleanPrice = sanitizeNumber(price_per_hour);
 
     const avatarUrl = avatarFile
@@ -374,7 +414,6 @@ export const updateSpecialist = async (req: Request, res: Response) => {
       category,
       description,
       experience,
-      rating,
       location,
       price_per_hour,
       avatar_url,
@@ -387,11 +426,10 @@ export const updateSpecialist = async (req: Request, res: Response) => {
          category = $3,
          description = $4,
          experience = $5,
-         rating = $6,
-         location = $7,
-         price_per_hour = $8,
-         avatar_url = $9
-       WHERE id = $10
+         location = $6,
+         price_per_hour = $7,
+         avatar_url = $8
+       WHERE id = $9
        RETURNING *`,
       [
         sanitizeString(name),
@@ -399,7 +437,6 @@ export const updateSpecialist = async (req: Request, res: Response) => {
         sanitizeString(category),
         sanitizeString(description),
         sanitizeNumber(experience),
-        sanitizeNumber(rating, 0, 5),
         sanitizeString(location),
         sanitizeNumber(price_per_hour),
         sanitizeString(avatar_url),

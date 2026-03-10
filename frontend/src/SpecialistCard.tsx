@@ -1,5 +1,4 @@
-import React from "react";
-import { Card, Typography, Button, message, Popconfirm } from "antd";
+import { Card, Typography, Button, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import type { Specialist } from "../src/api/specialists";
 

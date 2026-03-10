@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import AppHeader from "../src/Header/AppHeader";
 import { useAuth } from "../hooks/useAuth";
 import { Navigate } from 'react-router-dom';

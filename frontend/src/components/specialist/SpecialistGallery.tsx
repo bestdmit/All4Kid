@@ -6,13 +6,7 @@ import type {Specialist} from "../../api/specialists.ts";
 const SpecialistGallery = ({specialist} : {specialist: Specialist}) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    // TODO: Получить ссылки на изображения из пропа специалиста
-    const images = [
-        'https://via.placeholder.com/600x400/d9d9d9/666?text=Фото+1',
-        'https://via.placeholder.com/600x400/d9d9d9/666?text=Фото+2',
-        'https://via.placeholder.com/600x400/d9d9d9/666?text=Фото+3',
-        'https://via.placeholder.com/600x400/d9d9d9/666?text=Фото+4',
-    ];
+    const images = specialist?.avatar_url ? [specialist.avatar_url] : [];
 
     const handlePrev = () => {
         setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -44,84 +38,92 @@ const SpecialistGallery = ({specialist} : {specialist: Specialist}) => {
                         position: 'relative'
                     }}
                 >
-                    <img
-                        src={images[currentImageIndex]}
-                        alt={`Gallery image ${currentImageIndex + 1}`}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover'
-                        }}
-                    />
+                    {images.length > 0 ? (
+                        <img
+                            src={images[currentImageIndex]}
+                            alt={`Gallery image ${currentImageIndex + 1}`}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                            }}
+                        />
+                    ) : null}
 
                     {/* Navigation Arrows */}
-                    <Button
-                        icon={<LeftOutlined />}
-                        onClick={handlePrev}
-                        style={{
-                            position: 'absolute',
-                            left: 16,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            border: 'none',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            cursor: 'pointer'
-                        }}
-                    />
+                    {images.length > 1 ? (
+                        <>
+                            <Button
+                                icon={<LeftOutlined />}
+                                onClick={handlePrev}
+                                style={{
+                                    position: 'absolute',
+                                    left: 16,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                    cursor: 'pointer'
+                                }}
+                            />
 
-                    <Button
-                        icon={<RightOutlined />}
-                        onClick={handleNext}
-                        style={{
-                            position: 'absolute',
-                            right: 16,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            border: 'none',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            cursor: 'pointer'
-                        }}
-                    />
+                            <Button
+                                icon={<RightOutlined />}
+                                onClick={handleNext}
+                                style={{
+                                    position: 'absolute',
+                                    right: 16,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                    cursor: 'pointer'
+                                }}
+                            />
+                        </>
+                    ) : null}
                 </div>
 
                 {/* Thumbnails */}
-                <div style={{
-                    display: 'flex',
-                    gap: 8,
-                    marginTop: 16,
-                    justifyContent: 'flex-start'
-                }}>
-                    {images.map((image, index) => (
-                        <div
-                            key={index}
-                            onClick={() => handleThumbnailClick(index)}
-                            style={{
-                                width: 60,
-                                height: 60,
-                                borderRadius: 4,
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                border: currentImageIndex === index
-                                    ? '2px solid #9370DB'
-                                    : '2px solid transparent',
-                                opacity: currentImageIndex === index ? 1 : 0.6,
-                                transition: 'all 0.3s'
-                            }}
-                        >
-                            <img
-                                src={image}
-                                alt={`Thumbnail ${index + 1}`}
+                {images.length > 1 ? (
+                    <div style={{
+                        display: 'flex',
+                        gap: 8,
+                        marginTop: 16,
+                        justifyContent: 'flex-start'
+                    }}>
+                        {images.map((image, index) => (
+                            <div
+                                key={index}
+                                onClick={() => handleThumbnailClick(index)}
                                 style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
+                                    width: 60,
+                                    height: 60,
+                                    borderRadius: 4,
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    border: currentImageIndex === index
+                                        ? '2px solid #9370DB'
+                                        : '2px solid transparent',
+                                    opacity: currentImageIndex === index ? 1 : 0.6,
+                                    transition: 'all 0.3s'
                                 }}
-                            />
-                        </div>
-                    ))}
-                </div>
+                            >
+                                <img
+                                    src={image}
+                                    alt={`Thumbnail ${index + 1}`}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
             </div>
         </Card>
     );

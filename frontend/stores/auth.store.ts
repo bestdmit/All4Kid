@@ -10,6 +10,7 @@ export interface User {
   avatarUrl?: string;
   role: string;
   createdAt?: string;
+  children?: Array<{ name: string; birthDate?: string | null }>;
 }
 
 export interface AuthState {

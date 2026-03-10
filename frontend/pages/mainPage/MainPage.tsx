@@ -1,4 +1,3 @@
-import React from "react";
 import AppHeader from '../../src/Header/AppHeader';
 import ReasonCard from "../../src/reasonCard";
 import KategoryCard from "../../src/kategoryCard";

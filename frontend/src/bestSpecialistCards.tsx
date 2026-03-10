@@ -1,4 +1,3 @@
-import React from "react";
 import { Flex, Spin, Empty } from "antd";
 import SpecialistCard from "./SpecialistCard";
 import { useSpecialists } from "../hooks/specialists/useSpecialists.ts";

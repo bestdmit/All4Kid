@@ -12,7 +12,7 @@ const { Title, Text } = Typography;
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout, updateProfile, clearError } = useAuth();
-  const { specialists, getSpecialistsById, updateNameForCreator, removeSpecialistById } = useSpecialistStore();
+  const { getSpecialistsById, updateNameForCreator, removeSpecialistById, fetchSpecialists } = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -20,10 +20,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      const list = getSpecialistsById(user.id);
-      setUserSpecialists(list);
+      const getSpecialists = async () => {
+        await fetchSpecialists();
+        const list = getSpecialistsById(user.id);
+        setUserSpecialists(list);
+      }
+
+      getSpecialists();
     }
-  }, [user, specialists, getSpecialistsById]);
+  }, []);
 
   useEffect(() => {
     if (user) {

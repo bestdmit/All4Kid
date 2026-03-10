@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react'
-import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
+import {Form, Input, InputNumber, Button, Card, message, Space, Typography, Select, Divider} from "antd";
 import {type Category, useCategories} from "../hooks/useCategories.ts";
 import { useAuth } from '../hooks/useAuth';
 
@@ -252,9 +252,10 @@ export default function NewAdvertisements() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <Title level={4}>Дополнительная информация</Title>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+            <Divider style={{fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4'}}>Дополнительная информация</Divider>
+
+            <Space align={'center'} style={{justifyContent: 'center'}}>
+            <Space align={'center'} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, width: '100%' }}>
               <Form.Item
                 label="Опыт работы (лет)"
                 name="experience"
@@ -285,7 +286,8 @@ export default function NewAdvertisements() {
                   disabled={loading || !isAuthenticated}
                 />
               </Form.Item>
-            </div>
+            </Space>
+            </Space>
           </div>
 
           <Form.Item>

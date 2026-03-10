@@ -6,6 +6,7 @@ import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input } fro
 import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
 import { specialistApi } from "../src/api/specialists";
+import ProfileTabs from "../src/ProfileTabs";
 
 const { Title, Text } = Typography;
 
@@ -170,6 +171,10 @@ export default function ProfilePage() {
               </Flex>
             </Form>
           </Space>
+        </Card>
+
+        <Card style={{ marginBottom: '24px' }}>
+          <ProfileTabs user={user} updateProfile={updateProfile} />
         </Card>
 
         {userSpecialists.length > 0 && (

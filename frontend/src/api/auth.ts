@@ -20,6 +20,7 @@ export interface AuthResponse {
     phone?: string;
     avatarUrl?: string;
     role: string;
+    children?: { name: string; birthDate?: string | null }[];
   };
   accessToken: string;
   refreshToken: string;
@@ -28,6 +29,7 @@ export interface AuthResponse {
 export interface UpdateProfileData {
   fullName?: string;
   phone?: string;
+  children?: { name: string; birthDate?: string | null }[];
 }
 
 export const authApi = {

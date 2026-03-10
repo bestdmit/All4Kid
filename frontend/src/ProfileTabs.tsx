@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Button, Flex, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip } from "antd";
-import SpecialistCard from "./SpecialistCard";
-import type { Specialist } from "../stores/specialistStore";
+import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip } from "antd";
 import type { User } from "../stores/auth.store";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 
@@ -9,17 +7,15 @@ const { Text } = Typography;
 
 interface ProfileTabsProps {
   user: User;
-  userSpecialists: Specialist[];
-  updateProfile: (data: any) => Promise<any>;
+  updateProfile: (data: any) => Promise<boolean>;
 }
 
 const tabs = [
   { key: "children", label: "Мои дети" },
-  { key: "ads", label: "Мои объявления" },
   { key: "favorites", label: "Избранное" },
 ];
 
-export default function ProfileTabs({ user, userSpecialists, updateProfile }: ProfileTabsProps) {
+export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const [active, setActive] = useState<string>(tabs[0].key);
 
   const [childName, setChildName] = useState("");
@@ -35,14 +31,14 @@ export default function ProfileTabs({ user, userSpecialists, updateProfile }: Pr
     try {
       setAdding(true);
       const newChildren = [...(user.children || []), { name: childName.trim(), birthDate: childBirth || null }];
-      const resp = await updateProfile({ children: newChildren });
-      if (resp?.success) {
+      const ok = await updateProfile({ children: newChildren });
+      if (ok) {
         message.success("Ребенок добавлен");
         setChildName("");
         setChildBirth("");
         setAddModalVisible(false);
       } else {
-        message.error(resp?.message || "Ошибка при добавлении");
+        message.error("Не удалось сохранить ребёнка");
       }
     } catch (err: any) {
       console.error(err);
@@ -63,11 +59,11 @@ export default function ProfileTabs({ user, userSpecialists, updateProfile }: Pr
         try {
           const current = user.children || [];
           const newChildren = current.filter((_: any, i: number) => i !== index);
-          const resp = await updateProfile({ children: newChildren });
-          if (resp && resp.success) {
+          const ok = await updateProfile({ children: newChildren });
+          if (ok) {
             message.success('Ребёнок удалён');
           } else {
-            message.error(resp?.message || 'Ошибка при удалении');
+            message.error('Не удалось удалить ребёнка');
           }
         } catch (err) {
           console.error(err);
@@ -162,27 +158,8 @@ export default function ProfileTabs({ user, userSpecialists, updateProfile }: Pr
 
   const renderContent = () => {
     switch (active) {
-      case "records":
-        return <Text>Пока что нет записей</Text>;
       case "children":
         return renderChildrenTab();
-      case "ads":
-        if (userSpecialists.length === 0) {
-          return <Text>У вас пока нет объявлений</Text>;
-        }
-        return (
-          <Flex wrap gap="middle" justify="start">
-            {userSpecialists.map((spec) => (
-              <SpecialistCard
-                key={spec.id}
-                specialist={spec}
-                forDelete={true}
-                isLoading={false}
-                onDelete={() => {}}
-              />
-            ))}
-          </Flex>
-        );
       case "favorites":
         return <Text>Избранные специалисты пока не добавлены</Text>;
       default:

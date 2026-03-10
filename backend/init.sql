@@ -92,6 +92,9 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS children JSONB DEFAULT '[]';
+
 -- Обновляем таблицу специалистов, связываем с пользователями
 ALTER TABLE specialists 
 ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,

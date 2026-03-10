@@ -176,7 +176,7 @@ export const register = async (req: Request, res: Response) => {
     const result = await query(
       `INSERT INTO users (email, password_hash, full_name, phone) 
        VALUES ($1, $2, $3, $4) 
-       RETURNING id, email, full_name, phone, avatar_url, role`,
+       RETURNING id, email, full_name, phone, avatar_url, role, children`,
       [email, passwordHash, normalizedFullName, phone ? phone.trim() : null]
     );
 
@@ -206,7 +206,8 @@ export const register = async (req: Request, res: Response) => {
         fullName: user.full_name,
         phone: user.phone,
         avatarUrl: user.avatar_url,
-        role: user.role
+        role: user.role,
+        children: user.children ?? []
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken
@@ -244,7 +245,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Ищем пользователя по email
     const result = await query(
-      `SELECT id, email, password_hash, full_name, phone, avatar_url, role, is_active 
+      `SELECT id, email, password_hash, full_name, phone, avatar_url, role, is_active, children 
        FROM users WHERE email = $1`,
       [email]
     );
@@ -299,7 +300,8 @@ export const login = async (req: Request, res: Response) => {
         fullName: user.full_name,
         phone: user.phone,
         avatarUrl: user.avatar_url,
-        role: user.role
+        role: user.role,
+        children: user.children ?? []
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken
@@ -408,15 +410,21 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const { fullName, phone } = req.body as { fullName?: string; phone?: string | null };
+    const { fullName, phone, children } = req.body as { 
+      fullName?: string; 
+      phone?: string | null;
+      children?: { name: string; birthDate?: string | null }[];
+    };
 
     // Проверяем, что есть что обновлять
-    if (typeof fullName === 'undefined' && typeof phone === 'undefined') {
+    if (typeof fullName === 'undefined' && 
+        typeof phone === 'undefined' && 
+        typeof children === 'undefined') {
       return res.status(400).json({ success: false, message: 'Нет полей для обновления' });
     }
 
     const updates: string[] = [];
-    const values: Array<string | number | null> = [];
+    const values: Array<string | number | null | any> = [];
     let normalizedName: string | undefined;
 
     if (typeof fullName !== 'undefined') {
@@ -432,6 +440,17 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       values.push(phone ? phone.trim() : null);
     }
 
+    if (typeof children !== 'undefined') {
+      const normalizedChildren = Array.isArray(children)
+        ? children.map((c) => ({
+            name: String(c.name ?? '').trim(),
+            birthDate: c.birthDate ?? null,
+          }))
+        : [];
+      updates.push(`children = $${updates.length + 1}`);
+      values.push(JSON.stringify(normalizedChildren));
+    }
+
     updates.push(`updated_at = NOW()`);
 
     // Добавляем id пользователя для WHERE
@@ -442,7 +461,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       UPDATE users
       SET ${updates.join(', ')}
       WHERE id = $${placeholdersCount}
-      RETURNING id, email, full_name, phone, avatar_url, role, created_at
+      RETURNING id, email, full_name, phone, avatar_url, role, created_at, children
     `;
 
     const result = await query(updateQuery, values);
@@ -469,7 +488,8 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
         phone: user.phone,
         avatarUrl: user.avatar_url,
         role: user.role,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        children: user.children ?? []
       },
       message: 'Профиль обновлен'
     });
@@ -489,7 +509,7 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      `SELECT id, email, full_name, phone, avatar_url, role, created_at 
+      `SELECT id, email, full_name, phone, avatar_url, role, created_at, children 
        FROM users WHERE id = $1`,
       [req.user.id]
     );
@@ -509,7 +529,8 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
         phone: user.phone,
         avatarUrl: user.avatar_url,
         role: user.role,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        children: user.children ?? []
       }
     });
   } catch (error) {

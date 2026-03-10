@@ -182,7 +182,7 @@ export default function NewAdvertisements() {
           }}
         >
           <div style={{ marginBottom: 24 }}>
-            <Title level={4}>Основная информация</Title>
+            <Divider style={{fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4'}}>Основная информация</Divider>
             
             <Form.Item
               label="Имя специалиста"

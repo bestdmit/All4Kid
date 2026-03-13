@@ -147,15 +147,15 @@ export const register = async (req: Request, res: Response) => {
     const { email, password, fullName, phone }: RegisterDto = req.body;
 
     // Проверка валидности email через внешний сервис (apilayer)
-    const emailCheck = await verifyEmailDeliverability(email);
-    if (!emailCheck.isDeliverable) {
-      const reason = emailCheck.reason || 'Email недоступен или не прошел SMTP-проверку';
-      return res.status(400).json({
-        success: false,
-        message: 'Email недействителен',
-        errors: [{ field: 'email', message: reason }]
-      });
-    }
+    // const emailCheck = await verifyEmailDeliverability(email);
+    // if (!emailCheck.isDeliverable) {
+    //   const reason = emailCheck.reason || 'Email недоступен или не прошел SMTP-проверку';
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Email недействителен',
+    //     errors: [{ field: 'email', message: reason }]
+    //   });
+    // }
 
     // Нормализация fullName: trim + collapse multiple spaces -> single
     const normalizedFullName = (fullName ?? '').trim().replace(/\s{2,}/g, ' ');

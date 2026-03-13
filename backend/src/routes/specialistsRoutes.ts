@@ -10,13 +10,20 @@ import {
   deleteAvatar,
   getMySpecialists 
 } from '../controllers/specialistsController';
-import { createReviewForSpecialist, getReviewsBySpecialistId } from "../controllers/reviewsController";
-import { authenticateToken } from '../middleware/auth';
+import {
+  approveReview,
+  createReviewForSpecialist,
+  getReviewsBySpecialistId,
+  getUnapprovedReviews
+} from "../controllers/reviewsController";
+import {authenticateToken, authorize} from '../middleware/auth';
 
 const router = Router();
 
 // Публичные роуты
 router.get('/', getAllSpecialists);
+router.get('/admin/reviews', getUnapprovedReviews);
+router.post('/admin/review/approve', authenticateToken, authorize('admin'), approveReview);
 // Защищенные роуты (должны быть выше /:id)
 router.get('/my/list', authenticateToken, getMySpecialists);
 router.get('/:id/reviews', getReviewsBySpecialistId);

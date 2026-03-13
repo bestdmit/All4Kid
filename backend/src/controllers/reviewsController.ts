@@ -28,6 +28,26 @@ async function recomputeSpecialistRating(specialistId: number) {
   return Number(avg);
 }
 
+export const getUnapprovedReviews = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+        `SELECT *
+       FROM reviews
+       WHERE is_approved = FALSE
+       ORDER BY created_at DESC`
+    );
+
+    res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount,
+    });
+  } catch (err) {
+    console.error("Ошибка getUnapprovedReviews:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+};
+
 export const getReviewsBySpecialistId = async (req: Request, res: Response) => {
   try {
     const specialistId = sanitizeNumber(req.params.id, 0);
@@ -66,6 +86,33 @@ export const getReviewsBySpecialistId = async (req: Request, res: Response) => {
   }
 };
 
+export const approveReview = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Требуется авторизация" });
+    }
+
+    const reviewId = sanitizeNumber(req.body.id, 0);
+    if (!reviewId) {
+      return res.status(400).json({ success: false, message: "Некорректный id отзыва" });
+    }
+
+    const updated = await query(
+        `UPDATE reviews SET is_approved = $1
+       WHERE id = $2 RETURNING *`,
+        [true, reviewId]
+    );
+
+    res.json({
+      success: true,
+      data: updated.rows,
+    });
+  } catch (err) {
+    console.error("Ошибка approveReview:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+}
+
 export const createReviewForSpecialist = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -91,7 +138,7 @@ export const createReviewForSpecialist = async (req: AuthRequest, res: Response)
 
     const inserted = await query(
       `INSERT INTO reviews (specialist_id, user_id, rating, comment, is_verified, is_approved)
-       VALUES ($1, $2, $3, $4, FALSE, TRUE)
+       VALUES ($1, $2, $3, $4, FALSE, FALSE)
        RETURNING *`,
       [specialistId, req.user.id, rating, comment]
     );

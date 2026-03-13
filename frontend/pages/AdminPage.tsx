@@ -1,18 +1,36 @@
 import {Button, Card, Layout, message, Space, Typography} from "antd";
-import {useSpecialistReviews} from "../hooks/reviews/useSpecialistReviews";
 import AppHeader from "../src/Header/AppHeader.tsx";
-import {reviewsApi} from "../src/api/reviews.ts";
+import {type Review, reviewsApi} from "../src/api/reviews.ts";
 import {useNavigate} from "react-router-dom";
+import {useEffect, useState} from "react";
 
 const {Title} = Typography;
 
 const AdminPage = () => {
-    const { reviews } = useSpecialistReviews(8);
+    const [reviews, setReviews] = useState<Review[]>();
     const navigate = useNavigate();
 
-    const handleApproveReview = (id) => {
+    useEffect(() => {
+        const fetchUnapproved = async () => {
+            try {
+                const res = await reviewsApi.fetchUnapproved();
+
+                if (!res.success) {
+                    throw new Error(res.message || "Ошибка получения отзывов");
+                }
+
+                setReviews(res.data);
+            } catch (e: any) {
+                message.error(e instanceof Error ? e.message : "Ошибка при получении отзывов");
+            }
+        }
+
+        fetchUnapproved();
+    }, []);
+
+    const handleApproveReview = async (id: number) => {
         try {
-            const res = await reviewsApi.createForSpecialist(specialist.id);
+            const res = await reviewsApi.approve(id);
 
             if (!res.success) {
                 throw new Error(res.message || "Не удалось подтвердить отзыв");
@@ -29,8 +47,23 @@ const AdminPage = () => {
         }
     }
 
-    const handleDeleteReview = (id) => {
+    const handleDeleteReview = async (id: number) => {
+        try {
+            const res = await reviewsApi.delete(id);
 
+            if (!res.success) {
+                throw new Error(res.message || "Не удалось удалить отзыв");
+            }
+
+            message.success("Отзыв подтверждён");
+        } catch (e: any) {
+            if (e?.message === "UNAUTHORIZED") {
+                message.error("Сессия истекла. Войдите заново");
+                navigate("/auth");
+                return;
+            }
+            message.error(e instanceof Error ? e.message : "Ошибка при подтверждении отзыва");
+        }
     }
 
     return (
@@ -38,7 +71,7 @@ const AdminPage = () => {
             <AppHeader/>
             <Card styles={{body: {width: '70%'}}} style={{background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5rem 5rem"}}>
                 <Title style={{margin: '0 0 3rem 0', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Ожидают подтверждения</Title>
-                    {reviews.map((review) => (
+                    {reviews && reviews.map((review) => (
                         <Space style={{justifyContent: "space-around", width: '100%', border: '1px solid #d9d9d9', borderRadius: 8}}>
                             <p>{review.comment}</p>
                             <Space>

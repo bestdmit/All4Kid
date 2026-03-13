@@ -8,6 +8,7 @@ const {Title} = Typography;
 
 const AdminPage = () => {
     const [reviews, setReviews] = useState<Review[]>();
+    const [refetch, setRefetch] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -20,13 +21,16 @@ const AdminPage = () => {
                 }
 
                 setReviews(res.data);
+                if(refetch){
+                    setRefetch(false);
+                }
             } catch (e: any) {
                 message.error(e instanceof Error ? e.message : "Ошибка при получении отзывов");
             }
         }
 
         fetchUnapproved();
-    }, []);
+    }, [refetch,]);
 
     const handleApproveReview = async (id: number) => {
         try {
@@ -37,6 +41,7 @@ const AdminPage = () => {
             }
 
             message.success("Отзыв подтверждён");
+            setRefetch(true);
         } catch (e: any) {
             if (e?.message === "UNAUTHORIZED") {
                 message.error("Сессия истекла. Войдите заново");
@@ -55,14 +60,15 @@ const AdminPage = () => {
                 throw new Error(res.message || "Не удалось удалить отзыв");
             }
 
-            message.success("Отзыв подтверждён");
+            message.success("Отзыв удалён");
+            setRefetch(true);
         } catch (e: any) {
             if (e?.message === "UNAUTHORIZED") {
                 message.error("Сессия истекла. Войдите заново");
                 navigate("/auth");
                 return;
             }
-            message.error(e instanceof Error ? e.message : "Ошибка при подтверждении отзыва");
+            message.error(e instanceof Error ? e.message : "Ошибка при удалении отзыва");
         }
     }
 

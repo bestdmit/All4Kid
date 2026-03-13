@@ -12,6 +12,7 @@ import categoriesRoutes from './routes/categoriesRoutes';
 import authRoutes from './routes/authRoutes';
 import cors from 'cors';
 import helmet from 'helmet';
+import adminRoutes from "./routes/adminRoutes";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,6 +35,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use(express.json());
 
 app.use('/api/specialists', specialistsRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/auth', authRoutes);
 

@@ -1,4 +1,4 @@
-import {Button, Card, Layout, message, Space, Typography} from "antd";
+import {Button, Card, Layout, message, Rate, Space, Typography} from "antd";
 import AppHeader from "../src/Header/AppHeader.tsx";
 import {type Review, reviewsApi} from "../src/api/reviews.ts";
 import {useNavigate} from "react-router-dom";
@@ -75,10 +75,13 @@ const AdminPage = () => {
     return (
         <Layout>
             <AppHeader/>
-            <Card styles={{body: {width: '70%'}}} style={{background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5rem 5rem"}}>
+            <Card styles={{body: {width: '80%'}}} style={{background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5rem 5rem"}}>
                 <Title style={{margin: '0 0 3rem 0', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Ожидают подтверждения</Title>
                     {reviews && reviews.map((review) => (
-                        <Space style={{justifyContent: "space-around", width: '100%', border: '1px solid #d9d9d9', borderRadius: 8}}>
+                        <Space style={{padding: '1rem', marginBottom: '2rem', alignItems:"center", justifyContent: "space-around", width: '100%', border: '1px solid #d9d9d9', borderRadius: 8}}>
+                            <div style={{}}>
+                                <Rate disabled value={review.rating} />
+                            </div>
                             <p>{review.comment}</p>
                             <Space>
                                 <Button type={'primary'} onClick={() => handleApproveReview(review.id)}>Подтвердить</Button>

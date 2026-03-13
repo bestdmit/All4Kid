@@ -22,8 +22,6 @@ const router = Router();
 
 // Публичные роуты
 router.get('/', getAllSpecialists);
-router.get('/admin/reviews', getUnapprovedReviews);
-router.post('/admin/review/approve', authenticateToken, authorize('admin'), approveReview);
 // Защищенные роуты (должны быть выше /:id)
 router.get('/my/list', authenticateToken, getMySpecialists);
 router.get('/:id/reviews', getReviewsBySpecialistId);

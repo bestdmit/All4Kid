@@ -103,12 +103,45 @@ export const approveReview = async (req: AuthRequest, res: Response) => {
         [true, reviewId]
     );
 
+    const specs = await query(
+        'SELECT specialist_id FROM reviews WHERE id = $1',
+        [reviewId]
+    );
+
+    await recomputeSpecialistRating(specs.rows[0].specialist_id);
+
     res.json({
       success: true,
       data: updated.rows,
     });
   } catch (err) {
     console.error("Ошибка approveReview:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+}
+
+export const deleteReview = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Требуется авторизация" });
+    }
+
+    const reviewId = sanitizeNumber(req.body.id, 0);
+    if (!reviewId) {
+      return res.status(400).json({ success: false, message: "Некорректный id отзыва" });
+    }
+
+    const deleted = await query(
+        `DELETE FROM reviews WHERE id = $1 RETURNING *`,
+        [reviewId]
+    );
+
+    res.json({
+      success: true,
+      data: deleted.rows,
+    });
+  } catch (err) {
+    console.error("Ошибка deleteReview:", err);
     res.status(500).json({ success: false, message: "Ошибка сервера" });
   }
 }

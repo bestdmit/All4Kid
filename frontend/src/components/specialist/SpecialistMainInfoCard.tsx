@@ -21,7 +21,9 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
                 }
             }}
         >
-            <div
+            <img
+                src={specialist.avatar_url}
+                alt={''}
                 style={{
                     width: 220,
                     height: 220,

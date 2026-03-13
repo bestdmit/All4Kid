@@ -67,7 +67,7 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
 
     return (
         <Card
-            style={{ borderRadius: 8, marginTop: 16 }}
+            style={{ borderRadius: 8, marginTop: 16, width: '100%' }}
             styles={{ body: { padding: 20} }}
         >
             {/* Header */}

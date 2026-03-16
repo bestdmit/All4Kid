@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import type { FormProps } from "antd";
-import { Button, Form, Input, message } from "antd";
+import { Button, Form, Input, message, Upload, Avatar } from "antd";
+import { UploadOutlined } from '@ant-design/icons';
 import { useAuth } from "../hooks/useAuth";
 
 type FieldType = {
@@ -19,6 +20,8 @@ type RegisterFormProps = {
 const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) => {
   const [form] = Form.useForm();
   const { isAuthenticated, register } = useAuth();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     if (values.fullName) {
@@ -35,7 +38,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         password: values.password!,
         fullName: values.fullName!,
         phone: values.phone,
-      });
+      }, avatarFile || undefined);
       if (isAuthenticated) message.success("Регистрация успешна! Добро пожаловать!");
     } catch (err) {
       // Ошибка уже обработана в сторе
@@ -125,6 +128,46 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         ]}
       >
         <Input />
+      </Form.Item>
+
+      <Form.Item label="Фото профиля">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {avatarPreview && (
+            <Avatar size={64} src={avatarPreview} />
+          )}
+          <Upload
+            maxCount={1}
+            beforeUpload={(file) => {
+              const isImage = file.type.startsWith('image/');
+              if (!isImage) {
+                message.error('Выберите изображение');
+                return false;
+              }
+              const isLt5M = file.size / 1024 / 1024 < 5;
+              if (!isLt5M) {
+                message.error('Размер файла не должен превышать 5MB');
+                return false;
+              }
+              
+              // Сохраняем файл и preview
+              setAvatarFile(file);
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                setAvatarPreview(e.target?.result as string);
+              };
+              reader.readAsDataURL(file);
+              return false;
+            }}
+            onRemove={() => {
+              setAvatarFile(null);
+              setAvatarPreview(null);
+            }}
+          >
+            <Button icon={<UploadOutlined />}>
+              Выберите фото
+            </Button>
+          </Upload>
+        </div>
       </Form.Item>
 
       <Form.Item<FieldType>

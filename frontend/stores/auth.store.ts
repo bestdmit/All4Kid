@@ -24,7 +24,7 @@ export interface AuthState {
 
 export interface AuthActions {
   login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData, avatarFile?: File) => Promise<void>;
   logout: () => Promise<void>;
   refreshAuthToken: () => Promise<void>;
   setUser: (user: User | null) => void;
@@ -32,6 +32,8 @@ export interface AuthActions {
   clearError: () => void;
   initializeAuth: () => void;
   updateProfile: (data: UpdateProfileData) => Promise<boolean>;
+  uploadAvatar: (file: File) => Promise<boolean>;
+  deleteAvatar: () => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -119,11 +121,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      register: async (data: RegisterData) => {
+      register: async (data: RegisterData, avatarFile?: File) => {
         set({ isLoading: true, error: null });
         
         try {
-          const response = await authApi.register(data);
+          const response = avatarFile 
+            ? await authApi.registerWithAvatar(data, avatarFile)
+            : await authApi.register(data);
           
           if (response.success) {
             const { user, accessToken, refreshToken } = response.data as AuthResponse;
@@ -259,6 +263,72 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           console.error('Update profile error:', error);
           set({
             error: error.message || 'Ошибка соединения с сервером'
+          });
+          return false;
+        }
+      },
+
+      uploadAvatar: async (file: File) => {
+        set({ error: null });
+
+        try {
+          const response = await authApi.uploadAvatar(file);
+
+          if (response.success) {
+            const updatedUser = response.data as User;
+
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            set({
+              user: updatedUser,
+              error: null,
+            });
+
+            return true;
+          }
+
+          set({
+            error: response.message || 'Не удалось загрузить аватар'
+          });
+
+          return false;
+        } catch (error: any) {
+          console.error('Upload avatar error:', error);
+          set({
+            error: error.message || 'Ошибка при загрузке аватара'
+          });
+          return false;
+        }
+      },
+
+      deleteAvatar: async () => {
+        set({ error: null });
+
+        try {
+          const response = await authApi.deleteAvatar();
+
+          if (response.success) {
+            const updatedUser = response.data as User;
+
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            set({
+              user: updatedUser,
+              error: null,
+            });
+
+            return true;
+          }
+
+          set({
+            error: response.message || 'Не удалось удалить аватар'
+          });
+
+          return false;
+        } catch (error: any) {
+          console.error('Delete avatar error:', error);
+          set({
+            error: error.message || 'Ошибка при удалении аватара'
           });
           return false;
         }

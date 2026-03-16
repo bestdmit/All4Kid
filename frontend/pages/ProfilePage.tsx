@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import AppHeader from "../src/Header/AppHeader";
 import { useAuth } from "../hooks/useAuth";
 import { Navigate } from 'react-router-dom';
-import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input } from "antd";
+import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input, Avatar, Upload, Modal } from "antd";
+import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
 import { specialistApi } from "../src/api/specialists";
@@ -11,11 +12,12 @@ import ProfileTabs from "../src/ProfileTabs";
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading, logout, updateProfile, clearError } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, updateProfile, clearError, uploadAvatar, deleteAvatar } = useAuth();
   const { getSpecialistsById, updateNameForCreator, removeSpecialistById, fetchSpecialists } = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -84,6 +86,47 @@ export default function ProfilePage() {
     }
   };
 
+  const handleUploadAvatar = async (file: File) => {
+    try {
+      setUploadingAvatar(true);
+      const success = await uploadAvatar(file);
+      if (success) {
+        message.success('Аватар загружен');
+      } else {
+        message.error('Не удалось загрузить аватар');
+      }
+    } catch (err) {
+      message.error('Ошибка при загрузке аватара');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = () => {
+    Modal.confirm({
+      title: 'Удалить аватар?',
+      content: 'Вы уверены, что хотите удалить свой аватар?',
+      okText: 'Удалить',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        try {
+          setUploadingAvatar(true);
+          const success = await deleteAvatar();
+          if (success) {
+            message.success('Аватар удален');
+          } else {
+            message.error('Не удалось удалить аватар');
+          }
+        } catch (err) {
+          message.error('Ошибка при удалении аватара');
+        } finally {
+          setUploadingAvatar(false);
+        }
+      }
+    });
+  };
+
   if (isInitialLoading || !user) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -100,6 +143,54 @@ export default function ProfilePage() {
           <Title level={2}>Профиль пользователя</Title>
           
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {/* Аватар и управление */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingBottom: '16px', borderBottom: '1px solid #f0f0f0' }}>
+              <Avatar
+                size={80}
+                src={user.avatarUrl}
+                alt={user.fullName}
+                style={{ backgroundColor: '#1890ff' }}
+              >
+                {user.fullName?.[0]?.toUpperCase()}
+              </Avatar>
+              <div style={{ flex: 1 }}>
+                <Text strong style={{ fontSize: 16 }}>Фото профиля</Text>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                  <Upload
+                    maxCount={1}
+                    beforeUpload={(file) => {
+                      const isImage = file.type.startsWith('image/');
+                      if (!isImage) {
+                        message.error('Выберите изображение');
+                        return false;
+                      }
+                      const isLt5M = file.size / 1024 / 1024 < 5;
+                      if (!isLt5M) {
+                        message.error('Размер файла не должен превышать 5MB');
+                        return false;
+                      }
+                      handleUploadAvatar(file);
+                      return false;
+                    }}
+                  >
+                    <Button icon={<UploadOutlined />} loading={uploadingAvatar}>
+                      {user.avatarUrl ? 'Изменить' : 'Загрузить'}
+                    </Button>
+                  </Upload>
+                  {user.avatarUrl && (
+                    <Button 
+                      danger 
+                      icon={<DeleteOutlined />} 
+                      loading={uploadingAvatar}
+                      onClick={handleDeleteAvatar}
+                    >
+                      Удалить
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div>
               <Text strong>ID: </Text>
               <Text>{user.id}</Text>

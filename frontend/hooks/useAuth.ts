@@ -14,6 +14,8 @@ export const useAuth = () => {
     clearError,
     initializeAuth,
     updateProfile,
+    uploadAvatar,
+    deleteAvatar,
   } = useAuthStore();
 
   // Инициализируем аутентификацию при монтировании
@@ -41,6 +43,8 @@ export const useAuth = () => {
     register,
     logout,
     updateProfile,
+    uploadAvatar,
+    deleteAvatar,
     clearError,
   };
 };

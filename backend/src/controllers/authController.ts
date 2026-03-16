@@ -12,6 +12,8 @@ import {
 import { AuthRequest } from '../middleware/auth';
 import { body, validationResult } from 'express-validator';
 import { verifyEmailDeliverability } from '../services/emailValidation';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Helper: формирует единый ответ об ошибках валидации
@@ -45,6 +47,24 @@ function generateTokens(payload: Record<string, any>) {
   );
 
   return { accessToken, refreshToken };
+}
+
+/**
+ * Helper: безопасное удаление файла
+ */
+async function safeDeleteFile(fileUrl: string) {
+  if (!fileUrl || fileUrl.includes("default.jpg")) return;
+
+  const safePath = path.join("public", fileUrl.replace(/^\/+/, ""));
+  try {
+    await fs.unlink(safePath, (err) => {
+      if (err) {
+        console.warn("Не удалось удалить файл:", safePath, err);
+      }
+    });
+  } catch (err) {
+    console.warn("Не удалось удалить файл:", safePath, err);
+  }
 }
 
 /**
@@ -145,6 +165,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const { email, password, fullName, phone }: RegisterDto = req.body;
+    const file = req.file;
 
     // Проверка валидности email через внешний сервис (apilayer)
     // const emailCheck = await verifyEmailDeliverability(email);
@@ -172,12 +193,18 @@ export const register = async (req: Request, res: Response) => {
     // Хешируем пароль
     const passwordHash = await bcrypt.hash(password, config.bcryptRounds);
 
+    // Получаем путь к аватару (если загружен)
+    let avatarUrl = null;
+    if (file) {
+      avatarUrl = `/uploads/avatars/${file.filename}`;
+    }
+
     // Создаем пользователя
     const result = await query(
-      `INSERT INTO users (email, password_hash, full_name, phone) 
-       VALUES ($1, $2, $3, $4) 
+      `INSERT INTO users (email, password_hash, full_name, phone, avatar_url) 
+       VALUES ($1, $2, $3, $4, $5) 
        RETURNING id, email, full_name, phone, avatar_url, role, children`,
-      [email, passwordHash, normalizedFullName, phone ? phone.trim() : null]
+      [email, passwordHash, normalizedFullName, phone ? phone.trim() : null, avatarUrl]
     );
 
     const user = result.rows[0];
@@ -535,6 +562,110 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('Ошибка при получении пользователя:', error);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+/**
+ * Контроллер: загрузить/обновить аватар пользователя
+ */
+export const updateAvatarUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Пользователь не аутентифицирован' });
+    }
+
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'Файл не загружен' });
+    }
+
+    // Получаем текущий аватар пользователя для удаления старого
+    const userResult = await query(
+      'SELECT avatar_url FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+    }
+
+    const currentAvatar = userResult.rows[0].avatar_url;
+    await safeDeleteFile(currentAvatar);
+
+    const newUrl = `/uploads/avatars/${file.filename}`;
+
+    const result = await query(
+      'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, email, full_name, phone, avatar_url, role, created_at, children',
+      [newUrl, req.user.id]
+    );
+
+    const user = result.rows[0];
+
+    return res.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        phone: user.phone,
+        avatarUrl: user.avatar_url,
+        role: user.role,
+        createdAt: user.created_at,
+        children: user.children ?? []
+      },
+      message: 'Аватар обновлён'
+    });
+  } catch (error) {
+    console.error('Ошибка при загрузке аватара:', error);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+/**
+ * Контроллер: удалить аватар пользователя
+ */
+export const deleteAvatarUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Пользователь не аутентифицирован' });
+    }
+
+    const userResult = await query(
+      'SELECT avatar_url FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+    }
+
+    await safeDeleteFile(userResult.rows[0].avatar_url);
+
+    const result = await query(
+      'UPDATE users SET avatar_url = NULL WHERE id = $1 RETURNING id, email, full_name, phone, avatar_url, role, created_at, children',
+      [req.user.id]
+    );
+
+    const user = result.rows[0];
+
+    return res.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        phone: user.phone,
+        avatarUrl: user.avatar_url,
+        role: user.role,
+        createdAt: user.created_at,
+        children: user.children ?? []
+      },
+      message: 'Аватар удалён'
+    });
+  } catch (error) {
+    console.error('Ошибка при удалении аватара:', error);
     return res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 };

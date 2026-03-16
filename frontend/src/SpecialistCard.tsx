@@ -70,12 +70,16 @@ export default function SpecialistCard({
     handleDelete();
   };
 
+  const avatarSrc = specialist.avatar_url && specialist.avatar_url.trim() 
+    ? specialist.avatar_url 
+    : '/uploads/avatars/default.jpg';
+
   return (
     <Card variant="borderless" style={cardStyle} onClick={handleClick}
       cover={
         <div style={{ ...coverStyle, position: 'relative' }}>
           <img 
-            src={specialist.avatar_url}
+            src={avatarSrc}
             alt={specialist.name}
             style={{ 
               width: '100%', 

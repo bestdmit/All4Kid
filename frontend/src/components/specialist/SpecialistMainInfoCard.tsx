@@ -6,6 +6,10 @@ import { Typography } from 'antd';
 const { Title, Text } = Typography;
 
 export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) => {
+    const avatarSrc = specialist.avatar_url && specialist.avatar_url.trim()
+        ? specialist.avatar_url
+        : '/uploads/avatars/default.jpg';
+
     return (
         <Card
             style={{
@@ -22,15 +26,20 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
             }}
         >
             <img
-                src={specialist.avatar_url}
-                alt={''}
+                src={avatarSrc}
+                alt={specialist.name}
                 style={{
                     width: 220,
                     height: 220,
                     backgroundColor: '#d9d9d9',
                     borderRadius: 4,
                     marginRight: 16,
-                    flexShrink: 0
+                    flexShrink: 0,
+                    objectFit: 'cover',
+                    objectPosition: 'center 18%'
+                }}
+                onError={(e) => {
+                    e.currentTarget.src = '/uploads/avatars/default.jpg';
                 }}
             />
 

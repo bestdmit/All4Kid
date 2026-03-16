@@ -280,9 +280,27 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
     const cleanRating = 0;
     const cleanPrice = sanitizeNumber(price_per_hour);
 
-    const avatarUrl = avatarFile
-      ? `/uploads/avatars/${avatarFile.filename}`
-      : "/uploads/avatars/default.jpg";
+    // Определяем аватар для специалиста
+    let avatarUrl: string;
+    
+    if (avatarFile) {
+      // Если загружен файл при создании специалиста
+      avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
+    } else {
+      // Получаем аватар пользователя из базы
+      const userResult = await query(
+        'SELECT avatar_url FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      if (userResult.rows.length > 0 && userResult.rows[0].avatar_url) {
+        // Используем аватар пользователя если он есть
+        avatarUrl = userResult.rows[0].avatar_url;
+      } else {
+        // Иначе используем default
+        avatarUrl = "/uploads/avatars/default.jpg";
+      }
+    }
 
     const result = await query(
       `INSERT INTO specialists 

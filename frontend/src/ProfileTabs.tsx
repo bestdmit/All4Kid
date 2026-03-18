@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip } from "antd";
 import type { User } from "../stores/auth.store";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import ReviewsModerationPanel from "./components/admin/ReviewsModerationPanel";
 
 const { Text } = Typography;
 
@@ -10,12 +11,13 @@ interface ProfileTabsProps {
   updateProfile: (data: any) => Promise<boolean>;
 }
 
-const tabs = [
-  { key: "children", label: "Мои дети" },
-  { key: "favorites", label: "Избранное" },
-];
-
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
+  const tabs = [
+    { key: "children", label: "Мои дети" },
+    { key: "favorites", label: "Избранное" },
+    ...(user.role === "admin" ? [{ key: "review_moderation", label: "Модерация отзывов" }] : []),
+  ];
+
   const [active, setActive] = useState<string>(tabs[0].key);
 
   const [childName, setChildName] = useState("");
@@ -162,6 +164,12 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         return renderChildrenTab();
       case "favorites":
         return <Text>Избранные специалисты пока не добавлены</Text>;
+      case "review_moderation":
+        return (
+          <div style={{ paddingTop: 8 }}>
+            <ReviewsModerationPanel cardStyle={{ background: "#fff" }} />
+          </div>
+        );
       default:
         return null;
     }

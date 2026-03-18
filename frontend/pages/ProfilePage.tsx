@@ -8,6 +8,7 @@ import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
 import { specialistApi } from "../src/api/specialists";
 import ProfileTabs from "../src/ProfileTabs";
+import SpecialistSlotsManager from "../src/components/specialist/SpecialistSlotsManager";
 
 const { Title, Text } = Typography;
 
@@ -274,7 +275,7 @@ export default function ProfilePage() {
         </Card>
 
         {userSpecialists.length > 0 && (
-          <Card>
+          <Card style={{ marginBottom: '24px' }}>
             <Title level={3}>Мои объявления ({userSpecialists.length})</Title>
             <Flex wrap gap="middle" justify="start">
               {userSpecialists.map((spec) => (
@@ -287,6 +288,19 @@ export default function ProfilePage() {
                 />
               ))}
             </Flex>
+          </Card>
+        )}
+
+        {userSpecialists.length > 0 && (
+          <Card>
+            <Title level={3}>Управление расписанием</Title>
+            <Text type="secondary">
+              Добавляйте свободные интервалы для каждого объявления. Родители увидят их на странице специалиста.
+            </Text>
+
+            {userSpecialists.map((spec) => (
+              <SpecialistSlotsManager key={`slots-${spec.id}`} specialist={spec} />
+            ))}
           </Card>
         )}
       </div>

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip } from "antd";
 import type { User } from "../stores/auth.store";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { bookingsApi, type Appointment } from "./api/bookings";
+import { useBookingEventsStore } from "../stores/bookingEvents.store";
 
 const { Text } = Typography;
 
@@ -12,16 +14,95 @@ interface ProfileTabsProps {
 
 const tabs = [
   { key: "children", label: "Мои дети" },
+  { key: "appointments", label: "Мои записи" },
+  { key: "incoming", label: "Записи к моим услугам" },
   { key: "favorites", label: "Избранное" },
 ];
 
+const statusLabel: Record<Appointment['status'], string> = {
+  pending: 'Ожидает подтверждения',
+  confirmed: 'Подтверждена',
+  cancelled_by_parent: 'Отменена родителем',
+  cancelled_by_specialist: 'Отменена специалистом',
+  completed: 'Завершена',
+  no_show: 'Неявка',
+};
+
+const statusColor: Record<Appointment['status'], string> = {
+  pending: '#faad14',
+  confirmed: '#52c41a',
+  cancelled_by_parent: '#ff4d4f',
+  cancelled_by_specialist: '#cf1322',
+  completed: '#1677ff',
+  no_show: '#595959',
+};
+
+const formatDateTime = (iso: string | undefined) => {
+  if (!iso) return '-';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return iso;
+  return date.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const [active, setActive] = useState<string>(tabs[0].key);
+  const { appointmentsVersion } = useBookingEventsStore();
 
   const [childName, setChildName] = useState("");
   const [childBirth, setChildBirth] = useState("");
   const [adding, setAdding] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [incomingAppointments, setIncomingAppointments] = useState<Appointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [updatingAppointmentId, setUpdatingAppointmentId] = useState<number | null>(null);
+
+  const loadMyAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      const data = await bookingsApi.getMyAppointments();
+      setAppointments(data);
+    } catch (err: any) {
+      message.error(err?.message || 'Не удалось загрузить ваши записи');
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
+  const loadIncomingAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      const data = await bookingsApi.getMySpecialistAppointments();
+      setIncomingAppointments(data);
+    } catch (err: any) {
+      message.error(err?.message || 'Не удалось загрузить входящие записи');
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
+  const changeAppointmentStatus = async (appointmentId: number, status: Appointment['status'], isIncoming: boolean) => {
+    try {
+      setUpdatingAppointmentId(appointmentId);
+      await bookingsApi.updateAppointmentStatus(appointmentId, status);
+      message.success('Статус записи обновлен');
+      if (isIncoming) {
+        await loadIncomingAppointments();
+      } else {
+        await loadMyAppointments();
+      }
+    } catch (err: any) {
+      message.error(err?.message || 'Не удалось обновить статус записи');
+    } finally {
+      setUpdatingAppointmentId(null);
+    }
+  };
 
   const handleAddChild = async () => {
     if (!childName.trim()) {
@@ -156,10 +237,125 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     );
   };
 
+  useEffect(() => {
+    if (active === 'appointments') {
+      loadMyAppointments();
+    }
+
+    if (active === 'incoming' && (user.role === 'specialist' || user.role === 'admin')) {
+      loadIncomingAppointments();
+    }
+  }, [appointmentsVersion, active, user.role]);
+
   const renderContent = () => {
     switch (active) {
       case "children":
         return renderChildrenTab();
+      case "appointments":
+        return (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 18 }}>Мои записи к специалистам</Text>
+              <Button onClick={loadMyAppointments} loading={loadingAppointments}>Обновить</Button>
+            </div>
+
+            <Row gutter={[16, 16]}>
+              {appointments.length === 0 && (
+                <Col span={24}><Text>Записей пока нет</Text></Col>
+              )}
+
+              {appointments.map((a) => (
+                <Col key={a.id} xs={24} md={12}>
+                  <Card size="small">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <Text strong>{a.specialist_name || `Специалист #${a.specialist_id}`}</Text>
+                      <Text style={{ color: statusColor[a.status] }}>{statusLabel[a.status]}</Text>
+                    </div>
+                    <div><Text type="secondary">Время:</Text> <Text>{formatDateTime(a.starts_at)} - {formatDateTime(a.ends_at)}</Text></div>
+                    <div><Text type="secondary">Ребенок:</Text> <Text>{a.child_name}</Text></div>
+                    <div><Text type="secondary">Комментарий:</Text> <Text>{a.comment || '-'}</Text></div>
+
+                    {(a.status === 'pending' || a.status === 'confirmed') && (
+                      <div style={{ marginTop: 12 }}>
+                        <Button
+                          danger
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'cancelled_by_parent', false)}
+                        >
+                          Отменить запись
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        );
+      case "incoming":
+        if (user.role !== 'specialist' && user.role !== 'admin') {
+          return <Text>Вкладка доступна только специалисту или администратору</Text>;
+        }
+
+        return (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 18 }}>Входящие записи родителей</Text>
+              <Button onClick={loadIncomingAppointments} loading={loadingAppointments}>Обновить</Button>
+            </div>
+
+            <Row gutter={[16, 16]}>
+              {incomingAppointments.length === 0 && (
+                <Col span={24}><Text>Входящих записей пока нет</Text></Col>
+              )}
+
+              {incomingAppointments.map((a) => (
+                <Col key={a.id} xs={24} md={12}>
+                  <Card size="small">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <Text strong>{a.specialist_name || `Специалист #${a.specialist_id}`}</Text>
+                      <Text style={{ color: statusColor[a.status] }}>{statusLabel[a.status]}</Text>
+                    </div>
+                    <div><Text type="secondary">Время:</Text> <Text>{formatDateTime(a.starts_at)} - {formatDateTime(a.ends_at)}</Text></div>
+                    <div><Text type="secondary">Ребенок:</Text> <Text>{a.child_name}</Text></div>
+                    <div><Text type="secondary">Комментарий:</Text> <Text>{a.comment || '-'}</Text></div>
+
+                    <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {a.status === 'pending' && (
+                        <Button
+                          type="primary"
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'confirmed', true)}
+                        >
+                          Подтвердить
+                        </Button>
+                      )}
+
+                      {(a.status === 'pending' || a.status === 'confirmed') && (
+                        <Button
+                          danger
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'cancelled_by_specialist', true)}
+                        >
+                          Отменить
+                        </Button>
+                      )}
+
+                      {a.status === 'confirmed' && (
+                        <Button
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'completed', true)}
+                        >
+                          Завершить
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        );
       case "favorites":
         return <Text>Избранные специалисты пока не добавлены</Text>;
       default:
@@ -174,7 +370,15 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         {tabs.map((tab) => (
           <div
             key={tab.key}
-            onClick={() => setActive(tab.key)}
+            onClick={() => {
+              setActive(tab.key);
+              if (tab.key === 'appointments') {
+                loadMyAppointments();
+              }
+              if (tab.key === 'incoming') {
+                loadIncomingAppointments();
+              }
+            }}
             style={{
               padding: "8px 16px",
               cursor: "pointer",

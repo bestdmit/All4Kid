@@ -7,9 +7,11 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import { promises as fs } from 'fs';
 import { connectDB } from './database/db';
+import { ensureBookingsSchema } from './database/bookingsSchema';
 import specialistsRoutes from './routes/specialistsRoutes';
 import categoriesRoutes from './routes/categoriesRoutes';
 import authRoutes from './routes/authRoutes';
+import bookingsRoutes from './routes/bookingsRoutes';
 import cors from 'cors';
 import helmet from 'helmet';
 import adminRoutes from "./routes/adminRoutes";
@@ -38,6 +40,7 @@ app.use('/api/specialists', specialistsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api', bookingsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -54,6 +57,7 @@ app.get('/avatars/:filename', (req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
+    await ensureBookingsSchema();
 
      const defaultAvatarPath = path.join(__dirname, '../public/uploads/avatars/default.jpg');
     try {
@@ -69,6 +73,7 @@ const startServer = async () => {
       console.log(`Specialists API: http://localhost:${PORT}/api/specialists`);
       console.log(`CORS enabled for: http://localhost:5173`);
       console.log(`Categories API: http://localhost:${PORT}/api/categories`);
+      console.log(`Bookings API: http://localhost:${PORT}/api/specialists/:id/slots`);
       console.log(`Examples:`);
       console.log(`   • Search specialists: http://localhost:${PORT}/api/specialists?search=педиатр`);
       console.log(`   • Filter by category: http://localhost:${PORT}/api/specialists?category=Врачи`);

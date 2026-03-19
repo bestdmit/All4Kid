@@ -6,6 +6,7 @@ import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { bookingsApi, type Appointment } from "./api/bookings";
 import { specialistApi } from "./api/specialists";
 import { useBookingEventsStore } from "../stores/bookingEvents.store";
+import ReviewsModerationPanel from "./components/admin/ReviewsModerationPanel";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -21,6 +22,7 @@ const allTabs = [
   { key: "incoming", label: "Записи к моим услугам", roles: ['specialist', 'admin'] },
   { key: "admin_incoming", label: "Все записи (Админ)", roles: ['admin'] },
   { key: "favorites", label: "Избранное", roles: ['user', 'specialist', 'admin'] },
+  { key: "review_moderation", label: "Модерация отзывов", roles: ['admin'] },
 ];
 
 const statusLabel: Record<Appointment['status'], string> = {
@@ -549,6 +551,12 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         );
       case "favorites":
         return <Text>Избранные специалисты пока не добавлены</Text>;
+      case "review_moderation":
+        return (
+          <div style={{ paddingTop: 8 }}>
+            <ReviewsModerationPanel cardStyle={{ background: "#fff" }} />
+          </div>
+        );
       default:
         return null;
     }

@@ -117,6 +117,7 @@ export default function SpecialistCard({
             icon={<DeleteOutlined />}
             loading={isLoading}
             style={deleteButtonStyle}
+            onClick={(e) => e.stopPropagation()}
           >
             Удалить
           </Button>

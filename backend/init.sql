@@ -112,7 +112,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 
 -- Добавляем тестовых пользователей
 INSERT INTO users (email, password_hash, full_name, phone, role) VALUES
-('parent@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Анна Иванова', '+79001234567', 'user'),
+('parent@example.com', '$2b$10$I69n4xm1.cDbbDhjpFMFmuMFQ3A9pMEfSPNECIHEWeWR2nrGT8Lb.', 'Анна Иванова', '+79001234567', 'user'),
+('parent2@example.com', '$2b$10$Pln6ZHOpUQ9DNIlJgdBtEeNRceZv.yG.xNvhkuq4Kbg0SIthodGOa', 'Ольга Смирнова', '+79001234568', 'user'),
 ('admin@example.com', '$2b$10$rXbq58SRC7qx6f35M/LJW.6sZWzk20kn3hfVb9xTTVrrg6NF8X3Rq', 'Администратор', '+79007654321', 'admin'),
 ('specialist@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Иван Петров', '+79001112233', 'specialist')
 ON CONFLICT (email) DO NOTHING;

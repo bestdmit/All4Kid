@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 import {Form, Input, InputNumber, Button, Card, message, Space, Typography, Select, Divider} from "antd";
 import {type Category, useCategories} from "../hooks/useCategories.ts";
 import { useAuth } from '../hooks/useAuth';
+import { useAuthStore } from '../stores/auth.store';
 
 export interface CreateSpecialistDto {
   name: string;
@@ -113,6 +114,15 @@ export default function NewAdvertisements() {
     await createSpecialist(dataToSend, accessToken);
 
     message.success('Специалист успешно создан');
+    
+    // Обновляем роль пользователя на specialist если он был user
+    if (user && user.role === 'user') {
+      const setUser = useAuthStore.getState().setUser;
+      const updatedUser = { ...user, role: 'specialist' };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+    
     form.resetFields();
     form.setFieldsValue({
       name: user?.fullName || '',

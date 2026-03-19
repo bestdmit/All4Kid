@@ -6,6 +6,7 @@ import {
   getMyAppointments,
   getMySpecialistAppointments,
   getSpecialistSlots,
+  hideAppointment,
   updateAppointmentStatus,
 } from '../controllers/bookingsController';
 import { authenticateToken } from '../middleware/auth';
@@ -20,5 +21,6 @@ router.post('/specialists/:id/appointments', authenticateToken, createAppointmen
 router.get('/appointments/me', authenticateToken, getMyAppointments);
 router.get('/appointments/specialist/me', authenticateToken, getMySpecialistAppointments);
 router.patch('/appointments/:id/status', authenticateToken, updateAppointmentStatus);
+router.patch('/appointments/:id/hide', authenticateToken, hideAppointment);
 
 export default router;

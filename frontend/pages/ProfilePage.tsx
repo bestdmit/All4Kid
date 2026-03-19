@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import AppHeader from "../src/Header/AppHeader";
 import { useAuth } from "../hooks/useAuth";
 import { Navigate } from 'react-router-dom';
-import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input, Avatar, Upload, Modal } from "antd";
+import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input, Avatar, Upload, Modal, Alert } from "antd";
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
-import { specialistApi } from "../src/api/specialists";
+import { specialistApi, type SpecialistDeletionNotice } from "../src/api/specialists";
 import ProfileTabs from "../src/ProfileTabs";
 import SpecialistSlotsManager from "../src/components/specialist/SpecialistSlotsManager";
 
@@ -19,19 +19,22 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [deletionNotices, setDeletionNotices] = useState<SpecialistDeletionNotice[]>([]);
+  const [acknowledgingNoticeId, setAcknowledgingNoticeId] = useState<number | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (user) {
-      const getSpecialists = async () => {
-        await fetchSpecialists();
-        const list = getSpecialistsById(user.id);
-        setUserSpecialists(list);
-      }
+    if (!user) return;
 
-      getSpecialists();
-    }
-  }, []);
+    const bootstrapProfileData = async () => {
+      await fetchSpecialists();
+      const list = getSpecialistsById(user.id);
+      setUserSpecialists(list);
+      await loadDeletionNotices();
+    };
+
+    bootstrapProfileData();
+  }, [user, fetchSpecialists, getSpecialistsById]);
 
   useEffect(() => {
     if (user) {
@@ -64,7 +67,16 @@ export default function ProfilePage() {
         return;
       }
 
-      await specialistApi.deleteById(id, accessToken);
+      let reason: string | undefined;
+      if (user?.role === 'admin') {
+        reason = window.prompt('Укажите причину удаления объявления (минимум 5 символов):')?.trim();
+        if (!reason || reason.length < 5) {
+          message.error('Удаление отменено: нужна причина от 5 символов');
+          return;
+        }
+      }
+
+      await specialistApi.deleteById(id, accessToken, reason);
       removeSpecialistById(id);
 
       if (user) {
@@ -73,6 +85,10 @@ export default function ProfilePage() {
       }
 
       message.success("Специалист удален");
+
+      if (user?.role === 'admin') {
+        await loadDeletionNotices();
+      }
     } catch (error: any) {
       if (error?.message === 'UNAUTHORIZED') {
         message.error("Сессия истекла. Войдите заново");
@@ -84,6 +100,31 @@ export default function ProfilePage() {
       }
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const loadDeletionNotices = async () => {
+    try {
+      if (!user) return;
+      const notices = await specialistApi.getMyDeletionNotices();
+      setDeletionNotices(notices);
+    } catch (error: any) {
+      if (error?.message !== 'UNAUTHORIZED') {
+        console.error('Не удалось загрузить уведомления об удалении:', error);
+      }
+    }
+  };
+
+  const acknowledgeNotice = async (id: number) => {
+    try {
+      setAcknowledgingNoticeId(id);
+      await specialistApi.acknowledgeDeletionNotice(id);
+      setDeletionNotices((prev) => prev.filter((item) => item.id !== id));
+      message.success('Уведомление отмечено как ознакомлен');
+    } catch (error: any) {
+      message.error(error?.message || 'Не удалось подтвердить уведомление');
+    } finally {
+      setAcknowledgingNoticeId(null);
     }
   };
 
@@ -140,6 +181,35 @@ export default function ProfilePage() {
     <>
       <AppHeader />
       <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        {deletionNotices.length > 0 && (
+          <Card style={{ marginBottom: '24px' }}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Title level={4} style={{ margin: 0 }}>Уведомления администратора</Title>
+              {deletionNotices.map((notice) => (
+                <Alert
+                  key={notice.id}
+                  type="warning"
+                  showIcon
+                  message={`Объявление «${notice.name}» удалено администратором`}
+                  description={
+                    <div>
+                      <div>Причина: {notice.deletion_reason}</div>
+                      <Button
+                        size="small"
+                        style={{ marginTop: 8 }}
+                        loading={acknowledgingNoticeId === notice.id}
+                        onClick={() => acknowledgeNotice(notice.id)}
+                      >
+                        Ознакомлен
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            </Space>
+          </Card>
+        )}
+
         <Card style={{ marginBottom: '24px' }}>
           <Title level={2}>Профиль пользователя</Title>
           
@@ -192,10 +262,12 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div>
-              <Text strong>ID: </Text>
-              <Text>{user.id}</Text>
-            </div>
+            {user.role === 'admin' && (
+              <div>
+                <Text strong>ID: </Text>
+                <Text>{user.id}</Text>
+              </div>
+            )}
             
             <div>
               <Text strong>Email: </Text>

@@ -15,6 +15,14 @@ export interface Specialist {
   description: string;
 }
 
+export interface SpecialistDeletionNotice {
+  id: number;
+  name: string;
+  specialty: string;
+  deletion_reason: string;
+  deleted_at?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -37,8 +45,10 @@ export const specialistApi = {
   },
 
   fetchByID: async (id: number): Promise<Specialist> => {
-    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`);
-    if (!response.ok) {
+    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`);    if (response.status === 410) {
+      const result: any = await response.json();
+      throw new Error(result.message || 'Это объявление было удалено администратором');
+    }    if (!response.ok) {
       throw new Error(`Ошибка HTTP при получении специалистов: ${response.status}`);
     }
     const result: ApiResponse<Specialist> = await response.json();
@@ -76,12 +86,33 @@ export const specialistApi = {
     return all.filter(s => s.created_by === authId);
   },
 
-  deleteById: async (id: number, accessToken: string): Promise<void> => {
+  getMySpecialists: async (): Promise<Specialist[]> => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) throw new Error('UNAUTHORIZED');
+
+    const response = await fetch(`${API_BASE_URL}/api/specialists/my/list`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка загрузки ваших объявлений: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    return result.data || [];
+  },
+
+  deleteById: async (id: number, accessToken: string, reason?: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`, {
       method: 'DELETE',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      body: JSON.stringify({ reason }),
     });
 
     if (response.status === 401) {
@@ -103,7 +134,62 @@ export const specialistApi = {
     if (result.success === false) {
       throw new Error(result.message || 'Не удалось удалить специалиста');
     }
-  }
+  },
+
+  getMyDeletionNotices: async (): Promise<SpecialistDeletionNotice[]> => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/specialists/my/deletion-notices`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP при получении уведомлений: ${response.status}`);
+    }
+
+    const result: ApiResponse<SpecialistDeletionNotice[]> = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || 'Не удалось получить уведомления');
+    }
+
+    return result.data || [];
+  },
+
+  acknowledgeDeletionNotice: async (id: number): Promise<void> => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/specialists/my/deletion-notices/${id}/ack`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP при подтверждении уведомления: ${response.status}`);
+    }
+
+    const result: ApiResponse<null> = await response.json().catch(() => ({ success: true }));
+    if (result.success === false) {
+      throw new Error(result.message || 'Не удалось подтвердить уведомление');
+    }
+  },
 };
 
 export const specialistUtils = {

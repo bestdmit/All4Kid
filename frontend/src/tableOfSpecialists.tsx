@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, Flex, Button, message, Layout } from "antd";
 import { useSpecialistStore } from "../stores/specialistStore";
 import SpecialistCard from "./SpecialistCard";
-import type { Specialist } from "./api/specialists";
+import { specialistApi, type Specialist } from "./api/specialists";
 import SearchBar from "./SearchBar";
 import CategoryFilter from "./CategoryFilter";
 import {useNavigate} from "react-router-dom";
+import { useAuthStore } from "../stores/auth.store";
 
 const { Content, Sider } = Layout;
 
@@ -22,6 +23,7 @@ function TableSpecialists() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   
   // Загружаем специалистов при монтировании компонента
   useEffect(() => {
@@ -58,6 +60,30 @@ function TableSpecialists() {
 
   const handleSpecialistSelect = (id: number) => {
     navigate(`/specialists/${id}`)
+  };
+
+  const handleAdminDelete = async (id: number) => {
+    if (user?.role !== 'admin') return;
+
+    const reason = window.prompt('Укажите причину удаления объявления (минимум 5 символов):')?.trim();
+    if (!reason || reason.length < 5) {
+      message.error('Удаление отменено: нужна причина от 5 символов');
+      return;
+    }
+
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      message.error('Сессия истекла. Войдите заново');
+      return;
+    }
+
+    try {
+      await specialistApi.deleteById(id, accessToken, reason);
+      message.success('Объявление удалено администратором');
+      await fetchSpecialists();
+    } catch (error: any) {
+      message.error(error?.message || 'Не удалось удалить объявление');
+    }
   };
 
   const hasActiveFilters = searchTerm || selectedCategory;
@@ -197,7 +223,13 @@ function TableSpecialists() {
           ) : (
             <Flex wrap gap="middle" justify="start">
               {displayData.map((item: Specialist) => (
-                <SpecialistCard key={item.id} specialist={item} onClick={handleSpecialistSelect}/>
+                <SpecialistCard
+                  key={item.id}
+                  specialist={item}
+                  onClick={handleSpecialistSelect}
+                  forDelete={user?.role === 'admin'}
+                  onDelete={handleAdminDelete}
+                />
               ))}
             </Flex>
           )}

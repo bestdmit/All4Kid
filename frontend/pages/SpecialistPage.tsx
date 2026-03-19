@@ -18,10 +18,28 @@ const SpecialistPage = () => {
         return <div style={{ color: 'black', textAlign: 'center', padding: '40px' }}>Загрузка...</div>;
     }
 
-    if (error || !specialist) {
+    if (error) {
         return (
             <div style={{ color: 'red', textAlign: 'center', padding: '40px' }}>
-                Ошибка: {error}
+                {error.includes('удалено администратором') ? (
+                    <div>
+                        <p>{error}</p>
+                        <a href="/" style={{ color: '#1890ff' }}>← На главную</a>
+                    </div>
+                ) : (
+                    <div>
+                        <p>Ошибка: {error}</p>
+                        <a href="/" style={{ color: '#1890ff' }}>← На главную</a>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    if (!specialist) {
+        return (
+            <div style={{ color: 'red', textAlign: 'center', padding: '40px' }}>
+                Специалист не найден
             </div>
         );
     }

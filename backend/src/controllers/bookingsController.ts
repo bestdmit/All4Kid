@@ -54,14 +54,19 @@ function toISODate(value: Date): string {
 
 async function getSpecialistOrThrow(specialistId: number, client?: PoolClient) {
   const db = client ?? { query };
-  const result = await db.query('SELECT id, user_id, price_per_hour FROM specialists WHERE id = $1', [specialistId]);
+  const result = await db.query('SELECT id, user_id, created_by, price_per_hour FROM specialists WHERE id = $1', [specialistId]);
   if (!result.rows.length) {
     throw new HttpError(404, 'Специалист не найден');
   }
-  return result.rows[0] as { id: number; user_id: number | null; price_per_hour: string | number };
+  return result.rows[0] as {
+    id: number;
+    user_id: number | null;
+    created_by: number | null;
+    price_per_hour: string | number;
+  };
 }
 
-function assertCanManageSpecialist(req: AuthRequest, specialistUserId: number | null) {
+function assertCanManageSpecialist(req: AuthRequest, specialistUserId: number | null, specialistCreatedBy: number | null) {
   if (!req.user) {
     throw new HttpError(401, 'Требуется авторизация');
   }
@@ -70,7 +75,10 @@ function assertCanManageSpecialist(req: AuthRequest, specialistUserId: number | 
     return;
   }
 
-  if (!specialistUserId || specialistUserId !== req.user.id) {
+  const isOwnerByUser = !!specialistUserId && specialistUserId === req.user.id;
+  const isOwnerByCreator = !!specialistCreatedBy && specialistCreatedBy === req.user.id;
+
+  if (!isOwnerByUser && !isOwnerByCreator) {
     throw new HttpError(403, 'Недостаточно прав для управления расписанием');
   }
 }
@@ -142,7 +150,7 @@ export const createSpecialistSlot = async (req: AuthRequest, res: Response) => {
     }
 
     const specialist = await getSpecialistOrThrow(specialistId);
-    assertCanManageSpecialist(req, specialist.user_id);
+    assertCanManageSpecialist(req, specialist.user_id, specialist.created_by);
 
     const overlapCheck = await query(
       `SELECT id
@@ -189,7 +197,7 @@ export const deleteSpecialistSlot = async (req: AuthRequest, res: Response) => {
     }
 
     const specialist = await getSpecialistOrThrow(specialistId);
-    assertCanManageSpecialist(req, specialist.user_id);
+    assertCanManageSpecialist(req, specialist.user_id, specialist.created_by);
 
     const deleted = await query(
       `DELETE FROM specialist_slots
@@ -323,6 +331,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     }
 
     if (error?.code === '23505') {
+      console.warn('Booking conflict:', error.detail, error.constraint);
       return res.status(409).json({ success: false, message: 'Слот уже забронирован' });
     }
 
@@ -350,6 +359,7 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
        JOIN specialists s ON s.id = a.specialist_id
        JOIN specialist_slots ss ON ss.id = a.slot_id
        WHERE a.parent_user_id = $1
+         AND a.hidden_for_parent = FALSE
        ORDER BY ss.starts_at DESC`,
       [req.user.id]
     );
@@ -371,6 +381,8 @@ export const getMySpecialistAppointments = async (req: AuthRequest, res: Respons
       return res.status(401).json({ success: false, message: 'Требуется авторизация' });
     }
 
+    const includeAllForAdmin = req.user.role === 'admin' && req.query.adminMode === 'true';
+
     let sql = `
       SELECT
         a.*,
@@ -380,17 +392,21 @@ export const getMySpecialistAppointments = async (req: AuthRequest, res: Respons
         ss.ends_at,
         ss.price,
         u.full_name AS parent_name,
-        u.phone AS parent_phone
+        u.phone AS parent_phone,
+        su.phone AS specialist_phone
       FROM appointments a
       JOIN specialists s ON s.id = a.specialist_id
       JOIN specialist_slots ss ON ss.id = a.slot_id
       JOIN users u ON u.id = a.parent_user_id
+      LEFT JOIN users su ON su.id = s.user_id
     `;
     const params: any[] = [];
 
-    if (req.user.role !== 'admin') {
+    if (!includeAllForAdmin) {
       params.push(req.user.id);
-      sql += ` WHERE s.user_id = $${params.length}`;
+      sql += ` WHERE (s.user_id = $${params.length} OR s.created_by = $${params.length}) AND a.hidden_for_specialist = FALSE`;
+    } else {
+      sql += ' WHERE a.hidden_for_specialist = FALSE';
     }
 
     sql += ' ORDER BY ss.starts_at DESC';
@@ -431,6 +447,7 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
         `SELECT
            a.*,
            s.user_id AS specialist_owner_id,
+           s.created_by AS specialist_created_by,
            ss.starts_at
          FROM appointments a
          JOIN specialists s ON s.id = a.specialist_id
@@ -448,6 +465,7 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
         id: number;
         parent_user_id: number;
         specialist_owner_id: number | null;
+        specialist_created_by: number | null;
         status: AppointmentStatus;
         slot_id: number;
         starts_at: string;
@@ -455,13 +473,15 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
 
       const isAdmin = req.user!.role === 'admin';
       const isParent = current.parent_user_id === req.user!.id;
-      const isSpecialistOwner = !!current.specialist_owner_id && current.specialist_owner_id === req.user!.id;
+      const isSpecialistOwner =
+        (!!current.specialist_owner_id && current.specialist_owner_id === req.user!.id) ||
+        (!!current.specialist_created_by && current.specialist_created_by === req.user!.id);
 
       if (!isAdmin && !isParent && !isSpecialistOwner) {
         throw new HttpError(403, 'Недостаточно прав для изменения записи');
       }
 
-      if (isParent && !PARENT_CANCEL_STATUSES.includes(status)) {
+      if (isParent && !isAdmin && !PARENT_CANCEL_STATUSES.includes(status)) {
         throw new HttpError(403, 'Родитель может только отменить запись со своей стороны');
       }
 
@@ -480,6 +500,12 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
         }
       }
 
+      // Сохраняем, кем инициирована отмена, чтобы корректно отображать это в UI.
+      let effectiveCancelReason: string | null = cancelReason || null;
+      if (status === 'cancelled_by_specialist' && isAdmin && !effectiveCancelReason) {
+        effectiveCancelReason = 'cancelled_by_admin';
+      }
+
       const result = await client.query(
         `UPDATE appointments
          SET status = $1,
@@ -487,7 +513,7 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
              updated_at = NOW()
          WHERE id = $3
          RETURNING *`,
-        [status, cancelReason || null, appointmentId]
+        [status, effectiveCancelReason, appointmentId]
       );
 
       if (status.startsWith('cancelled')) {
@@ -529,6 +555,97 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
     }
 
     console.error('Ошибка updateAppointmentStatus:', error);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+export const hideAppointment = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Требуется авторизация' });
+    }
+
+    const appointmentId = sanitizeNumber(req.params.id, 0);
+    if (!appointmentId) {
+      return res.status(400).json({ success: false, message: 'Некорректный id записи' });
+    }
+
+    const updated = await withTransaction(async (client) => {
+      const currentRes = await client.query(
+        `SELECT
+           a.id,
+           a.parent_user_id,
+           a.status,
+           s.user_id AS specialist_owner_id,
+           s.created_by AS specialist_created_by
+         FROM appointments a
+         JOIN specialists s ON s.id = a.specialist_id
+         WHERE a.id = $1
+         FOR UPDATE`,
+        [appointmentId]
+      );
+
+      if (!currentRes.rows.length) {
+        throw new HttpError(404, 'Запись не найдена');
+      }
+
+      const current = currentRes.rows[0] as {
+        id: number;
+        parent_user_id: number;
+        status: AppointmentStatus;
+        specialist_owner_id: number | null;
+        specialist_created_by: number | null;
+      };
+
+      const terminalStatuses: AppointmentStatus[] = ['completed', 'cancelled_by_parent', 'cancelled_by_specialist', 'no_show'];
+      if (!terminalStatuses.includes(current.status)) {
+        throw new HttpError(409, 'Скрыть можно только завершенную или отмененную запись');
+      }
+
+      const isAdmin = req.user!.role === 'admin';
+      const isParent = current.parent_user_id === req.user!.id;
+      const isSpecialistOwner =
+        (!!current.specialist_owner_id && current.specialist_owner_id === req.user!.id) ||
+        (!!current.specialist_created_by && current.specialist_created_by === req.user!.id);
+
+      if (!isAdmin && !isParent && !isSpecialistOwner) {
+        throw new HttpError(403, 'Недостаточно прав для скрытия записи');
+      }
+
+      let setClause = '';
+      if (isParent && !isSpecialistOwner && !isAdmin) {
+        setClause = 'hidden_for_parent = TRUE';
+      } else if (isSpecialistOwner && !isParent && !isAdmin) {
+        setClause = 'hidden_for_specialist = TRUE';
+      } else if (isParent && isSpecialistOwner) {
+        setClause = 'hidden_for_parent = TRUE, hidden_for_specialist = TRUE';
+      } else if (isAdmin) {
+        setClause = 'hidden_for_specialist = TRUE';
+      }
+
+      const result = await client.query(
+        `UPDATE appointments
+         SET ${setClause},
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [appointmentId]
+      );
+
+      return result.rows[0];
+    });
+
+    return res.json({
+      success: true,
+      data: updated,
+      message: 'Запись скрыта',
+    });
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+
+    console.error('Ошибка hideAppointment:', error);
     return res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 };

@@ -8,7 +8,9 @@ import {
   deleteSpecialist,
   updateAvatar,
   deleteAvatar,
-  getMySpecialists 
+  getMySpecialists,
+  getMyDeletionNotices,
+  acknowledgeDeletionNotice,
 } from '../controllers/specialistsController';
 import {
   approveReview,
@@ -24,6 +26,8 @@ const router = Router();
 router.get('/', getAllSpecialists);
 // Защищенные роуты (должны быть выше /:id)
 router.get('/my/list', authenticateToken, getMySpecialists);
+router.get('/my/deletion-notices', authenticateToken, getMyDeletionNotices);
+router.patch('/my/deletion-notices/:id/ack', authenticateToken, acknowledgeDeletionNotice);
 router.get('/:id/reviews', getReviewsBySpecialistId);
 router.get('/:id', getSpecialistById);
 

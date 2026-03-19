@@ -25,8 +25,15 @@ export const useSpecialist = (id: number) => {
 
                 setSpecialist(result);
                 setLoading(false);
-            } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : "Произошла ошибка при загрузке";
+            } catch (err: any) {
+                let errorMessage = "Произошла ошибка при загрузке";
+                if (err instanceof Error) {
+                    errorMessage = err.message;
+                }
+                // If specialist was deleted by admin, show appropriate message
+                if (errorMessage.includes('410')) {
+                    errorMessage = 'Это объявление было удалено администратором';
+                }
 
                 setError(errorMessage);
                 setLoading(false);

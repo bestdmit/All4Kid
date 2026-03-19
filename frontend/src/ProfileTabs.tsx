@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
-import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip } from "antd";
+import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip, Empty, Select } from "antd";
+import { Link } from "react-router-dom";
 import type { User } from "../stores/auth.store";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { bookingsApi, type Appointment } from "./api/bookings";
+import { specialistApi } from "./api/specialists";
 import { useBookingEventsStore } from "../stores/bookingEvents.store";
 
 const { Text } = Typography;
+const { Option } = Select;
 
 interface ProfileTabsProps {
   user: User;
   updateProfile: (data: any) => Promise<boolean>;
 }
 
-const tabs = [
-  { key: "children", label: "Мои дети" },
-  { key: "appointments", label: "Мои записи" },
-  { key: "incoming", label: "Записи к моим услугам" },
-  { key: "favorites", label: "Избранное" },
+const allTabs = [
+  { key: "children", label: "Мои дети", roles: ['user', 'specialist', 'admin'] },
+  { key: "appointments", label: "Мои записи", roles: ['user', 'specialist', 'admin'] },
+  { key: "incoming", label: "Записи к моим услугам", roles: ['specialist', 'admin'] },
+  { key: "admin_incoming", label: "Все записи (Админ)", roles: ['admin'] },
+  { key: "favorites", label: "Избранное", roles: ['user', 'specialist', 'admin'] },
 ];
 
 const statusLabel: Record<Appointment['status'], string> = {
@@ -26,6 +30,14 @@ const statusLabel: Record<Appointment['status'], string> = {
   cancelled_by_specialist: 'Отменена специалистом',
   completed: 'Завершена',
   no_show: 'Неявка',
+};
+
+const getStatusLabel = (appointment: Appointment) => {
+  if (appointment.status === 'cancelled_by_specialist' && appointment.cancel_reason === 'cancelled_by_admin') {
+    return 'Отменена администратором';
+  }
+
+  return statusLabel[appointment.status];
 };
 
 const statusColor: Record<Appointment['status'], string> = {
@@ -50,8 +62,12 @@ const formatDateTime = (iso: string | undefined) => {
   });
 };
 
+const isTerminalStatus = (status: Appointment['status']) => {
+  return status === 'completed' || status === 'cancelled_by_parent' || status === 'cancelled_by_specialist' || status === 'no_show';
+};
+
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
-  const [active, setActive] = useState<string>(tabs[0].key);
+  const [active, setActive] = useState<string>("children");
   const { appointmentsVersion } = useBookingEventsStore();
 
   const [childName, setChildName] = useState("");
@@ -60,8 +76,24 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [incomingAppointments, setIncomingAppointments] = useState<Appointment[]>([]);
+  const [adminAppointments, setAdminAppointments] = useState<Appointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [updatingAppointmentId, setUpdatingAppointmentId] = useState<number | null>(null);
+  const [hidingAppointmentId, setHidingAppointmentId] = useState<number | null>(null);
+
+  const [mySpecialists, setMySpecialists] = useState<any[]>([]);
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState<number | null>(null);
+
+  const availableTabs = allTabs.filter(tab => tab.roles.includes(user.role));
+
+  const loadMySpecialists = async () => {
+    try {
+      const data = await specialistApi.getMySpecialists();
+      setMySpecialists(data);
+    } catch (err) {
+      console.error('Не удалось загрузить специалистов пользователя', err);
+    }
+  };
 
   const loadMyAppointments = async () => {
     try {
@@ -75,11 +107,15 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     }
   };
 
-  const loadIncomingAppointments = async () => {
+  const loadIncomingAppointments = async (asAdmin = false) => {
     try {
       setLoadingAppointments(true);
-      const data = await bookingsApi.getMySpecialistAppointments();
-      setIncomingAppointments(data);
+      const data = await bookingsApi.getMySpecialistAppointments(asAdmin);
+      if (asAdmin) {
+        setAdminAppointments(data);
+      } else {
+        setIncomingAppointments(data);
+      }
     } catch (err: any) {
       message.error(err?.message || 'Не удалось загрузить входящие записи');
     } finally {
@@ -87,13 +123,17 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     }
   };
 
-  const changeAppointmentStatus = async (appointmentId: number, status: Appointment['status'], isIncoming: boolean) => {
+  const changeAppointmentStatus = async (appointmentId: number, status: Appointment['status'], isIncoming: boolean, isAdminView = false) => {
     try {
       setUpdatingAppointmentId(appointmentId);
       await bookingsApi.updateAppointmentStatus(appointmentId, status);
       message.success('Статус записи обновлен');
       if (isIncoming) {
-        await loadIncomingAppointments();
+        if (isAdminView) {
+          await loadIncomingAppointments(true);
+        } else {
+          await loadIncomingAppointments(false);
+        }
       } else {
         await loadMyAppointments();
       }
@@ -101,6 +141,28 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       message.error(err?.message || 'Не удалось обновить статус записи');
     } finally {
       setUpdatingAppointmentId(null);
+    }
+  };
+
+  const hideAppointment = async (appointmentId: number, isIncoming: boolean, isAdminView = false) => {
+    try {
+      setHidingAppointmentId(appointmentId);
+      await bookingsApi.hideAppointment(appointmentId);
+      message.success('Запись скрыта');
+      
+      if (isIncoming) {
+        if (isAdminView) {
+          setAdminAppointments((prev) => prev.filter(a => a.id !== appointmentId));
+        } else {
+          setIncomingAppointments((prev) => prev.filter(a => a.id !== appointmentId));
+        }
+      } else {
+        setAppointments((prev) => prev.filter(a => a.id !== appointmentId));
+      }
+    } catch (err: any) {
+      message.error(err?.message || 'Не удалось скрыть запись');
+    } finally {
+      setHidingAppointmentId(null);
     }
   };
 
@@ -243,7 +305,12 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     }
 
     if (active === 'incoming' && (user.role === 'specialist' || user.role === 'admin')) {
-      loadIncomingAppointments();
+      loadIncomingAppointments(false);
+      loadMySpecialists();
+    }
+
+    if (active === 'admin_incoming' && user.role === 'admin') {
+      loadIncomingAppointments(true);
     }
   }, [appointmentsVersion, active, user.role]);
 
@@ -259,17 +326,19 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
               <Button onClick={loadMyAppointments} loading={loadingAppointments}>Обновить</Button>
             </div>
 
-            <Row gutter={[16, 16]}>
-              {appointments.length === 0 && (
-                <Col span={24}><Text>Записей пока нет</Text></Col>
-              )}
+            {appointments.length === 0 && (
+              <Empty description="Записей пока нет" style={{ marginTop: 48 }} />
+            )}
 
+            <Row gutter={[16, 16]}>
               {appointments.map((a) => (
                 <Col key={a.id} xs={24} md={12}>
                   <Card size="small">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <Text strong>{a.specialist_name || `Специалист #${a.specialist_id}`}</Text>
-                      <Text style={{ color: statusColor[a.status] }}>{statusLabel[a.status]}</Text>
+                      <Link to={`/specialists/${a.specialist_id}`} target="_blank" style={{ fontWeight: 'bold' }}>
+                        {a.specialist_name || `Специалист #${a.specialist_id}`}
+                      </Link>
+                      <Text style={{ color: statusColor[a.status] }}>{getStatusLabel(a)}</Text>
                     </div>
                     <div><Text type="secondary">Время:</Text> <Text>{formatDateTime(a.starts_at)} - {formatDateTime(a.ends_at)}</Text></div>
                     <div><Text type="secondary">Ребенок:</Text> <Text>{a.child_name}</Text></div>
@@ -286,6 +355,17 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
                         </Button>
                       </div>
                     )}
+
+                    {isTerminalStatus(a.status) && (
+                      <div style={{ marginTop: 12 }}>
+                        <Button
+                          loading={hidingAppointmentId === a.id}
+                          onClick={() => hideAppointment(a.id, false, false)}
+                        >
+                          Убрать
+                        </Button>
+                      </div>
+                    )}
                   </Card>
                 </Col>
               ))}
@@ -294,28 +374,49 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         );
       case "incoming":
         if (user.role !== 'specialist' && user.role !== 'admin') {
-          return <Text>Вкладка доступна только специалисту или администратору</Text>;
+          return <Text>Вкладка доступна только специалисту</Text>;
         }
+
+        const filteredIncoming = selectedSpecialistId 
+          ? incomingAppointments.filter(a => a.specialist_id === selectedSpecialistId)
+          : incomingAppointments;
 
         return (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <Text strong style={{ fontSize: 18 }}>Входящие записи родителей</Text>
-              <Button onClick={loadIncomingAppointments} loading={loadingAppointments}>Обновить</Button>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <Select
+                  style={{ width: 250 }}
+                  placeholder="Фильтр по специалисту"
+                  allowClear
+                  value={selectedSpecialistId}
+                  onChange={(val) => setSelectedSpecialistId(val)}
+                >
+                  {mySpecialists.map((s: any) => (
+                    <Option key={s.id} value={s.id}>{s.name} ({s.specialty})</Option>
+                  ))}
+                </Select>
+                <Button onClick={() => loadIncomingAppointments(false)} loading={loadingAppointments}>Обновить</Button>
+              </div>
             </div>
 
-            <Row gutter={[16, 16]}>
-              {incomingAppointments.length === 0 && (
-                <Col span={24}><Text>Входящих записей пока нет</Text></Col>
-              )}
+            {filteredIncoming.length === 0 && (
+              <Empty description="Входящих записей пока нет" style={{ marginTop: 48 }} />
+            )}
 
-              {incomingAppointments.map((a) => (
+
+            <Row gutter={[16, 16]}>
+              {filteredIncoming.map((a) => (
                 <Col key={a.id} xs={24} md={12}>
                   <Card size="small">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <Text strong>{a.specialist_name || `Специалист #${a.specialist_id}`}</Text>
-                      <Text style={{ color: statusColor[a.status] }}>{statusLabel[a.status]}</Text>
+                      <Text strong>{a.parent_name || `Пользователь #${a.parent_user_id}`}</Text>
+                      <Text style={{ color: statusColor[a.status] }}>{getStatusLabel(a)}</Text>
                     </div>
+                    {a.parent_phone ? (
+                      <div><Text type="secondary">Телефон родителя:</Text> <Text>{a.parent_phone}</Text></div>
+                    ) : null}
                     <div><Text type="secondary">Время:</Text> <Text>{formatDateTime(a.starts_at)} - {formatDateTime(a.ends_at)}</Text></div>
                     <div><Text type="secondary">Ребенок:</Text> <Text>{a.child_name}</Text></div>
                     <div><Text type="secondary">Комментарий:</Text> <Text>{a.comment || '-'}</Text></div>
@@ -349,6 +450,96 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
                           Завершить
                         </Button>
                       )}
+
+                      {isTerminalStatus(a.status) && (
+                        <Button
+                          loading={hidingAppointmentId === a.id}
+                          onClick={() => hideAppointment(a.id, true, false)}
+                        >
+                          Убрать
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        );
+      case "admin_incoming":
+        if (user.role !== 'admin') {
+          return null;
+        }
+
+        return (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 18 }}>Все записи (Администрирование)</Text>
+              <Button onClick={() => loadIncomingAppointments(true)} loading={loadingAppointments}>Обновить</Button>
+            </div>
+
+            {adminAppointments.length === 0 && (
+              <Empty description="Записей пока нет" style={{ marginTop: 48 }} />
+            )}
+
+            <Row gutter={[16, 16]}>
+              {adminAppointments.map((a) => (
+                <Col key={a.id} xs={24} md={12}>
+                  <Card size="small">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <Text strong>{a.parent_name || `Пользователь #${a.parent_user_id}`}</Text>
+                      <Text style={{ color: statusColor[a.status] }}>{getStatusLabel(a)}</Text>
+                    </div>
+                    <div><Text type="secondary">К кому:</Text> <Link to={`/specialists/${a.specialist_id}`} target="_blank">{a.specialist_name || `Специалист #${a.specialist_id}`}</Link></div>
+                    <div><Text type="secondary">Кто записался:</Text> <Text>{a.parent_name || `Пользователь #${a.parent_user_id}`}</Text></div>
+                    {a.parent_phone ? (
+                      <div><Text type="secondary">Телефон родителя или заказчика:</Text> <Text>{a.parent_phone}</Text></div>
+                    ) : null}
+                     {a.specialist_id && (
+                      <div><Text type="secondary">Телефон специалиста:</Text> <Text>{a.specialist_phone || '-'}</Text></div>
+                    )}
+                    <div><Text type="secondary">Время:</Text> <Text>{formatDateTime(a.starts_at)} - {formatDateTime(a.ends_at)}</Text></div>
+                    <div><Text type="secondary">Ребенок:</Text> <Text>{a.child_name}</Text></div>
+                    <div><Text type="secondary">Комментарий:</Text> <Text>{a.comment || '-'}</Text></div>
+
+                    <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {a.status === 'pending' && (
+                        <Button
+                          type="primary"
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'confirmed', true, true)}
+                        >
+                          Подтвердить
+                        </Button>
+                      )}
+
+                      {(a.status === 'pending' || a.status === 'confirmed') && (
+                        <Button
+                          danger
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'cancelled_by_specialist', true, true)}
+                        >
+                          Отменить
+                        </Button>
+                      )}
+
+                      {a.status === 'confirmed' && (
+                        <Button
+                          loading={updatingAppointmentId === a.id}
+                          onClick={() => changeAppointmentStatus(a.id, 'completed', true, true)}
+                        >
+                          Завершить
+                        </Button>
+                      )}
+
+                      {isTerminalStatus(a.status) && (
+                        <Button
+                          loading={hidingAppointmentId === a.id}
+                          onClick={() => hideAppointment(a.id, true, true)}
+                        >
+                          Убрать
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 </Col>
@@ -367,7 +558,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     <div>
       {/* tab headers */}
       <div style={{ display: "flex", borderBottom: "1px solid #e8e8e8", marginBottom: 16 }}>
-        {tabs.map((tab) => (
+        {availableTabs.map((tab) => (
           <div
             key={tab.key}
             onClick={() => {
@@ -376,7 +567,11 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
                 loadMyAppointments();
               }
               if (tab.key === 'incoming') {
-                loadIncomingAppointments();
+                loadIncomingAppointments(false);
+                loadMySpecialists();
+              }
+              if (tab.key === 'admin_incoming') {
+                loadIncomingAppointments(true);
               }
             }}
             style={{

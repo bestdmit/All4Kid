@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { query } from "../database/db";
+import { query, withTransaction } from "../database/db";
 import { AuthRequest } from "../middleware/auth";
 import path from "path";
 import fs from "fs/promises";
@@ -156,7 +156,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
        INNER JOIN categories cat ON (spec.category = cat.name)
        LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)`;
     const params: any[] = [];
-    const cond: string[] = [];
+    const cond: string[] = ['spec.is_deleted_by_admin = FALSE'];
 
     if (search) {
       params.push(`%${search.toLowerCase()}%`);
@@ -212,6 +212,7 @@ export const getSpecialistById = async (req: Request, res: Response) => {
          spec.user_id,
          spec.created_by,
          spec.is_approved,
+         spec.is_deleted_by_admin,
          COUNT(r.id)::int AS reviews_total
        FROM specialists spec
        LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)
@@ -226,9 +227,18 @@ export const getSpecialistById = async (req: Request, res: Response) => {
       });
     }
 
+    const specialist = result.rows[0];
+    if (specialist.is_deleted_by_admin) {
+      return res.status(410).json({
+        success: false,
+        message: "Это объявление было удалено администратором",
+        deletionReason: specialist.deletion_reason,
+      });
+    }
+
     res.json({
       success: true,
-      data: result.rows[0],
+      data: specialist,
     });
   } catch (err) {
     console.error("Ошибка getSpecialistById:", err);
@@ -511,13 +521,86 @@ export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    if (isAdmin) {
+      const reason = sanitizeString(req.body?.reason);
+      if (!reason || reason.length < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Укажите причину удаления (минимум 5 символов)',
+        });
+      }
+
+      await withTransaction(async (client) => {
+        // Освобождаем слоты для отменяемых записей
+        await client.query(
+          `UPDATE specialist_slots
+           SET is_booked = FALSE
+           WHERE id IN (
+             SELECT slot_id FROM appointments
+             WHERE specialist_id = $1 
+               AND status IN ('pending', 'confirmed')
+               AND slot_id IS NOT NULL
+           )`,
+          [id]
+        );
+
+        // Отменяем активные записи
+        await client.query(
+          `UPDATE appointments
+           SET status = 'cancelled_by_specialist',
+               cancel_reason = $1,
+               updated_at = NOW()
+           WHERE specialist_id = $2
+             AND status IN ('pending', 'confirmed')`,
+          [`Администратор удалил профиль: ${reason}`, id]
+        );
+
+        // Помечаем специалиста как удаленного
+        await client.query(
+          `UPDATE specialists
+           SET is_deleted_by_admin = TRUE,
+               deletion_reason = $1,
+               deletion_reason_acknowledged = FALSE,
+               deleted_at = NOW()
+           WHERE id = $2`,
+          [reason, id]
+        );
+      });
+
+      return res.json({
+        success: true,
+        message: 'Объявление скрыто администратором',
+      });
+    }
+
     await safeDeleteFile(specialist.avatar_url);
 
-    await query("DELETE FROM specialists WHERE id = $1", [id]);
+    // Use transaction to ensure all cascade operations complete atomically
+    await withTransaction(async (client) => {
+      // Cancel all active appointments for this specialist FIRST
+      // This must happen before deletion to properly record cancellation reason
+      const cancelResult = await client.query(
+        `UPDATE appointments
+         SET status = 'cancelled_by_specialist',
+             cancel_reason = 'Specialist deleted',
+             updated_at = NOW()
+         WHERE specialist_id = $1 
+         AND status IN ('pending', 'confirmed')`,
+        [id]
+      );
+      console.log(`Cancelled ${cancelResult.rowCount} appointments for specialist ${id}`);
+
+      // Delete specialist - ON DELETE CASCADE will handle:
+      // - specialist_slots deletion
+      // - appointments deletion (if not already cancelled)
+      // This is the safest approach that respects foreign key constraints
+      await client.query("DELETE FROM specialists WHERE id = $1", [id]);
+      console.log(`Deleted specialist ${id} and cascaded deletions`);
+    });
 
     res.json({
       success: true,
-      message: "Специалист удалён",
+      message: "Specialist deleted",
     });
   } catch (err) {
     console.error("Ошибка deleteSpecialist:", err);
@@ -539,7 +622,7 @@ export const getMySpecialists = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      "SELECT * FROM specialists WHERE user_id = $1 ORDER BY id DESC",
+      "SELECT * FROM specialists WHERE user_id = $1 AND is_deleted_by_admin = FALSE ORDER BY id DESC",
       [req.user.id]
     );
 
@@ -551,5 +634,64 @@ export const getMySpecialists = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error("Ошибка getMySpecialists:", err);
     res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+};
+
+export const getMyDeletionNotices = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Не авторизован' });
+    }
+
+    const result = await query(
+      `SELECT id, name, specialty, deletion_reason, deleted_at
+       FROM specialists
+       WHERE is_deleted_by_admin = TRUE
+         AND deletion_reason_acknowledged = FALSE
+         AND (user_id = $1 OR created_by = $1)
+       ORDER BY deleted_at DESC, id DESC`,
+      [req.user.id]
+    );
+
+    return res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount,
+    });
+  } catch (err) {
+    console.error('Ошибка getMyDeletionNotices:', err);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+export const acknowledgeDeletionNotice = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Не авторизован' });
+    }
+
+    const id = sanitizeNumber(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Некорректный id объявления' });
+    }
+
+    const updated = await query(
+      `UPDATE specialists
+       SET deletion_reason_acknowledged = TRUE
+       WHERE id = $1
+         AND is_deleted_by_admin = TRUE
+         AND (user_id = $2 OR created_by = $2)
+       RETURNING id`,
+      [id, req.user.id]
+    );
+
+    if (!updated.rows.length) {
+      return res.status(404).json({ success: false, message: 'Уведомление не найдено' });
+    }
+
+    return res.json({ success: true, message: 'Уведомление подтверждено' });
+  } catch (err) {
+    console.error('Ошибка acknowledgeDeletionNotice:', err);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 };

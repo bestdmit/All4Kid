@@ -2,9 +2,15 @@ import { Flex, Spin, Empty } from "antd";
 import SpecialistCard from "./SpecialistCard";
 import { useSpecialists } from "../hooks/specialists/useSpecialists.ts";
 import type { Specialist } from "./api/specialists";
+import { useNavigate } from "react-router-dom";
 
 export default function BestSpecialistsCards(){
   const { specialists, loading } = useSpecialists();
+  const navigate = useNavigate();
+
+  const handleSpecialistClick = (id: number) => {
+    navigate(`/specialists/${id}`);
+  };
 
   const topSpecialists = [...specialists]
     .sort((a, b) => b.rating - a.rating || b.experience - a.experience)
@@ -25,7 +31,11 @@ export default function BestSpecialistsCards(){
   return (
     <Flex wrap gap={'middle'} justify={"center"}>
       {topSpecialists.map((spec: Specialist) => (
-        <SpecialistCard specialist={spec} key={spec.id} />
+        <SpecialistCard
+          specialist={spec}
+          key={spec.id}
+          onClick={handleSpecialistClick}
+        />
       ))}
     </Flex>
   );

@@ -66,6 +66,15 @@ export default function SpecialistCard({
     }
   };
 
+  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (event) => {
+    if (!onClick) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleClick();
+    }
+  };
+
   const confirmDelete = () => {
     handleDelete();
   };
@@ -75,7 +84,14 @@ export default function SpecialistCard({
     : '/uploads/avatars/default.jpg';
 
   return (
-    <Card variant="borderless" style={cardStyle} onClick={handleClick}
+    <Card
+      variant="borderless"
+      style={cardStyle}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `Открыть страницу специалиста ${specialist.name}` : undefined}
       cover={
         <div style={{ ...coverStyle, position: 'relative' }}>
           <img 

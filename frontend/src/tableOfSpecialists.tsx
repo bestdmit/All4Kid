@@ -5,7 +5,7 @@ import SpecialistCard from "./SpecialistCard";
 import { specialistApi, type Specialist } from "./api/specialists";
 import SearchBar from "./SearchBar";
 import CategoryFilter from "./CategoryFilter";
-import {useNavigate} from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store";
 
 const { Content, Sider } = Layout;
@@ -23,12 +23,24 @@ function TableSpecialists() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuthStore((state) => state.user);
+  const initialCategoryFromUrl = searchParams.get('category') || '';
+  const initialSearchFromUrl = searchParams.get('search') || '';
   
-  // Загружаем специалистов при монтировании компонента
+  // Инициализируем фильтры из URL и сразу выполняем поиск
   useEffect(() => {
-    fetchSpecialists();
+    setSearchTerm(initialSearchFromUrl);
+    setSelectedCategory(initialCategoryFromUrl);
+    performSearch(initialSearchFromUrl, initialCategoryFromUrl);
   }, []);
+
+  const syncFiltersToUrl = (search: string, category: string) => {
+    const nextParams = new URLSearchParams();
+    if (search.trim()) nextParams.set('search', search.trim());
+    if (category) nextParams.set('category', category);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const performSearch = async (search: string, category: string) => {
     setIsSearching(true);
@@ -44,17 +56,20 @@ function TableSpecialists() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
+    syncFiltersToUrl(term, selectedCategory);
     performSearch(term, selectedCategory);
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    syncFiltersToUrl(searchTerm, category);
     performSearch(searchTerm, category);
   };
 
   const handleResetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('');
+    setSearchParams({}, { replace: true });
     fetchSpecialists(); // Загружаем всех специалистов заново
   };
 

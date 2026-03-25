@@ -80,4 +80,19 @@ describe('categoriesController', () => {
   message: 'Категория не найдена',
     });
   });
+  it('should not crash if slug is missing', async () => {
+  const req: any = {
+    params: {},
+  };
+
+  const res: any = {
+    status: vi.fn().mockReturnThis(),
+    json: vi.fn().mockReturnThis(),
+  };
+
+  await getCategoryBySlug(req, res);
+
+  expect(res.status).toHaveBeenCalled();
+  expect(res.json).toHaveBeenCalled();
+});
 });

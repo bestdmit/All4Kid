@@ -34,4 +34,22 @@ describe('authController.register (simple)', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
   });
+  it('should handle missing fields gracefully', async () => {
+  const req: any = {
+    body: {
+      email: '',
+      password: '',
+    },
+  };
+
+  const res: any = {
+    status: vi.fn().mockReturnThis(),
+    json: vi.fn().mockReturnThis(),
+  };
+
+  await register(req, res);
+
+  expect(res.status).toHaveBeenCalled();
+  expect(res.json).toHaveBeenCalled();
+});
 });

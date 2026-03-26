@@ -10,10 +10,10 @@ export default function ReasonCard({ imagePath,titleText, descriptionText } : Re
     <Card variant="borderless" cover = {<img
           alt={descriptionText || "Изображение карточки"}
           src={imagePath}
-          style={{ height: "10vh", objectFit: 'cover',width:"auto",marginLeft:"auto",marginRight:"auto",marginTop:"1vh" }}
+          style={{ height: "10vh", objectFit: 'cover', width: "auto", marginLeft: "auto", marginRight: "auto", marginTop: "1vh" }}
         />} 
-        style={{ width: 300 }} >
-            <Typography.Title level={3} style={{marginTop:0}}>{titleText}</Typography.Title>
+        style={{ minWidth: 0, width: '100%', maxWidth: 300 }} >
+            <Typography.Title level={3} style={{ marginTop: 0 }}>{titleText}</Typography.Title>
         <Typography.Paragraph>{descriptionText}</Typography.Paragraph>
     </Card>
     </>

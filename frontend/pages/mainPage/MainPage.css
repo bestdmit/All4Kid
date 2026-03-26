@@ -1,0 +1,92 @@
+.heroSection {
+  background-color: #d9e5ff;
+  border-radius: 0;
+}
+.heroCard {
+  min-height: 60vh;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: #d9e5ff;
+}
+.heroContent {
+  max-width: 1000px;
+  width: 100%;
+}
+.heroTitle {
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+.heroText {
+  font-size: 1.5rem;
+}
+.heroButton {
+  margin-top: 16px;
+}
+.sectionCard {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  margin-bottom: 0;
+  padding: 2rem 1rem;
+}
+.sectionTitle {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.cardsRow {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.reasonCard, .categoryCard {
+  flex: 1 1 calc(25% - 1rem);
+  max-width: 300px;
+  min-width: 220px;
+}
+@media (max-width: 1200px) {
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(33.333% - 1rem);
+    max-width: 260px;
+  }
+}
+@media (max-width: 900px) {
+  .heroText {
+    font-size: 1.2rem;
+  }
+  .heroCard {
+    min-height: auto;
+    padding: 1.25rem;
+  }
+  .heroTitle {
+    font-size: 2rem;
+  }
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(50% - 1rem);
+    max-width: 260px;
+  }
+}
+@media (max-width: 640px) {
+  .heroTitle {
+    font-size: 1.5rem;
+  }
+  .heroText {
+    font-size: 1rem;
+  }
+  .sectionCard {
+    padding: 1rem 0.75rem;
+  }
+  .reasonCard, .categoryCard {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .heroButton .ant-btn {
+    width: 100%;
+  }
+}

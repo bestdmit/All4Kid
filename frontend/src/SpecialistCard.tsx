@@ -13,7 +13,8 @@ interface SpecialistCardProps {
 }
 
 const cardStyle: React.CSSProperties = {
-  width: "15rem",
+  width: "100%",
+  maxWidth: "15rem",
   position: "relative",
   cursor: "pointer"
 };
@@ -21,7 +22,7 @@ const cardStyle: React.CSSProperties = {
 const coverStyle: React.CSSProperties = {
   height: "120px",
   objectFit: 'cover',
-  width: "auto",
+  width: "100%",
   margin: 0,
   backgroundColor: "#E9E6E6",
   position: "relative",

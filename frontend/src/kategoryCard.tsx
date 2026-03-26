@@ -15,9 +15,9 @@ export default function KategoryCard({imagePath,titleText,to}:KategoryCardProps)
             cover = {<img
                 alt={titleText || "Изображение карточки"}
                 src={imagePath}
-                style={{ height: "7vh", objectFit: 'cover',width:"auto",marginLeft:"auto",marginRight:"auto",marginTop:"1vh" }}
+                style={{ height: "7vh", objectFit: 'cover', width: "auto", marginLeft: "auto", marginRight: "auto", marginTop: "1vh" }}
             />}
-            style={{ width: 300 }}
+            style={{ minWidth: 0, width: '100%', maxWidth: 300 }}
         >
             <Typography.Title level={3} style={{marginTop:0,textAlign:"center"}}>{titleText}</Typography.Title>
         </Card>

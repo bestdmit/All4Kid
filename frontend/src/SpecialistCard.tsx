@@ -1,6 +1,7 @@
 import { Card, Typography, Button, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import type { Specialist } from "../src/api/specialists";
+import "./specialistCard.css";
 
 const { Title, Text } = Typography;
 
@@ -14,13 +15,15 @@ interface SpecialistCardProps {
 
 const cardStyle: React.CSSProperties = {
   width: "100%",
-  maxWidth: "15rem",
   position: "relative",
-  cursor: "pointer"
+  cursor: "pointer",
+  border: "1px solid #d9d9d9",
+  borderRadius: "12px",
+  overflow: "hidden",
 };
 
 const coverStyle: React.CSSProperties = {
-  height: "120px",
+  height: "110px",
   objectFit: 'cover',
   width: "100%",
   margin: 0,
@@ -30,17 +33,17 @@ const coverStyle: React.CSSProperties = {
 
 const ratingBadgeStyle: React.CSSProperties = {
   position: "absolute",
-  bottom: "8px",
+  top: "8px",
   left: "8px",
   backgroundColor: "rgba(255, 255, 255, 0.9)",
-  padding: "4px 8px",
-  borderRadius: "4px",
+  padding: "4px 10px",
+  borderRadius: "6px",
   fontSize: "12px",
-  fontWeight: "bold",
+  fontWeight: 700,
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: "6px",
 };
 
 const deleteButtonStyle: React.CSSProperties = {
@@ -88,6 +91,7 @@ export default function SpecialistCard({
     <Card
       variant="borderless"
       style={cardStyle}
+      styles={{ body: { padding: 12 } }}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role={onClick ? "button" : undefined}
@@ -110,36 +114,49 @@ export default function SpecialistCard({
           />
           <div style={ratingBadgeStyle}>
             <span>★</span>
-            <span>{specialist.rating}</span>
+            <span>
+              {specialist.rating}({specialist.reviews_total ?? 0})
+            </span>
           </div>
         </div>
       }
     >
-      <Title level={4} style={{ marginTop: 0 }}>{specialist.name}</Title>
-      <Text>{specialist.specialty}</Text>
-      <br />
-      <Text>{specialist.price_per_hour} ₽/час</Text>
+      <div className="specialist-card-body">
+        <Title level={4} className="specialist-card-name">
+          {specialist.name || "ФИО"}
+        </Title>
+        <Text className="specialist-card-specialty">{specialist.specialty || "Вид специалиста"}</Text>
+
+        <div className="specialist-card-price">
+          <Text type="secondary" className="specialist-card-price-label">
+            Стоимость за час
+          </Text>
+          <Text className="specialist-card-price-value">
+            {specialist.price_per_hour} ₽/час
+          </Text>
+        </div>
       
-      {forDelete && (
-        <Popconfirm
-          title="Удалить специалиста"
-          description="Вы уверены, что хотите удалить этого специалиста?"
-          onConfirm={confirmDelete}
-          okText="Да"
-          cancelText="Нет"
-        >
-          <Button 
-            type="primary" 
-            danger
-            icon={<DeleteOutlined />}
-            loading={isLoading}
-            style={deleteButtonStyle}
-            onClick={(e) => e.stopPropagation()}
+        {forDelete && (
+          <Popconfirm
+            title="Удалить специалиста"
+            description="Вы уверены, что хотите удалить этого специалиста?"
+            onConfirm={confirmDelete}
+            okText="Да"
+            cancelText="Нет"
           >
-            Удалить
-          </Button>
-        </Popconfirm>
-      )}
+            <Button 
+              type="primary" 
+              danger
+              icon={<DeleteOutlined />}
+              loading={isLoading}
+              style={deleteButtonStyle}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Удалить
+            </Button>
+          </Popconfirm>
+        )}
+      </div>
     </Card>
   );
 }

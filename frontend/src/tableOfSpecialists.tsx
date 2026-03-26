@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Card, Flex, Button, message, Layout } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Card, Button, Input, Select, message, Typography } from "antd";
 import { useSpecialistStore } from "../stores/specialistStore";
 import SpecialistCard from "./SpecialistCard";
 import { specialistApi, type Specialist } from "./api/specialists";
@@ -8,7 +8,9 @@ import CategoryFilter from "./CategoryFilter";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store";
 
-const { Content, Sider } = Layout;
+import "./tableOfSpecialists.css";
+
+const { Text } = Typography;
 
 function TableSpecialists() {
   const { 
@@ -21,6 +23,9 @@ function TableSpecialists() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [district, setDistrict] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [minRating, setMinRating] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,13 +71,6 @@ function TableSpecialists() {
     performSearch(searchTerm, category);
   };
 
-  const handleResetFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('');
-    setSearchParams({}, { replace: true });
-    fetchSpecialists(); // Загружаем всех специалистов заново
-  };
-
   const handleSpecialistSelect = (id: number) => {
     navigate(`/specialists/${id}`)
   };
@@ -101,142 +99,128 @@ function TableSpecialists() {
     }
   };
 
-  const hasActiveFilters = searchTerm || selectedCategory;
-  const displayData = specialists;
-  const displayLoading = hasActiveFilters ? isSearching : loading;
+  const normalizedDistrict = district.trim().toLowerCase();
+  const normalizedSpecialty = specialty.trim().toLowerCase();
+  const parsedMinRating = Number(minRating);
 
-  if (displayLoading && displayData.length === 0) {
-    return <div style={{ color: 'white', textAlign: 'center', padding: '40px' }}>Загрузка...</div>;
+  const displayData = useMemo(() => {
+    return specialists.filter((item) => {
+      const districtOk = !normalizedDistrict || (item.location || '').toLowerCase().includes(normalizedDistrict);
+      const specialtyOk = !normalizedSpecialty || (item.specialty || '').toLowerCase().includes(normalizedSpecialty);
+      const ratingOk = !minRating.trim() || (!Number.isNaN(parsedMinRating) && item.rating >= parsedMinRating);
+      return districtOk && specialtyOk && ratingOk;
+    });
+  }, [specialists, normalizedDistrict, normalizedSpecialty, minRating, parsedMinRating]);
+
+  const hasActiveFilters = Boolean(searchTerm || selectedCategory || district || specialty || minRating);
+  const displayLoading = (isSearching || loading) && specialists.length === 0;
+
+  if (displayLoading) {
+    return <div className="specialists-loading">Загрузка...</div>;
   }
 
-  if (error && !hasActiveFilters) {
+  if (error) {
     return (
-      <div style={{ color: 'red', textAlign: 'center', padding: '40px' }}>
-        Ошибка: {error}
-        <br />
-        <Button type="primary" onClick={fetchSpecialists} style={{ marginTop: 10 }}>
+      <div className="specialists-error">
+        <Text type="danger">Ошибка: {error}</Text>
+        <Button type="primary" onClick={fetchSpecialists} className="specialists-error-btn">
           Попробовать снова
         </Button>
       </div>
     );
   }
 
-  return (
-    <Layout style={{ 
-      minHeight: 'calc(100vh - 64px)', 
-      backgroundColor: '#FFFFFF',
-      padding: '0 24px'
-    }}>
-      <Layout style={{ 
-        backgroundColor: 'transparent',
-        flexDirection: 'row' 
-      }}>
-        {/* Левая панель - фильтры и управление */}
-        <Sider 
-          width={300}
-          style={{ 
-            backgroundColor: 'transparent',
-            marginRight: '24px',
-            paddingTop: '0',
-          }}
-        >
-          <Card
-            size="small"
-            style={{ 
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(105, 103, 103, 0.98)',
-              color: 'white',
-              marginTop: "15vh",
-              paddingTop: 0,
-              boxShadow: "3px 3px 3px rgba(105, 103, 103, 0.98)"
-            }}
-            styles={{
-              header: { 
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                color: 'white'
-              }
-            }}
-          >
-            {/* Фильтр категорий */}
-            <div style={{ marginBottom: '16px' }}>
-              <CategoryFilter 
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                disabled={isSearching}
-              />
-            </div>
-            
-            {/* Кнопки управления */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginBottom: '16px' }}>
-              <Button 
-                type="primary" 
-                onClick={fetchSpecialists}
-                loading={loading && !hasActiveFilters}
-                disabled={isSearching}
-                block
-              >
-                Обновить список
-              </Button>
-              
-              {hasActiveFilters && (
-                <Button 
-                  onClick={handleResetFilters}
-                  disabled={isSearching}
-                  block
-                >
-                  Сбросить все фильтры
-                </Button>
-              )}
-            </div>
-            
-          </Card>
-        </Sider>
+  const districtOptions = useMemo(() => {
+    const uniq = new Set(specialists.map((s) => s.location).filter(Boolean));
+    return Array.from(uniq);
+  }, [specialists]);
 
-        {/* Правая часть - карточки специалистов */}
-        <Content style={{ 
-          backgroundColor: 'transparent',
-          flex: 1
-        }}>
-          {/* Поиск над карточками специалистов */}
-          <div style={{ 
-            marginTop: '1vh',
-            width: '100%'
-          }}>
-            <SearchBar 
-              onSearch={handleSearch}
-              loading={isSearching}
+  const specialtyOptions = useMemo(() => {
+    const uniq = new Set(specialists.map((s) => s.specialty).filter(Boolean));
+    return Array.from(uniq);
+  }, [specialists]);
+
+  return (
+    <div className="specialists-page">
+      <div className="specialists-search-area">
+        <SearchBar onSearch={handleSearch} loading={isSearching} />
+      </div>
+
+      <div className="specialists-layout">
+        <Card size="small" className="specialists-filters-card">
+          <div className="specialists-filters-title">Фильтры</div>
+
+          <div className="specialists-filter-group">
+            <div className="specialists-filter-label">Категория</div>
+            <CategoryFilter
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              disabled={isSearching}
             />
           </div>
 
-          {/* Заголовок таблицы карточек */}
-          <div style={{ 
-            color: 'white', 
-            marginBottom: '16px',
-            padding: '12px 16px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            fontSize: '14px'
-          }}>
-            {hasActiveFilters 
-              ? `Результаты поиска${searchTerm ? ` по запросу "${searchTerm}"` : ''}${selectedCategory ? ' в категории "' + selectedCategory + '"' : ''}`
-              : 'Все специалисты'}
+          <div className="specialists-filter-group">
+            <div className="specialists-filter-label">Район</div>
+            <Select
+              placeholder="Все районы"
+              value={district || undefined}
+              onChange={(val) => setDistrict(val)}
+              allowClear
+              className="specialists-filter-select"
+              disabled={isSearching}
+            >
+              <Select.Option value="">Все районы</Select.Option>
+              {districtOptions.map((d) => (
+                <Select.Option key={d} value={d}>
+                  {d}
+                </Select.Option>
+              ))}
+            </Select>
           </div>
 
-          {/* Карточки специалистов */}
+          <div className="specialists-filter-group">
+            <div className="specialists-filter-label">Вид специализации</div>
+            <Select
+              placeholder="Все специализации"
+              value={specialty || undefined}
+              onChange={(val) => setSpecialty(val)}
+              allowClear
+              className="specialists-filter-select"
+              disabled={isSearching}
+            >
+              <Select.Option value="">Все специализации</Select.Option>
+              {specialtyOptions.map((s) => (
+                <Select.Option key={s} value={s}>
+                  {s}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="specialists-filter-group specialists-filter-group-last">
+            <div className="specialists-filter-label">Минимальный рейтинг</div>
+            <Input
+              placeholder="0.0"
+              value={minRating}
+              onChange={(e) => setMinRating(e.target.value)}
+              disabled={isSearching}
+              type="number"
+              min={0}
+              max={5}
+              step={0.1}
+              className="specialists-filter-input"
+              size="large"
+            />
+          </div>
+        </Card>
+
+        <div className="specialists-results">
           {displayData.length === 0 ? (
-            <div style={{ 
-              color: 'white', 
-              textAlign: 'center', 
-              padding: '60px 20px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px'
-            }}>
-              {hasActiveFilters 
-                ? `Не найдено специалистов${searchTerm ? ` по запросу "${searchTerm}"` : ''}${selectedCategory ? ' в выбранной категории' : ''}`
-                : 'Специалисты не найдены'}
+            <div className="specialists-empty">
+              {hasActiveFilters ? "Ничего не найдено по выбранным фильтрам" : "Специалисты не найдены"}
             </div>
           ) : (
-            <Flex wrap gap="middle" justify="start">
+            <div className="specialists-cards-grid">
               {displayData.map((item: Specialist) => (
                 <SpecialistCard
                   key={item.id}
@@ -246,11 +230,11 @@ function TableSpecialists() {
                   onDelete={handleAdminDelete}
                 />
               ))}
-            </Flex>
+            </div>
           )}
-        </Content>
-      </Layout>
-    </Layout>
+        </div>
+      </div>
+    </div>
   );
 }
 

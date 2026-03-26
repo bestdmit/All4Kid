@@ -7,6 +7,7 @@ import { bookingsApi, type Appointment } from "./api/bookings";
 import { specialistApi } from "./api/specialists";
 import { useBookingEventsStore } from "../stores/bookingEvents.store";
 import ReviewsModerationPanel from "./components/admin/ReviewsModerationPanel";
+import "./profileTabs.css";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -565,10 +566,11 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   return (
     <div>
       {/* tab headers */}
-      <div style={{ display: "flex", borderBottom: "1px solid #e8e8e8", marginBottom: 16 }}>
+      <div className="profile-tabs-header" style={{ display: "flex", borderBottom: "1px solid #e8e8e8", marginBottom: 16 }}>
         {availableTabs.map((tab) => (
           <div
             key={tab.key}
+            className={`profile-tabs-tab ${active === tab.key ? "is-active" : ""}`}
             onClick={() => {
               setActive(tab.key);
               if (tab.key === 'appointments') {

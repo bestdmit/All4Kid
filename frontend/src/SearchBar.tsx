@@ -50,9 +50,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
         style={{
           borderRadius: '0 8px 8px 0', // Закругляем только правую сторону
           marginLeft: 0,
-          border: '1px solid #1890ff',
+          border: '1px solid #6155F5',
           borderLeft: 'none', // Убираем левую границу
-          boxShadow: 'none'
+          boxShadow: 'none',
+          backgroundColor: '#6155F5',
+          borderColor: '#6155F5',
+          color: '#ffffff',
         }}
       >
         Найти

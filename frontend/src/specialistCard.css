@@ -1,0 +1,49 @@
+.specialist-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.specialist-card-name {
+  margin: 0 !important;
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+}
+
+.specialist-card-specialty {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.specialist-card-price {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.specialist-card-price-label {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.specialist-card-price-value {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+@media (max-width: 520px) {
+  .specialist-card-name {
+    font-size: 20px !important;
+  }
+
+  .specialist-card-specialty {
+    font-size: 13px;
+  }
+
+  .specialist-card-price-label,
+  .specialist-card-price-value {
+    font-size: 12px;
+  }
+}
+

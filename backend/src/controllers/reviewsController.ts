@@ -87,10 +87,12 @@ export const validateUpdateReview = [
 export const getUnapprovedReviews = async (req: Request, res: Response) => {
   try {
     const result = await query(
-        `SELECT *
-       FROM reviews
-       WHERE is_approved = FALSE
-       ORDER BY created_at DESC`
+        `SELECT r.*, u.full_name as user_name, u.avatar_url as user_avatar, s.name as specialist_name
+       FROM reviews r
+       LEFT JOIN users u ON r.user_id = u.id
+       LEFT JOIN specialists s ON r.specialist_id = s.id
+       WHERE r.is_approved = FALSE
+       ORDER BY r.created_at DESC`
     );
 
     res.json({
@@ -209,12 +211,12 @@ export const createReview = async (req: AuthRequest, res: Response) => {
 
     const createdReview = await query(
       `INSERT INTO reviews (specialist_id, user_id, rating, comment, is_verified, is_approved)
-       VALUES ($1, $2, $3, $4, FALSE, TRUE)
+       VALUES ($1, $2, $3, $4, FALSE, FALSE)
        RETURNING id, specialist_id, user_id, rating, comment, is_verified, is_approved, created_at, updated_at`,
       [specialistId, req.user.id, rating, comment]
     );
 
-    await recomputeSpecialistRating(specialistId);
+    // await recomputeSpecialistRating(specialistId); // Rating doesn't change until approved
 
     return res.status(201).json({
       success: true,
@@ -410,7 +412,7 @@ export const deleteReview = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const reviewId = parsePositiveInt(req.params.id);
+    const reviewId = parsePositiveInt(req.params.id) || parsePositiveInt(req.body.id);
     if (!reviewId) {
       return res.status(400).json({
         success: false,

@@ -1,4 +1,6 @@
-import { Button, message, Rate, Space, Typography, Card } from "antd";
+import { Button, message, Rate, Space, Typography, Card, Avatar, Tooltip } from "antd";
+import { Link } from "react-router-dom";
+import { UserOutlined } from "@ant-design/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Review, reviewsApi } from "../../api/reviews";
@@ -104,29 +106,39 @@ export default function ReviewsModerationPanel({
               <div
                 key={review.id}
                 style={{
-                  padding: "12px 16px",
+                  padding: "16px",
                   border: "1px solid #d9d9d9",
                   borderRadius: 8,
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16,
+                  flexDirection: "column",
+                  gap: 12,
                 }}
               >
-                <div style={{ minWidth: 120 }}>
-                  <Rate disabled value={review.rating} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                   <Space align="center" size={12}>
+                      <Avatar src={review.user_avatar} icon={<UserOutlined />} />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Text strong>{review.user_name || `Пользователь #${review.user_id}`}</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                              для специалиста: <Link to={`/specialists/${review.specialist_id}`}>{review.specialist_name || `Специалист #${review.specialist_id}`}</Link>
+                          </Text>
+                      </div>
+                   </Space>
+                   <Rate disabled value={review.rating} style={{ fontSize: 16 }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{review.comment}</div>
+
+                <div style={{ padding: "8px 0", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                    {review.comment}
                 </div>
-                <Space>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
                   <Button type="primary" onClick={() => handleApproveReview(review.id)}>
                     Подтвердить
                   </Button>
                   <Button danger onClick={() => handleDeleteReview(review.id)}>
                     Отклонить
                   </Button>
-                </Space>
+                </div>
               </div>
             ))}
           </Space>

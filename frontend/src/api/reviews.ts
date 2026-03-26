@@ -10,6 +10,7 @@ export interface Review {
   updated_at: string;
   user_name?: string;
   user_avatar?: string;
+  specialist_name?: string;
 }
 
 export interface ReviewsResponse {

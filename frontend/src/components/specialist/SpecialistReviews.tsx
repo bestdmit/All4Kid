@@ -45,7 +45,7 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
 
             message.success("Отзыв отправлен");
             closeModal();
-            await refetch();
+            // await refetch(); // Don't refetch immediately, it should be approved first
         } catch (e: any) {
             if (e?.message === "UNAUTHORIZED") {
                 message.error("Сессия истекла. Войдите заново");

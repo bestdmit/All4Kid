@@ -565,6 +565,13 @@ export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
            WHERE id = $2`,
           [reason, id]
         );
+
+        // Автоматически удаляем (отклоняем) все ожидающие модерацию отзывы при блокировке специалиста
+        await client.query(
+          `DELETE FROM reviews 
+           WHERE specialist_id = $1 AND is_approved = FALSE`,
+          [id]
+        );
       });
 
       return res.json({

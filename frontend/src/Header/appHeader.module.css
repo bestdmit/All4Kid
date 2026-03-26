@@ -4,20 +4,49 @@
     align-items: center;
     justify-content: space-between;
     display: flex;
-    padding: 1vh;
-    padding-left: 10rem;
+    padding: 12px 24px;
+    border-bottom: 1px solid #ececec;
 }
 
 .buttonBlock{
-    margin-right: 15rem;
     margin-left: auto;
     width:fit-content;
     display: flex;
-    gap: 2rem;
+    gap: 1rem;
 }
 .title{
     width:fit-content;
     color: #6155F5 !important;
     margin: 0 !important;
-    margin-left: 10rem;
+}
+
+.title a {
+    color: inherit;
+}
+
+.burgerButton {
+    display: none;
+    margin-left: auto;
+}
+
+.mobileMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+@media (max-width: 900px) {
+    .header {
+        padding: 8px 12px;
+    }
+
+    .buttonBlock {
+        display: none;
+    }
+
+    .burgerButton {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 }

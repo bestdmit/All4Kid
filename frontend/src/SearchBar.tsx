@@ -4,10 +4,15 @@ import { Input, Button } from "antd";
 interface SearchBarProps {
   onSearch: (searchTerm: string) => void;
   loading?: boolean;
+  value?: string;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading, value = "" }) => {
   const [searchTerm, setSearchTerm] = useState('');
+
+  React.useEffect(() => {
+    setSearchTerm(value);
+  }, [value]);
 
   const handleSearch = () => {
     onSearch(searchTerm);
@@ -50,9 +55,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
         style={{
           borderRadius: '0 8px 8px 0', // Закругляем только правую сторону
           marginLeft: 0,
-          border: '1px solid #1890ff',
+          border: '1px solid #6155F5',
           borderLeft: 'none', // Убираем левую границу
-          boxShadow: 'none'
+          boxShadow: 'none',
+          backgroundColor: '#6155F5'
         }}
       >
         Найти

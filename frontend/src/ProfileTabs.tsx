@@ -235,6 +235,17 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       onOk: async () => {
         try {
           const current = user.children || [];
+          const childToDelete = current[index];
+          if (!childToDelete) {
+            message.error('Ребенок не найден');
+            return;
+          }
+
+          await bookingsApi.deleteAppointmentsByChild({
+            childName: String(childToDelete.name || '').trim(),
+            childBirthDate: childToDelete.birthDate || null,
+          });
+
           const newChildren = current.filter((_: any, i: number) => i !== index);
           const ok = await updateProfile({ children: newChildren });
           if (ok) {

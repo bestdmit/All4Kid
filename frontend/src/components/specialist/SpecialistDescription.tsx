@@ -9,11 +9,12 @@ export const SpecialistDescription = ({specialist} : {specialist: Specialist}) =
         <>
             {/* About Section */}
             <Card
+                className="specialist-section-card"
                 title="О специалисте"
-                style={{ marginBottom: 30, borderRadius: 8 }}
-                styles={{ body: {padding: 20}, title: { fontSize: 28} }}
+                style={{ marginBottom: 16, borderRadius: 8 }}
+                styles={{ body: {padding: 16}, title: { fontSize: 24} }}
             >
-                <Paragraph style={{ fontSize: 18, lineHeight: 1.8, color: '#262626' }}>
+                <Paragraph className="specialist-section-paragraph" style={{ lineHeight: 1.7, color: '#262626' }}>
                     {specialist.description}
                 </Paragraph>
             </Card>
@@ -21,31 +22,33 @@ export const SpecialistDescription = ({specialist} : {specialist: Specialist}) =
             {/* Education Section */}
             {/* TODO: заменить шаблоны, после добавления образования на бэкенде */}
             <Card
+                className="specialist-section-card"
                 title="Образование"
-                style={{ marginBottom: 30, borderRadius: 8 }}
-                styles={{ body: {padding: 20}, title: { fontSize: 28} }}
+                style={{ marginBottom: 16, borderRadius: 8 }}
+                styles={{ body: {padding: 16}, title: { fontSize: 24} }}
             >
                 <Space orientation="vertical" size={12}>
                     <div>
-                        <Text style={{fontSize: 18}} strong>МГУ им. М.В. Ломоносова, механико-математический факультет</Text>
+                        <Text className="specialist-section-paragraph" strong>МГУ им. М.В. Ломоносова, механико-математический факультет</Text>
                         <br />
-                        <Text style={{fontSize: 18}} type="secondary">(2009)</Text>
+                        <Text className="specialist-section-muted" type="secondary">(2009)</Text>
                     </div>
                     <div>
-                        <Text style={{fontSize: 18}} strong>Педагогический университет, методика преподавания математики</Text>
+                        <Text className="specialist-section-paragraph" strong>Педагогический университет, методика преподавания математики</Text>
                         <br />
-                        <Text style={{fontSize: 18}} type="secondary">(2011)</Text>
+                        <Text className="specialist-section-muted" type="secondary">(2011)</Text>
                     </div>
                 </Space>
             </Card>
 
             {/* Work Experience Section */}
             <Card
+                className="specialist-section-card"
                 title="Опыт работы"
-                style={{ marginBottom: 30, borderRadius: 8 }}
-                styles={{ body: {padding: 20, fontSize: 18}, title: { fontSize: 28} }}
+                style={{ marginBottom: 16, borderRadius: 8 }}
+                styles={{ body: {padding: 16, fontSize: 16}, title: { fontSize: 24} }}
             >
-                <Text style={{fontSize: 18}}>{specialist.experience} года</Text>
+                <Text className="specialist-section-paragraph">{specialist.experience} года</Text>
             </Card>
         </>
     )

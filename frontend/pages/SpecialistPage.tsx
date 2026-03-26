@@ -7,6 +7,7 @@ import {SpecialistBooking} from "../src/components/specialist/SpecialistBooking.
 import SpecialistGallery from "../src/components/specialist/SpecialistGallery.tsx";
 import SpecialistReviews from "../src/components/specialist/SpecialistReviews.tsx";
 import {useSpecialist} from "../hooks/specialists/useSpecialist.ts";
+import "../src/components/specialist/specialistPage.css";
 const { Content } = Layout;
 
 
@@ -45,12 +46,12 @@ const SpecialistPage = () => {
     }
 
     return (
-        <Layout >
+        <Layout>
             <AppHeader/>
-            <Content style={{padding: "30px 12rem 30px 12rem", background: "#FFFFFF"}}>
+            <Content className="specialist-page-content">
                 <SpecialistMainInfoCard specialist={specialist}/>
 
-                <Row gutter={24}>
+                <Row gutter={[16, 16]}>
                     <Col xs={24} lg={16}>
                         <SpecialistDescription specialist={specialist}/>
                         <SpecialistGallery specialist={specialist}/>
@@ -60,7 +61,9 @@ const SpecialistPage = () => {
                         <SpecialistBooking specialist={specialist}/>
                     </Col>
 
-                    <SpecialistReviews specialist={specialist}/>
+                    <Col xs={24}>
+                        <SpecialistReviews specialist={specialist}/>
+                    </Col>
                 </Row>
             </Content>
         </Layout>

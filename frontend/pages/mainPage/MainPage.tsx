@@ -3,7 +3,8 @@ import ReasonCard from "../../src/reasonCard";
 import KategoryCard from "../../src/kategoryCard";
 import BestSpecialistsCards from "../../src/bestSpecialistCards";
 import { Link } from 'react-router-dom';
-import { Layout, Card, Flex,Typography, Button } from 'antd';
+import { Layout, Card, Typography, Button } from 'antd';
+import "./mainPage.css";
 
 const { Content } = Layout;
 const {Title,Text} = Typography;
@@ -49,9 +50,8 @@ export default function MainPage(){
                     borderRight: 'none'
                     }}
                 >
-                    <Title style={{textAlign:"center"}}>Почему нас выбирают</Title>
-                    
-                    <Flex justify="center" align = "center" gap={"middle"}>
+                    <Title className="section-title">Почему выбирают нас</Title>
+                    <div className="main-cards-grid reason-grid">
                         <ReasonCard imagePath="../../src/images/reasons/MagnifyingGlass.png"
                         descriptionText="Педагоги, тренеры, аниматоры и творческие специалисты в едином каталоге"
                         titleText="Все в одном месте"/>
@@ -59,7 +59,7 @@ export default function MainPage(){
                             descriptionText="Честные рейтинги и отзывы от других родителей"/>
                         <ReasonCard imagePath="../../src/images/reasons/FamilyLogo.png" titleText="Семейный профиль"
                             descriptionText="Прикрепляйте каждого специалиста к конкретному ребёнку"/>
-                    </Flex>
+                    </div>
                 </Card>
                 </section>
 
@@ -73,14 +73,14 @@ export default function MainPage(){
                     backgroundColor:"#E9E6E6"
                     }}
                 >
-                    <Title style={{textAlign:"center"}}>Популярные категории</Title>
-                    <Flex justify="center" align = "center" gap={"middle"}>
+                    <Title className="section-title">Популярные категории</Title>
+                    <div className="main-cards-grid categories-grid">
                         <KategoryCard imagePath="../../src/images/kategories/sport.png" titleText="Спорт" to="/specialists?category=sports"/>
                         <KategoryCard imagePath="../../src/images/kategories/Education.png" titleText="Образование" to="/specialists?category=education"/>
                         <KategoryCard imagePath="../../src/images/kategories/creativity.png" titleText="Творчество" to="/specialists?category=creativity"/>
                         <KategoryCard imagePath="../../src/images/kategories/Entertainment.png" titleText="Развлечения" to="/specialists?category=entertainment"/>
 
-                    </Flex>
+                    </div>
                 </Card>
                 </section>
 

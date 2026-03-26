@@ -14,6 +14,7 @@
     min-width: auto;
     min-height: auto;
     color: #6155F5;
+    margin-left: auto;
 }
 
 .buttonBlock{
@@ -72,6 +73,8 @@
 @media (max-width: 768px) {
     .burgerButton {
         display: inline-flex;
+        margin-left: auto;
+        align-items: center;
     }
 
     .buttonBlock {

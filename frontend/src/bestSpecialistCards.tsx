@@ -3,6 +3,7 @@ import SpecialistCard from "./SpecialistCard";
 import { useSpecialists } from "../hooks/specialists/useSpecialists.ts";
 import type { Specialist } from "./api/specialists";
 import { useNavigate } from "react-router-dom";
+import "./bestSpecialistsCards.css";
 
 export default function BestSpecialistsCards(){
   const { specialists, loading } = useSpecialists();
@@ -31,11 +32,12 @@ export default function BestSpecialistsCards(){
   return (
     <Flex wrap gap={'middle'} justify={"center"}>
       {topSpecialists.map((spec: Specialist) => (
-        <SpecialistCard
-          specialist={spec}
-          key={spec.id}
-          onClick={handleSpecialistClick}
-        />
+        <div key={spec.id} className="best-specialist-card">
+          <SpecialistCard
+            specialist={spec}
+            onClick={handleSpecialistClick}
+          />
+        </div>
       ))}
     </Flex>
   );

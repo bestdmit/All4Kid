@@ -33,6 +33,10 @@
   border-right: none;
   margin-bottom: 0;
   padding: 2rem 1rem;
+  --reason-img-height: 10vh;
+  --category-img-height: 7vh;
+  --reason-img-margin-top: 1vh;
+  --category-img-margin-top: 1vh;
 }
 .sectionTitle {
   text-align: center;
@@ -81,6 +85,30 @@
   .reasonCard, .categoryCard {
     flex: 1 1 calc(50% - 1rem);
     max-width: 260px;
+  }
+}
+
+@media (min-width: 901px) {
+  /* Десктоп: фиксируем высоты иконок и делаем ряд более “ровным”, не затрагивая mobile */
+  .sectionCard {
+    --reason-img-height: 56px;
+    --category-img-height: 44px;
+    --reason-img-margin-top: 10px;
+    --category-img-margin-top: 10px;
+  }
+
+  .cardsRow {
+    display: grid;
+    justify-content: center;
+    align-items: stretch;
+    gap: 26px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .reasonCard, .categoryCard {
+    flex: none;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 @media (max-width: 640px) {

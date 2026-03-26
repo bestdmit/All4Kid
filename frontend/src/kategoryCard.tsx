@@ -15,7 +15,14 @@ export default function KategoryCard({imagePath,titleText,to}:KategoryCardProps)
             cover = {<img
                 alt={titleText || "Изображение карточки"}
                 src={imagePath}
-                style={{ height: "7vh", objectFit: 'cover', width: "auto", marginLeft: "auto", marginRight: "auto", marginTop: "1vh" }}
+                style={{
+                    height: "var(--category-img-height, 7vh)",
+                    objectFit: 'cover',
+                    width: "auto",
+                    marginLeft: "auto",
+                    marginRight: "auto",
+                    marginTop: "var(--category-img-margin-top, 1vh)",
+                }}
             />}
             style={{ minWidth: 0, width: '100%', maxWidth: 300 }}
         >

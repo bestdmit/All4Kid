@@ -77,6 +77,11 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const [childBirth, setChildBirth] = useState("");
   const [adding, setAdding] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingChildIndex, setEditingChildIndex] = useState<number | null>(null);
+  const [editChildName, setEditChildName] = useState("");
+  const [editChildBirth, setEditChildBirth] = useState("");
+  const [editing, setEditing] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [incomingAppointments, setIncomingAppointments] = useState<Appointment[]>([]);
   const [adminAppointments, setAdminAppointments] = useState<Appointment[]>([]);
@@ -219,6 +224,61 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     });
   };
 
+  const handleOpenEditChild = (index: number) => {
+    const children = user.children || [];
+    const child = children[index];
+    if (!child) return;
+
+    setEditingChildIndex(index);
+    setEditChildName(String(child.name || ''));
+    setEditChildBirth(child.birthDate || '');
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEditedChild = async () => {
+    if (editingChildIndex === null) return;
+
+    const trimmedName = editChildName.trim();
+    if (!trimmedName) {
+      message.error('Введите имя ребенка');
+      return;
+    }
+
+    const current = user.children || [];
+    if (!current[editingChildIndex]) {
+      message.error('Ребенок не найден');
+      return;
+    }
+
+    const newChildren = current.map((child, index) => {
+      if (index !== editingChildIndex) return child;
+
+      return {
+        name: trimmedName,
+        birthDate: editChildBirth || null,
+      };
+    });
+
+    try {
+      setEditing(true);
+      const ok = await updateProfile({ children: newChildren });
+      if (ok) {
+        message.success('Данные ребенка обновлены');
+        setEditModalVisible(false);
+        setEditingChildIndex(null);
+        setEditChildName('');
+        setEditChildBirth('');
+      } else {
+        message.error('Не удалось сохранить изменения');
+      }
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.message || 'Ошибка при сохранении');
+    } finally {
+      setEditing(false);
+    }
+  };
+
   const renderChildrenTab = () => {
     const children = user.children || [];
     return (
@@ -267,7 +327,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
 
                     <div style={{ display: 'flex', gap: 8 }}>
                       <Tooltip title="Редактировать">
-                        <Button type="text" icon={<EditOutlined />} />
+                        <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenEditChild(idx)} />
                       </Tooltip>
                       <Tooltip title="Удалить">
                         <Button type="text" danger icon={<DeleteOutlined />} onClick={() => confirmDeleteChild(idx)} />
@@ -295,6 +355,36 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Button onClick={() => setAddModalVisible(false)}>Отмена</Button>
               <Button type="primary" onClick={handleAddChild} loading={adding}>Добавить</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          title="Редактировать ребёнка"
+          open={editModalVisible}
+          onCancel={() => {
+            setEditModalVisible(false);
+            setEditingChildIndex(null);
+            setEditChildName('');
+            setEditChildBirth('');
+          }}
+          footer={null}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Input placeholder="Имя ребёнка" value={editChildName} onChange={e => setEditChildName(e.target.value)} />
+            <Input type="date" value={editChildBirth} onChange={e => setEditChildBirth(e.target.value)} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <Button onClick={() => {
+                setEditModalVisible(false);
+                setEditingChildIndex(null);
+                setEditChildName('');
+                setEditChildBirth('');
+              }}>
+                Отмена
+              </Button>
+              <Button type="primary" onClick={handleSaveEditedChild} loading={editing}>
+                Сохранить
+              </Button>
             </div>
           </div>
         </Modal>

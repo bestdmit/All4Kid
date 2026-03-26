@@ -14,8 +14,8 @@ import {
 } from '../controllers/specialistsController';
 import {
   approveReview,
-  createReviewForSpecialist,
-  getReviewsBySpecialistId,
+  createReview,
+  getSpecialistReviews,
   getUnapprovedReviews
 } from "../controllers/reviewsController";
 import {authenticateToken, authorize} from '../middleware/auth';
@@ -28,7 +28,7 @@ router.get('/', getAllSpecialists);
 router.get('/my/list', authenticateToken, getMySpecialists);
 router.get('/my/deletion-notices', authenticateToken, getMyDeletionNotices);
 router.patch('/my/deletion-notices/:id/ack', authenticateToken, acknowledgeDeletionNotice);
-router.get('/:id/reviews', getReviewsBySpecialistId);
+router.get('/:id/reviews', getSpecialistReviews);
 router.get('/:id', getSpecialistById);
 
 router.post('/', authenticateToken, upload.single('avatar'), createSpecialist); // УБРАЛИ authorize('admin')
@@ -36,6 +36,6 @@ router.put('/:id', authenticateToken, updateSpecialist);
 router.delete('/:id', authenticateToken, deleteSpecialist);
 router.patch('/:id/avatar', authenticateToken, upload.single('avatar'), updateAvatar);
 router.delete('/:id/avatar', authenticateToken, deleteAvatar);
-router.post('/:id/reviews', authenticateToken, createReviewForSpecialist);
+router.post('/:id/reviews', authenticateToken, createReview);
 
 export default router;

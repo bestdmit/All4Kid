@@ -164,7 +164,7 @@ export const createReview = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const specialistId = parsePositiveInt(req.params.specialistId);
+    const specialistId = parsePositiveInt(req.params.specialistId || req.params.id);
     if (!specialistId) {
       return res.status(400).json({
         success: false,

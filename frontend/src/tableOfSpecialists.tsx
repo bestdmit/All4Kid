@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, Flex, Button, message, Layout } from "antd";
+import { Card, Button, message, Input } from "antd";
 import { useSpecialistStore } from "../stores/specialistStore";
 import SpecialistCard from "./SpecialistCard";
 import { specialistApi, type Specialist } from "./api/specialists";
@@ -7,8 +7,7 @@ import SearchBar from "./SearchBar";
 import CategoryFilter from "./CategoryFilter";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store";
-
-const { Content, Sider } = Layout;
+import "./tableOfSpecialists.css";
 
 function TableSpecialists() {
   const { 
@@ -21,24 +20,32 @@ function TableSpecialists() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
+  const [minRatingFilter, setMinRatingFilter] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuthStore((state) => state.user);
   const initialCategoryFromUrl = searchParams.get('category') || '';
   const initialSearchFromUrl = searchParams.get('search') || '';
+  const initialDistrictFromUrl = searchParams.get('district') || '';
+  const initialMinRatingFromUrl = searchParams.get('minRating') || '';
   
   // Инициализируем фильтры из URL и сразу выполняем поиск
   useEffect(() => {
     setSearchTerm(initialSearchFromUrl);
     setSelectedCategory(initialCategoryFromUrl);
+    setDistrictFilter(initialDistrictFromUrl);
+    setMinRatingFilter(initialMinRatingFromUrl);
     performSearch(initialSearchFromUrl, initialCategoryFromUrl);
   }, []);
 
-  const syncFiltersToUrl = (search: string, category: string) => {
+  const syncFiltersToUrl = (search: string, category: string, district: string, minRating: string) => {
     const nextParams = new URLSearchParams();
     if (search.trim()) nextParams.set('search', search.trim());
     if (category) nextParams.set('category', category);
+    if (district.trim()) nextParams.set('district', district.trim());
+    if (minRating.trim()) nextParams.set('minRating', minRating.trim());
     setSearchParams(nextParams, { replace: true });
   };
 
@@ -56,19 +63,33 @@ function TableSpecialists() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    syncFiltersToUrl(term, selectedCategory);
+    syncFiltersToUrl(term, selectedCategory, districtFilter, minRatingFilter);
     performSearch(term, selectedCategory);
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    syncFiltersToUrl(searchTerm, category);
+    syncFiltersToUrl(searchTerm, category, districtFilter, minRatingFilter);
     performSearch(searchTerm, category);
+  };
+
+  const handleDistrictChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value;
+    setDistrictFilter(nextValue);
+    syncFiltersToUrl(searchTerm, selectedCategory, nextValue, minRatingFilter);
+  };
+
+  const handleMinRatingChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value;
+    setMinRatingFilter(nextValue);
+    syncFiltersToUrl(searchTerm, selectedCategory, districtFilter, nextValue);
   };
 
   const handleResetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('');
+    setDistrictFilter('');
+    setMinRatingFilter('');
     setSearchParams({}, { replace: true });
     fetchSpecialists(); // Загружаем всех специалистов заново
   };
@@ -101,8 +122,21 @@ function TableSpecialists() {
     }
   };
 
-  const hasActiveFilters = searchTerm || selectedCategory;
-  const displayData = specialists;
+  const normalizedDistrictFilter = districtFilter.trim().toLowerCase();
+  const parsedMinRating = Number(minRatingFilter);
+
+  const displayData = specialists.filter((item) => {
+    const districtMatch =
+      !normalizedDistrictFilter ||
+      item.location.toLowerCase().includes(normalizedDistrictFilter);
+    const ratingMatch =
+      !minRatingFilter.trim() ||
+      (!Number.isNaN(parsedMinRating) && item.rating >= parsedMinRating);
+
+    return districtMatch && ratingMatch;
+  });
+
+  const hasActiveFilters = Boolean(searchTerm || selectedCategory || districtFilter || minRatingFilter);
   const displayLoading = hasActiveFilters ? isSearching : loading;
 
   if (displayLoading && displayData.length === 0) {
@@ -122,135 +156,91 @@ function TableSpecialists() {
   }
 
   return (
-    <Layout style={{ 
-      minHeight: 'calc(100vh - 64px)', 
-      backgroundColor: '#FFFFFF',
-      padding: '0 24px'
-    }}>
-      <Layout style={{ 
-        backgroundColor: 'transparent',
-        flexDirection: 'row' 
-      }}>
-        {/* Левая панель - фильтры и управление */}
-        <Sider 
-          width={300}
-          style={{ 
-            backgroundColor: 'transparent',
-            marginRight: '24px',
-            paddingTop: '0',
-          }}
-        >
-          <Card
-            size="small"
-            style={{ 
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(105, 103, 103, 0.98)',
-              color: 'white',
-              marginTop: "15vh",
-              paddingTop: 0,
-              boxShadow: "3px 3px 3px rgba(105, 103, 103, 0.98)"
-            }}
-            styles={{
-              header: { 
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                color: 'white'
-              }
-            }}
-          >
-            {/* Фильтр категорий */}
-            <div style={{ marginBottom: '16px' }}>
-              <CategoryFilter 
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                disabled={isSearching}
-              />
-            </div>
-            
-            {/* Кнопки управления */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginBottom: '16px' }}>
-              <Button 
-                type="primary" 
-                onClick={fetchSpecialists}
-                loading={loading && !hasActiveFilters}
-                disabled={isSearching}
-                block
-              >
-                Обновить список
-              </Button>
-              
-              {hasActiveFilters && (
-                <Button 
-                  onClick={handleResetFilters}
-                  disabled={isSearching}
-                  block
-                >
-                  Сбросить все фильтры
-                </Button>
-              )}
-            </div>
-            
-          </Card>
-        </Sider>
+    <div className="specialists-page">
+      <div className="specialists-page-inner">
+        <SearchBar
+          value={searchTerm}
+          onSearch={handleSearch}
+          loading={isSearching}
+        />
 
-        {/* Правая часть - карточки специалистов */}
-        <Content style={{ 
-          backgroundColor: 'transparent',
-          flex: 1
-        }}>
-          {/* Поиск над карточками специалистов */}
-          <div style={{ 
-            marginTop: '1vh',
-            width: '100%'
-          }}>
-            <SearchBar 
-              onSearch={handleSearch}
-              loading={isSearching}
+        <Card className="filters-card" size="small">
+          <div className="filters-title">Фильтры</div>
+
+          <div className="filter-item">
+            <div className="filter-label">Категория</div>
+            <CategoryFilter
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              disabled={isSearching}
             />
           </div>
 
-          {/* Заголовок таблицы карточек */}
-          <div style={{ 
-            color: 'white', 
-            marginBottom: '16px',
-            padding: '12px 16px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            fontSize: '14px'
-          }}>
-            {hasActiveFilters 
-              ? `Результаты поиска${searchTerm ? ` по запросу "${searchTerm}"` : ''}${selectedCategory ? ' в категории "' + selectedCategory + '"' : ''}`
-              : 'Все специалисты'}
+          <div className="filter-item">
+            <div className="filter-label">Район</div>
+            <Input
+              placeholder="Все районы"
+              value={districtFilter}
+              onChange={handleDistrictChange}
+              disabled={isSearching}
+              size="large"
+            />
           </div>
 
-          {/* Карточки специалистов */}
-          {displayData.length === 0 ? (
-            <div style={{ 
-              color: 'white', 
-              textAlign: 'center', 
-              padding: '60px 20px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px'
-            }}>
-              {hasActiveFilters 
-                ? `Не найдено специалистов${searchTerm ? ` по запросу "${searchTerm}"` : ''}${selectedCategory ? ' в выбранной категории' : ''}`
-                : 'Специалисты не найдены'}
-            </div>
-          ) : (
-            <Flex wrap gap="middle" justify="start">
-              {displayData.map((item: Specialist) => (
-                <SpecialistCard
-                  key={item.id}
-                  specialist={item}
-                  onClick={handleSpecialistSelect}
-                  forDelete={user?.role === 'admin'}
-                  onDelete={handleAdminDelete}
-                />
-              ))}
-            </Flex>
-          )}
-        </Content>
-      </Layout>
-    </Layout>
+          <div className="filter-item">
+            <div className="filter-label">Минимальный рейтинг</div>
+            <Input
+              placeholder="0.0"
+              value={minRatingFilter}
+              onChange={handleMinRatingChange}
+              disabled={isSearching}
+              size="large"
+              type="number"
+              min={0}
+              max={5}
+              step={0.1}
+            />
+          </div>
+
+          <div className="filters-actions">
+            <Button
+              type="primary"
+              onClick={fetchSpecialists}
+              loading={loading && !hasActiveFilters}
+              disabled={isSearching}
+              block
+            >
+              Обновить список
+            </Button>
+            {hasActiveFilters && (
+              <Button onClick={handleResetFilters} disabled={isSearching} block>
+                Сбросить фильтры
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        {displayData.length === 0 ? (
+          <div className="empty-state">
+            {hasActiveFilters
+              ? "По вашим фильтрам ничего не найдено"
+              : "Специалисты не найдены"}
+          </div>
+        ) : (
+          <div className="cards-grid">
+            {displayData.map((item: Specialist) => (
+              <SpecialistCard
+                key={item.id}
+                specialist={item}
+                onClick={handleSpecialistSelect}
+                forDelete={user?.role === "admin"}
+                onDelete={handleAdminDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

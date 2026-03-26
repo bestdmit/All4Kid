@@ -1,0 +1,72 @@
+.specialists-page {
+  min-height: calc(100vh - 64px);
+  background: #fff;
+  padding: 12px;
+}
+
+.specialists-page-inner {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.filters-card {
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px solid #d9d9d9;
+}
+
+.filters-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.filter-item {
+  margin-bottom: 10px;
+}
+
+.filter-label {
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #444;
+}
+
+.filters-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cards-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.empty-state {
+  margin-top: 12px;
+  text-align: center;
+  color: #666;
+  border: 1px dashed #cfcfcf;
+  border-radius: 12px;
+  padding: 24px 12px;
+}
+
+@media (min-width: 768px) {
+  .specialists-page {
+    padding: 16px 20px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1080px) {
+  .cards-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

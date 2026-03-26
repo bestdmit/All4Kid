@@ -13,13 +13,16 @@ interface SpecialistCardProps {
 }
 
 const cardStyle: React.CSSProperties = {
-  width: "15rem",
+  width: "100%",
   position: "relative",
-  cursor: "pointer"
+  cursor: "pointer",
+  border: "1px solid #d9d9d9",
+  borderRadius: "12px",
+  overflow: "hidden"
 };
 
 const coverStyle: React.CSSProperties = {
-  height: "120px",
+  height: "110px",
   objectFit: 'cover',
   width: "auto",
   margin: 0,
@@ -114,8 +117,8 @@ export default function SpecialistCard({
         </div>
       }
     >
-      <Title level={4} style={{ marginTop: 0 }}>{specialist.name}</Title>
-      <Text>{specialist.specialty}</Text>
+      <Title level={5} style={{ marginTop: 0, marginBottom: 2 }}>{specialist.name || "ФИО"}</Title>
+      <Text>{specialist.specialty || "Вид специалиста"}</Text>
       <br />
       <Text>{specialist.price_per_hour} ₽/час</Text>
       

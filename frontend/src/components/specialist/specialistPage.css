@@ -1,0 +1,211 @@
+.specialist-page-content {
+  padding: 16px 12px;
+  background: #ffffff;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.specialist-main-card {
+  width: 100%;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.specialist-main-avatar {
+  width: 220px;
+  height: 220px;
+  background-color: #d9d9d9;
+  border-radius: 8px;
+  margin-right: 16px;
+  flex-shrink: 0;
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+.specialist-main-meta {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.specialist-main-name {
+  font-size: 28px !important;
+}
+
+.specialist-main-specialty {
+  font-size: 20px;
+}
+
+.specialist-main-favorite {
+  font-size: 24px;
+}
+
+.specialist-main-details {
+  margin-top: 20px;
+}
+
+.specialist-main-icon {
+  font-size: 16px;
+}
+
+.specialist-main-detail-text {
+  font-size: 16px;
+}
+
+.specialist-section-card .ant-card-head-title {
+  font-size: 22px !important;
+}
+
+.specialist-section-paragraph {
+  font-size: 16px;
+}
+
+.specialist-section-muted {
+  font-size: 14px;
+}
+
+.specialist-gallery-main-image {
+  height: 300px;
+}
+
+.specialist-reviews-title {
+  font-size: 24px !important;
+}
+
+.specialist-reviews-add-btn {
+  font-size: 18px !important;
+}
+
+.specialist-review-user-name {
+  font-size: 16px;
+}
+
+.specialist-review-date,
+.specialist-review-text {
+  font-size: 13px;
+}
+
+.specialist-review-modal .ant-modal-header {
+  margin-bottom: 8px;
+}
+
+.specialist-review-modal .ant-modal-title {
+  font-size: 22px;
+}
+
+.specialist-review-modal .ant-modal-footer .ant-btn-default {
+  display: none;
+}
+
+.specialist-review-modal .ant-modal-footer .ant-btn-primary {
+  border-radius: 8px;
+  min-width: 44px;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .specialist-page-content {
+    padding: 8px 6px 16px;
+  }
+
+  .specialist-main-card .ant-card-body {
+    padding: 8px !important;
+    display: block !important;
+  }
+
+  .specialist-main-avatar {
+    width: 100%;
+    height: 190px;
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+
+  .specialist-main-title-row {
+    align-items: flex-start;
+  }
+
+  .specialist-main-name {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+  }
+
+  .specialist-main-specialty {
+    font-size: 14px;
+  }
+
+  .specialist-main-favorite {
+    font-size: 18px;
+  }
+
+  .specialist-main-details {
+    margin-top: 8px;
+  }
+
+  .specialist-main-icon {
+    font-size: 14px;
+  }
+
+  .specialist-main-detail-text {
+    font-size: 13px;
+  }
+
+  .specialist-section-card .ant-card-head {
+    min-height: 42px;
+    padding: 0 12px;
+  }
+
+  .specialist-section-card .ant-card-head-title {
+    font-size: 18px !important;
+    padding: 10px 0 !important;
+  }
+
+  .specialist-section-card .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .specialist-section-paragraph {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .specialist-section-muted {
+    font-size: 12px;
+  }
+
+  .specialist-gallery-main-image {
+    height: 170px;
+    border-radius: 6px !important;
+  }
+
+  .specialist-reviews-header {
+    margin-bottom: 10px !important;
+  }
+
+  .specialist-reviews-title {
+    font-size: 28px !important;
+    line-height: 1.1 !important;
+  }
+
+  .specialist-reviews-add-btn {
+    font-size: 16px !important;
+    white-space: nowrap;
+  }
+
+  .specialist-review-user-name {
+    font-size: 14px;
+  }
+
+  .specialist-review-date,
+  .specialist-review-text {
+    font-size: 12px;
+  }
+
+  .specialist-review-modal .ant-modal-content {
+    border-radius: 10px;
+  }
+
+  .specialist-review-modal .ant-form-item-label > label {
+    font-size: 18px;
+  }
+}

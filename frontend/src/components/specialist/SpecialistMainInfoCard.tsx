@@ -12,12 +12,7 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
 
     return (
         <Card
-            style={{
-                width: '100%',
-                border: '1px solid #d9d9d9',
-                borderRadius: 8,
-                marginBottom: 30
-            }}
+            className="specialist-main-card"
             styles={{
                 body: {
                     display: "flex",
@@ -28,52 +23,38 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
             <img
                 src={avatarSrc}
                 alt={specialist.name}
-                style={{
-                    width: 220,
-                    height: 220,
-                    backgroundColor: '#d9d9d9',
-                    borderRadius: 4,
-                    marginRight: 16,
-                    flexShrink: 0,
-                    objectFit: 'cover',
-                    objectPosition: 'center 18%'
-                }}
+                className="specialist-main-avatar"
                 onError={(e) => {
                     e.currentTarget.src = '/uploads/avatars/default.jpg';
                 }}
             />
 
-            <div style={{ flex: 1, margin: 0, padding: 0 }}>
-                <Space style={{ width: '100%', justifyContent: 'space-between', display: 'flex' }}>
+            <div className="specialist-main-meta">
+                <Space className="specialist-main-title-row" style={{ width: '100%', justifyContent: 'space-between', display: 'flex' }}>
                     <div>
-                        <Title level={5} style={{ margin: 0, marginTop: "-1rem", fontSize: 40 }}>
+                        <Title level={5} className="specialist-main-name" style={{ margin: 0 }}>
                             {specialist?.name}
                         </Title>
-                        <Text type="secondary" style={{ margin: 0, fontSize: 34 }}>
+                        <Text type="secondary" className="specialist-main-specialty" style={{ margin: 0 }}>
                             {specialist?.specialty}
                         </Text>
                     </div>
                     <HeartOutlined
-                        style={{
-                            fontSize: 30,
-                            color: '#E31b23',
-                            cursor: 'pointer',
-                            alignSelf: 'flex-start',
-                            paddingTop: "-10rem"
-                        }}
+                        className="specialist-main-favorite"
+                        style={{ color: '#E31b23', cursor: 'pointer', alignSelf: 'flex-start' }}
                     />
                 </Space>
 
-                <Space orientation="vertical" size={4} style={{ marginTop: 50 }}>
+                <Space orientation="vertical" size={4} className="specialist-main-details">
                     <Space>
-                        <EnvironmentOutlined style={{ color: '#8c8c8c', fontSize: 20 }} />
-                        <Text type="secondary" style={{ fontSize: 20 }}>{specialist?.location}</Text>
+                        <EnvironmentOutlined className="specialist-main-icon" style={{ color: '#8c8c8c' }} />
+                        <Text type="secondary" className="specialist-main-detail-text">{specialist?.location}</Text>
                     </Space>
 
                     <Space>
-                        <StarFilled style={{ color: '#FFD700', fontSize: 20 }} />
-                        <Text strong style={{ fontSize: 20 }}>{specialist?.rating}</Text>
-                        <Text type="secondary" style={{ fontSize: 20 }}>
+                        <StarFilled className="specialist-main-icon" style={{ color: '#FFD700' }} />
+                        <Text strong className="specialist-main-detail-text">{specialist?.rating}</Text>
+                        <Text type="secondary" className="specialist-main-detail-text">
                             {(specialist?.reviews_total ?? 0)} отзывов
                         </Text>
                     </Space>

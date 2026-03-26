@@ -67,26 +67,19 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
 
     return (
         <Card
-            style={{ borderRadius: 8, marginTop: 16, width: '100%' }}
-            styles={{ body: { padding: 20} }}
+            className="specialist-section-card specialist-reviews-card"
+            style={{ borderRadius: 8, marginTop: 0, width: '100%' }}
+            styles={{ body: { padding: 16 } }}
         >
             {/* Header */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 24
-            }}>
-                <Title level={4} style={{ margin: 0, fontSize: 32 }}>
+            <div className="specialist-reviews-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Title level={4} className="specialist-reviews-title" style={{ margin: 0 }}>
                     Отзывы ({total})
                 </Title>
                 <Button
                     type="link"
-                    style={{
-                        color: '#52c41a',
-                        fontSize: 24,
-                        padding: 0
-                    }}
+                    className="specialist-reviews-add-btn"
+                    style={{ color: '#52c41a', padding: 0 }}
                     onClick={openModal}
                 >
                     Написать отзыв
@@ -98,7 +91,7 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
             ) : null}
 
             {/* Reviews List */}
-            <Space orientation="vertical" size={20} style={{ width: '100%' }}>
+            <Space orientation="vertical" size={16} style={{ width: '100%' }}>
                 {reviews.map((review) => (
                     <div key={review.id}>
                         <Space align="start">
@@ -117,9 +110,9 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
                             <div style={{ flex: 1 }}>
                                 {/* Name and Date */}
                                 <div style={{ marginBottom: 4 }}>
-                                    <Text strong style={{ fontSize: 20 }}>{review.user_name || `Пользователь #${review.user_id}`}</Text>
+                                    <Text strong className="specialist-review-user-name">{review.user_name || `Пользователь #${review.user_id}`}</Text>
                                     <br />
-                                    <Text type="secondary" style={{ fontSize: 14 }}>{formatDate(review.created_at)}</Text>
+                                    <Text type="secondary" className="specialist-review-date">{formatDate(review.created_at)}</Text>
                                 </div>
 
                                 {/* Rating */}
@@ -129,12 +122,8 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
 
                                 {/* Review Text */}
                                 <Paragraph
-                                    style={{
-                                        margin: 0,
-                                        fontSize: 14,
-                                        lineHeight: 1.6,
-                                        color: '#262626'
-                                    }}
+                                    className="specialist-review-text"
+                                    style={{ margin: 0, lineHeight: 1.5, color: '#262626' }}
                                 >
                                     {review.comment}
                                 </Paragraph>
@@ -153,14 +142,15 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
             </Space>
 
             <Modal
-                title="Написать отзыв"
+                title="Оценка"
                 open={isModalOpen}
                 onCancel={closeModal}
                 onOk={onSubmit}
-                okText="Отправить"
-                cancelText="Отмена"
+                okText=">"
+                cancelText=""
                 confirmLoading={submitting}
                 destroyOnClose
+                className="specialist-review-modal"
             >
                 <Form form={form} layout="vertical" initialValues={{ rating: 5, comment: "" }}>
                     <Form.Item
@@ -178,7 +168,7 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
                             { min: 5, message: "Комментарий слишком короткий" },
                         ]}
                     >
-                        <Input.TextArea rows={4} placeholder="Поделитесь впечатлениями" />
+                        <Input.TextArea rows={4} placeholder="Опишите о каком опыте работы со специалистом. Что понравилось? Какие были результаты?" />
                     </Form.Item>
                 </Form>
             </Modal>

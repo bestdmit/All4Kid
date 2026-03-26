@@ -9,6 +9,7 @@ import SpecialistCard from "../src/SpecialistCard";
 import { specialistApi, type SpecialistDeletionNotice } from "../src/api/specialists";
 import ProfileTabs from "../src/ProfileTabs";
 import SpecialistSlotsManager from "../src/components/specialist/SpecialistSlotsManager";
+import "./profilePage.css";
 
 const { Title, Text } = Typography;
 
@@ -180,9 +181,9 @@ export default function ProfilePage() {
   return (
     <>
       <AppHeader />
-      <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="profile-page-container">
         {deletionNotices.length > 0 && (
-          <Card style={{ marginBottom: '24px' }}>
+          <Card className="profile-card profile-notices-card">
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <Title level={4} style={{ margin: 0 }}>Уведомления администратора</Title>
               {deletionNotices.map((notice) => (
@@ -210,12 +211,12 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        <Card style={{ marginBottom: '24px' }}>
-          <Title level={2}>Профиль пользователя</Title>
+        <Card className="profile-card profile-main-card">
+          <Title level={2} className="profile-main-title">Профиль пользователя</Title>
           
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {/* Аватар и управление */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingBottom: '16px', borderBottom: '1px solid #f0f0f0' }}>
+            <div className="profile-user-header">
               <Avatar
                 size={80}
                 src={user.avatarUrl}
@@ -224,9 +225,10 @@ export default function ProfilePage() {
               >
                 {user.fullName?.[0]?.toUpperCase()}
               </Avatar>
-              <div style={{ flex: 1 }}>
-                <Text strong style={{ fontSize: 16 }}>Фото профиля</Text>
-                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+              <div className="profile-user-info">
+                <div className="profile-photo-controls">
+                  <Text strong style={{ fontSize: 16 }}>Фото профиля</Text>
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                   <Upload
                     maxCount={1}
                     beforeUpload={(file) => {
@@ -258,25 +260,28 @@ export default function ProfilePage() {
                       Удалить
                     </Button>
                   )}
+                  </div>
+                </div>
+
+                <div className="profile-fields">
+                  {user.role === 'admin' && (
+                    <div className="profile-field-row">
+                      <Text strong className="profile-field-label">ID: </Text>
+                      <Text className="profile-field-value">{user.id}</Text>
+                    </div>
+                  )}
+
+                  <div className="profile-field-row">
+                    <Text strong className="profile-field-label">Email: </Text>
+                    <Text className="profile-field-value">{user.email}</Text>
+                  </div>
+
+                  <div className="profile-field-row">
+                    <Text strong className="profile-field-label">Роль: </Text>
+                    <Text className="profile-field-value">{user.role}</Text>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {user.role === 'admin' && (
-              <div>
-                <Text strong>ID: </Text>
-                <Text>{user.id}</Text>
-              </div>
-            )}
-            
-            <div>
-              <Text strong>Email: </Text>
-              <Text>{user.email}</Text>
-            </div>
-
-            <div>
-              <Text strong>Роль: </Text>
-              <Text>{user.role}</Text>
             </div>
 
             <Form
@@ -330,7 +335,7 @@ export default function ProfilePage() {
                 <Input placeholder="Например, +7 999 123-45-67" />
               </Form.Item>
 
-              <Flex gap="small" wrap>
+              <Flex gap="small" wrap className="profile-actions">
                 <Button type="primary" htmlType="submit" loading={saving}>
                   Сохранить
                 </Button>
@@ -342,14 +347,14 @@ export default function ProfilePage() {
           </Space>
         </Card>
 
-        <Card style={{ marginBottom: '24px' }}>
+      <Card className="profile-card profile-tabs-card">
           <ProfileTabs user={user} updateProfile={updateProfile} />
         </Card>
 
         {userSpecialists.length > 0 && (
-          <Card style={{ marginBottom: '24px' }}>
+          <Card className="profile-card profile-specialists-card">
             <Title level={3}>Мои объявления ({userSpecialists.length})</Title>
-            <Flex wrap gap="middle" justify="start">
+            <div className="profile-specialists-grid">
               {userSpecialists.map((spec) => (
                 <SpecialistCard 
                   key={spec.id}
@@ -359,12 +364,12 @@ export default function ProfilePage() {
                   isLoading={deleting === spec.id}
                 />
               ))}
-            </Flex>
+            </div>
           </Card>
         )}
 
         {userSpecialists.length > 0 && (
-          <Card>
+          <Card className="profile-card profile-schedule-card">
             <Title level={3}>Управление расписанием</Title>
             <Text type="secondary">
               Добавляйте свободные интервалы для каждого объявления. Родители увидят их на странице специалиста.

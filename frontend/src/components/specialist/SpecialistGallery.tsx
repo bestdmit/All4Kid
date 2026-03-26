@@ -22,21 +22,16 @@ const SpecialistGallery = ({specialist} : {specialist: Specialist}) => {
 
     return (
         <Card
+            className="specialist-section-card specialist-gallery-card"
             title="Галерея"
-            style={{ borderRadius: 8, marginTop: 16 }}
-            styles={{ body: {padding: 20}, title: {fontSize: 28} }}
+            style={{ borderRadius: 8, marginTop: 0 }}
+            styles={{ body: {padding: 16}, title: {fontSize: 24} }}
         >
             <div style={{ position: 'relative' }}>
                 {/* Main Image */}
                 <div
-                    style={{
-                        width: '100%',
-                        height: 300,
-                        backgroundColor: '#d9d9d9',
-                        borderRadius: 8,
-                        overflow: 'hidden',
-                        position: 'relative'
-                    }}
+                    className="specialist-gallery-main-image"
+                    style={{ width: '100%', backgroundColor: '#d9d9d9', borderRadius: 8, overflow: 'hidden', position: 'relative' }}
                 >
                     {images.length > 0 ? (
                         <img

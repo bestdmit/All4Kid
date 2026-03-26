@@ -10,11 +10,18 @@ export default function ReasonCard({ imagePath,titleText, descriptionText } : Re
     <Card variant="borderless" cover = {<img
           alt={descriptionText || "Изображение карточки"}
           src={imagePath}
-          style={{ height: 56, objectFit: 'contain', width:"auto", marginLeft:"auto", marginRight:"auto", marginTop:"8px" }}
+          style={{
+            height: "var(--reason-img-height, 10vh)",
+            objectFit: 'cover',
+            width: "auto",
+            marginLeft: "auto",
+            marginRight: "auto",
+            marginTop: "var(--reason-img-margin-top, 1vh)",
+          }}
         />} 
-        className="reason-card" >
-            <Typography.Title level={4} style={{marginTop:0, textAlign: "center", marginBottom: 8}}>{titleText}</Typography.Title>
-        <Typography.Paragraph style={{ textAlign: "center", marginBottom: 0 }}>{descriptionText}</Typography.Paragraph>
+        style={{ minWidth: 0, width: '100%', maxWidth: 300 }} >
+            <Typography.Title level={3} style={{ marginTop: 0 }}>{titleText}</Typography.Title>
+        <Typography.Paragraph>{descriptionText}</Typography.Paragraph>
     </Card>
     </>
 }

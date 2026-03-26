@@ -4,49 +4,100 @@
     align-items: center;
     justify-content: space-between;
     display: flex;
-    padding: 12px 24px;
-    border-bottom: 1px solid #ececec;
-}
-
-.buttonBlock{
-    margin-left: auto;
-    width:fit-content;
-    display: flex;
-    gap: 1rem;
-}
-.title{
-    width:fit-content;
-    color: #6155F5 !important;
-    margin: 0 !important;
-}
-
-.title a {
-    color: inherit;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
 }
 
 .burgerButton {
     display: none;
+    min-width: auto;
+    min-height: auto;
+    color: #6155F5;
     margin-left: auto;
 }
 
-.mobileMenu {
+.buttonBlock{
+    margin: 0;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    align-items: center;
 }
 
-@media (max-width: 900px) {
+.buttonBlock.open {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+}
+
+.title{
+    width: fit-content;
+    color: #6155F5 !important;
+    margin: 0 !important;
+}
+
+@media (min-width: 1024px) {
     .header {
-        padding: 8px 12px;
+        padding: 1rem 10rem;
+    }
+
+    .buttonBlock {
+        margin-left: auto;
+        gap: 1.25rem;
+    }
+
+    .title {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        justify-content: flex-start;
+    }
+
+    .buttonBlock {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .buttonBlock a,
+    .buttonBlock button {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .burgerButton {
+        display: inline-flex;
+        margin-left: auto;
+        align-items: center;
     }
 
     .buttonBlock {
         display: none;
     }
 
-    .burgerButton {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    .buttonBlock.open {
+        display: flex;
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .buttonBlock.open {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    .title {
+        font-size: 1rem;
     }
 }

@@ -1,0 +1,18 @@
+.best-specialist-card {
+  width: 15rem;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1200px) {
+  .best-specialist-card {
+    width: 13rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .best-specialist-card {
+    width: 10.5rem;
+  }
+}
+

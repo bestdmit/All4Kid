@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Card, Button, message, Input } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Card, Button, Input, Select, message, Typography } from "antd";
 import { useSpecialistStore } from "../stores/specialistStore";
 import SpecialistCard from "./SpecialistCard";
 import { specialistApi, type Specialist } from "./api/specialists";
@@ -7,7 +7,10 @@ import SearchBar from "./SearchBar";
 import CategoryFilter from "./CategoryFilter";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store";
+
 import "./tableOfSpecialists.css";
+
+const { Text } = Typography;
 
 function TableSpecialists() {
   const { 
@@ -20,32 +23,27 @@ function TableSpecialists() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
-  const [minRatingFilter, setMinRatingFilter] = useState('');
+  const [district, setDistrict] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [minRating, setMinRating] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuthStore((state) => state.user);
   const initialCategoryFromUrl = searchParams.get('category') || '';
   const initialSearchFromUrl = searchParams.get('search') || '';
-  const initialDistrictFromUrl = searchParams.get('district') || '';
-  const initialMinRatingFromUrl = searchParams.get('minRating') || '';
   
   // Инициализируем фильтры из URL и сразу выполняем поиск
   useEffect(() => {
     setSearchTerm(initialSearchFromUrl);
     setSelectedCategory(initialCategoryFromUrl);
-    setDistrictFilter(initialDistrictFromUrl);
-    setMinRatingFilter(initialMinRatingFromUrl);
     performSearch(initialSearchFromUrl, initialCategoryFromUrl);
   }, []);
 
-  const syncFiltersToUrl = (search: string, category: string, district: string, minRating: string) => {
+  const syncFiltersToUrl = (search: string, category: string) => {
     const nextParams = new URLSearchParams();
     if (search.trim()) nextParams.set('search', search.trim());
     if (category) nextParams.set('category', category);
-    if (district.trim()) nextParams.set('district', district.trim());
-    if (minRating.trim()) nextParams.set('minRating', minRating.trim());
     setSearchParams(nextParams, { replace: true });
   };
 
@@ -63,35 +61,14 @@ function TableSpecialists() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    syncFiltersToUrl(term, selectedCategory, districtFilter, minRatingFilter);
+    syncFiltersToUrl(term, selectedCategory);
     performSearch(term, selectedCategory);
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    syncFiltersToUrl(searchTerm, category, districtFilter, minRatingFilter);
+    syncFiltersToUrl(searchTerm, category);
     performSearch(searchTerm, category);
-  };
-
-  const handleDistrictChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const nextValue = event.target.value;
-    setDistrictFilter(nextValue);
-    syncFiltersToUrl(searchTerm, selectedCategory, nextValue, minRatingFilter);
-  };
-
-  const handleMinRatingChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const nextValue = event.target.value;
-    setMinRatingFilter(nextValue);
-    syncFiltersToUrl(searchTerm, selectedCategory, districtFilter, nextValue);
-  };
-
-  const handleResetFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('');
-    setDistrictFilter('');
-    setMinRatingFilter('');
-    setSearchParams({}, { replace: true });
-    fetchSpecialists(); // Загружаем всех специалистов заново
   };
 
   const handleSpecialistSelect = (id: number) => {
@@ -122,53 +99,59 @@ function TableSpecialists() {
     }
   };
 
-  const normalizedDistrictFilter = districtFilter.trim().toLowerCase();
-  const parsedMinRating = Number(minRatingFilter);
+  const normalizedDistrict = district.trim().toLowerCase();
+  const normalizedSpecialty = specialty.trim().toLowerCase();
+  const parsedMinRating = Number(minRating);
 
-  const displayData = specialists.filter((item) => {
-    const districtMatch =
-      !normalizedDistrictFilter ||
-      item.location.toLowerCase().includes(normalizedDistrictFilter);
-    const ratingMatch =
-      !minRatingFilter.trim() ||
-      (!Number.isNaN(parsedMinRating) && item.rating >= parsedMinRating);
+  const displayData = useMemo(() => {
+    return specialists.filter((item) => {
+      const districtOk = !normalizedDistrict || (item.location || '').toLowerCase().includes(normalizedDistrict);
+      const specialtyOk = !normalizedSpecialty || (item.specialty || '').toLowerCase().includes(normalizedSpecialty);
+      const ratingOk = !minRating.trim() || (!Number.isNaN(parsedMinRating) && item.rating >= parsedMinRating);
+      return districtOk && specialtyOk && ratingOk;
+    });
+  }, [specialists, normalizedDistrict, normalizedSpecialty, minRating, parsedMinRating]);
 
-    return districtMatch && ratingMatch;
-  });
+  const hasActiveFilters = Boolean(searchTerm || selectedCategory || district || specialty || minRating);
+  const displayLoading = (isSearching || loading) && specialists.length === 0;
 
-  const hasActiveFilters = Boolean(searchTerm || selectedCategory || districtFilter || minRatingFilter);
-  const displayLoading = hasActiveFilters ? isSearching : loading;
-
-  if (displayLoading && displayData.length === 0) {
-    return <div style={{ color: 'white', textAlign: 'center', padding: '40px' }}>Загрузка...</div>;
+  if (displayLoading) {
+    return <div className="specialists-loading">Загрузка...</div>;
   }
 
-  if (error && !hasActiveFilters) {
+  if (error) {
     return (
-      <div style={{ color: 'red', textAlign: 'center', padding: '40px' }}>
-        Ошибка: {error}
-        <br />
-        <Button type="primary" onClick={fetchSpecialists} style={{ marginTop: 10 }}>
+      <div className="specialists-error">
+        <Text type="danger">Ошибка: {error}</Text>
+        <Button type="primary" onClick={fetchSpecialists} className="specialists-error-btn">
           Попробовать снова
         </Button>
       </div>
     );
   }
 
+  const districtOptions = useMemo(() => {
+    const uniq = new Set(specialists.map((s) => s.location).filter(Boolean));
+    return Array.from(uniq);
+  }, [specialists]);
+
+  const specialtyOptions = useMemo(() => {
+    const uniq = new Set(specialists.map((s) => s.specialty).filter(Boolean));
+    return Array.from(uniq);
+  }, [specialists]);
+
   return (
     <div className="specialists-page">
-      <div className="specialists-page-inner">
-        <SearchBar
-          value={searchTerm}
-          onSearch={handleSearch}
-          loading={isSearching}
-        />
+      <div className="specialists-search-area">
+        <SearchBar onSearch={handleSearch} loading={isSearching} />
+      </div>
 
-        <Card className="filters-card" size="small">
-          <div className="filters-title">Фильтры</div>
+      <div className="specialists-layout">
+        <Card size="small" className="specialists-filters-card">
+          <div className="specialists-filters-title">Фильтры</div>
 
-          <div className="filter-item">
-            <div className="filter-label">Категория</div>
+          <div className="specialists-filter-group">
+            <div className="specialists-filter-label">Категория</div>
             <CategoryFilter
               value={selectedCategory}
               onChange={handleCategoryChange}
@@ -176,69 +159,80 @@ function TableSpecialists() {
             />
           </div>
 
-          <div className="filter-item">
-            <div className="filter-label">Район</div>
-            <Input
+          <div className="specialists-filter-group">
+            <div className="specialists-filter-label">Район</div>
+            <Select
               placeholder="Все районы"
-              value={districtFilter}
-              onChange={handleDistrictChange}
+              value={district || undefined}
+              onChange={(val) => setDistrict(val)}
+              allowClear
+              className="specialists-filter-select"
               disabled={isSearching}
-              size="large"
-            />
+            >
+              <Select.Option value="">Все районы</Select.Option>
+              {districtOptions.map((d) => (
+                <Select.Option key={d} value={d}>
+                  {d}
+                </Select.Option>
+              ))}
+            </Select>
           </div>
 
-          <div className="filter-item">
-            <div className="filter-label">Минимальный рейтинг</div>
+          <div className="specialists-filter-group">
+            <div className="specialists-filter-label">Вид специализации</div>
+            <Select
+              placeholder="Все специализации"
+              value={specialty || undefined}
+              onChange={(val) => setSpecialty(val)}
+              allowClear
+              className="specialists-filter-select"
+              disabled={isSearching}
+            >
+              <Select.Option value="">Все специализации</Select.Option>
+              {specialtyOptions.map((s) => (
+                <Select.Option key={s} value={s}>
+                  {s}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="specialists-filter-group specialists-filter-group-last">
+            <div className="specialists-filter-label">Минимальный рейтинг</div>
             <Input
               placeholder="0.0"
-              value={minRatingFilter}
-              onChange={handleMinRatingChange}
+              value={minRating}
+              onChange={(e) => setMinRating(e.target.value)}
               disabled={isSearching}
-              size="large"
               type="number"
               min={0}
               max={5}
               step={0.1}
+              className="specialists-filter-input"
+              size="large"
             />
-          </div>
-
-          <div className="filters-actions">
-            <Button
-              type="primary"
-              onClick={fetchSpecialists}
-              loading={loading && !hasActiveFilters}
-              disabled={isSearching}
-              block
-            >
-              Обновить список
-            </Button>
-            {hasActiveFilters && (
-              <Button onClick={handleResetFilters} disabled={isSearching} block>
-                Сбросить фильтры
-              </Button>
-            )}
           </div>
         </Card>
 
-        {displayData.length === 0 ? (
-          <div className="empty-state">
-            {hasActiveFilters
-              ? "По вашим фильтрам ничего не найдено"
-              : "Специалисты не найдены"}
-          </div>
-        ) : (
-          <div className="cards-grid">
-            {displayData.map((item: Specialist) => (
-              <SpecialistCard
-                key={item.id}
-                specialist={item}
-                onClick={handleSpecialistSelect}
-                forDelete={user?.role === "admin"}
-                onDelete={handleAdminDelete}
-              />
-            ))}
-          </div>
-        )}
+        <div className="specialists-results">
+          {displayData.length === 0 ? (
+            <div className="specialists-empty">
+              {hasActiveFilters ? "Ничего не найдено по выбранным фильтрам" : "Специалисты не найдены"}
+            </div>
+          ) : (
+            <div className="specialists-cards-grid">
+              {displayData.map((item: Specialist) => (
+                <SpecialistCard
+                  key={item.id}
+                  specialist={item}
+                  onClick={handleSpecialistSelect}
+                  forDelete={user?.role === 'admin'}
+                  onDelete={handleAdminDelete}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

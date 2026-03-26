@@ -1,0 +1,154 @@
+.heroSection {
+  background-color: #d9e5ff;
+  border-radius: 0;
+}
+.heroCard {
+  min-height: 60vh;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: #d9e5ff;
+}
+.heroContent {
+  max-width: 1000px;
+  width: 100%;
+}
+.heroTitle {
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+.heroText {
+  font-size: 1.5rem;
+}
+.heroButton {
+  margin-top: 16px;
+}
+.sectionCard {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  margin-bottom: 0;
+  padding: 2rem 1rem;
+  --reason-img-height: 10vh;
+  --category-img-height: 7vh;
+  --reason-img-margin-top: 1vh;
+  --category-img-margin-top: 1vh;
+}
+.sectionTitle {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.cardsRow {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.reasonCard, .categoryCard {
+  flex: 1 1 calc(25% - 1rem);
+  max-width: 300px;
+  min-width: 220px;
+}
+.bestSpecialistsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  justify-items: center;
+}
+.bestSpecialistsGrid .ant-card {
+  width: 100%;
+  max-width: 15rem;
+}
+
+@media (max-width: 1200px) {
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(33.333% - 1rem);
+    max-width: 260px;
+  }
+}
+@media (max-width: 900px) {
+  .heroText {
+    font-size: 1.2rem;
+  }
+  .heroCard {
+    min-height: auto;
+    padding: 1.25rem;
+  }
+  .heroTitle {
+    font-size: 2rem;
+  }
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(50% - 1rem);
+    max-width: 260px;
+  }
+}
+
+@media (min-width: 901px) {
+  /* Десктоп: фиксируем высоты иконок и делаем ряд более “ровным”, не затрагивая mobile */
+  .sectionCard {
+    --reason-img-height: 56px;
+    --category-img-height: 44px;
+    --reason-img-margin-top: 10px;
+    --category-img-margin-top: 10px;
+  }
+
+  .cardsRow {
+    display: grid;
+    justify-content: center;
+    align-items: stretch;
+    gap: 26px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .reasonCard, .categoryCard {
+    flex: none;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+@media (max-width: 640px) {
+  .heroTitle {
+    font-size: 1.5rem;
+  }
+  .heroText {
+    font-size: 1rem;
+  }
+  .sectionCard {
+    padding: 1rem 0.75rem;
+  }
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+  }
+  .bestSpecialistsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .heroButton .ant-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .sectionCard {
+    padding: 0.75rem 0.5rem;
+  }
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+  }
+  .bestSpecialistsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .heroTitle {
+    font-size: 1.3rem;
+  }
+  .heroText {
+    font-size: 0.95rem;
+  }
+}
+

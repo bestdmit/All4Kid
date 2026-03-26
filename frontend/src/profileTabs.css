@@ -1,0 +1,22 @@
+.profile-tabs-header {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.profile-tabs-header::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-tabs-tab {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 520px) {
+  .profile-tabs-tab {
+    font-size: 13px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+}
+

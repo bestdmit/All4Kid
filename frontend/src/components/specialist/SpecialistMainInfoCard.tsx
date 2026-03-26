@@ -1,11 +1,74 @@
-import {Card, Space} from "antd";
-import {EnvironmentOutlined, HeartOutlined, StarFilled} from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Space, message } from "antd";
+import { EnvironmentOutlined, HeartFilled, HeartOutlined, StarFilled } from "@ant-design/icons";
 import type {Specialist} from "../../api/specialists.ts";
 import { Typography } from 'antd';
+import { favoritesApi } from "../../api/favorites.ts";
+import { useAuth } from "../../../hooks/useAuth.ts";
 
 const { Title, Text } = Typography;
 
 export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) => {
+    const { isAuthenticated } = useAuth();
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadFavoriteStatus = async () => {
+            if (!isAuthenticated) {
+                setIsFavorite(false);
+                return;
+            }
+
+            try {
+                const status = await favoritesApi.getFavoriteStatus(specialist.id);
+                if (!cancelled) {
+                    setIsFavorite(status);
+                }
+            } catch {
+                if (!cancelled) {
+                    setIsFavorite(false);
+                }
+            }
+        };
+
+        loadFavoriteStatus();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, specialist.id]);
+
+    const handleToggleFavorite = async () => {
+        if (!isAuthenticated) {
+            message.info('Войдите в аккаунт, чтобы добавить специалиста в избранное');
+            return;
+        }
+
+        try {
+            setFavoriteLoading(true);
+            if (isFavorite) {
+                await favoritesApi.removeFavorite(specialist.id);
+                setIsFavorite(false);
+                message.success('Специалист удален из избранного');
+            } else {
+                await favoritesApi.addFavorite(specialist.id);
+                setIsFavorite(true);
+                message.success('Специалист добавлен в избранное');
+            }
+        } catch (error: any) {
+            if (error?.message === 'UNAUTHORIZED') {
+                message.info('Войдите в аккаунт, чтобы добавить специалиста в избранное');
+                return;
+            }
+            message.error(error?.message || 'Не удалось изменить избранное');
+        } finally {
+            setFavoriteLoading(false);
+        }
+    };
+
     const avatarSrc = specialist.avatar_url && specialist.avatar_url.trim()
         ? specialist.avatar_url
         : '/uploads/avatars/default.jpg';
@@ -39,10 +102,19 @@ export const SpecialistMainInfoCard = ({specialist} : {specialist: Specialist}) 
                             {specialist?.specialty}
                         </Text>
                     </div>
-                    <HeartOutlined
-                        className="specialist-main-favorite"
-                        style={{ color: '#E31b23', cursor: 'pointer', alignSelf: 'flex-start' }}
-                    />
+                    {isFavorite ? (
+                        <HeartFilled
+                            className="specialist-main-favorite"
+                            style={{ color: '#E31b23', cursor: favoriteLoading ? 'not-allowed' : 'pointer', alignSelf: 'flex-start', opacity: favoriteLoading ? 0.6 : 1 }}
+                            onClick={favoriteLoading ? undefined : handleToggleFavorite}
+                        />
+                    ) : (
+                        <HeartOutlined
+                            className="specialist-main-favorite"
+                            style={{ color: '#E31b23', cursor: favoriteLoading ? 'not-allowed' : 'pointer', alignSelf: 'flex-start', opacity: favoriteLoading ? 0.6 : 1 }}
+                            onClick={favoriteLoading ? undefined : handleToggleFavorite}
+                        />
+                    )}
                 </Space>
 
                 <Space orientation="vertical" size={4} className="specialist-main-details">

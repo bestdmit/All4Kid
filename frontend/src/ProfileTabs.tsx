@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip, Empty, Select } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { User } from "../stores/auth.store";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { bookingsApi, type Appointment } from "./api/bookings";
+import { favoritesApi } from "./api/favorites";
 import { specialistApi } from "./api/specialists";
 import { useBookingEventsStore } from "../stores/bookingEvents.store";
 import ReviewsModerationPanel from "./components/admin/ReviewsModerationPanel";
+import SpecialistCard from "./SpecialistCard";
 import "./profileTabs.css";
 
 const { Text } = Typography;
@@ -89,6 +91,7 @@ const isFutureDateValue = (value: string): boolean => {
 };
 
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
+  const navigate = useNavigate();
   const [active, setActive] = useState<string>("children");
   const { appointmentsVersion } = useBookingEventsStore();
   const maxBirthDate = toInputDateValue(new Date());
@@ -108,6 +111,8 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [updatingAppointmentId, setUpdatingAppointmentId] = useState<number | null>(null);
   const [hidingAppointmentId, setHidingAppointmentId] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
 
   const [mySpecialists, setMySpecialists] = useState<any[]>([]);
   const [selectedSpecialistId, setSelectedSpecialistId] = useState<number | null>(null);
@@ -148,6 +153,22 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       message.error(err?.message || 'Не удалось загрузить входящие записи');
     } finally {
       setLoadingAppointments(false);
+    }
+  };
+
+  const loadFavorites = async () => {
+    try {
+      setLoadingFavorites(true);
+      const data = await favoritesApi.getMyFavorites();
+      setFavorites(data);
+    } catch (err: any) {
+      if (err?.message === 'UNAUTHORIZED') {
+        setFavorites([]);
+        return;
+      }
+      message.error(err?.message || 'Не удалось загрузить избранное');
+    } finally {
+      setLoadingFavorites(false);
     }
   };
 
@@ -447,6 +468,10 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     if (active === 'admin_incoming' && user.role === 'admin') {
       loadIncomingAppointments(true);
     }
+
+    if (active === 'favorites') {
+      loadFavorites();
+    }
   }, [appointmentsVersion, active, user.role]);
 
   const renderContent = () => {
@@ -683,7 +708,26 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
           </div>
         );
       case "favorites":
-        return <Text>Избранные специалисты пока не добавлены</Text>;
+        return (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 18 }}>Избранные специалисты</Text>
+              <Button onClick={loadFavorites} loading={loadingFavorites}>Обновить</Button>
+            </div>
+
+            {!loadingFavorites && favorites.length === 0 && (
+              <Empty description="Избранных специалистов пока нет" style={{ marginTop: 24 }} />
+            )}
+
+            <Row gutter={[16, 16]}>
+              {favorites.map((spec) => (
+                <Col key={spec.id} xs={24} sm={12} md={8} lg={6}>
+                  <SpecialistCard specialist={spec} onClick={(id) => navigate(`/specialists/${id}`)} />
+                </Col>
+              ))}
+            </Row>
+          </div>
+        );
       case "review_moderation":
         return (
           <div style={{ paddingTop: 8 }}>
@@ -714,6 +758,9 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
               }
               if (tab.key === 'admin_incoming') {
                 loadIncomingAppointments(true);
+              }
+              if (tab.key === 'favorites') {
+                loadFavorites();
               }
             }}
             style={{

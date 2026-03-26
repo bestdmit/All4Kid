@@ -8,11 +8,13 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import { promises as fs } from 'fs';
 import { connectDB } from './database/db';
 import { ensureBookingsSchema } from './database/bookingsSchema';
+import { ensureFavoritesSchema } from './database/favoritesSchema';
 import specialistsRoutes from './routes/specialistsRoutes';
 import categoriesRoutes from './routes/categoriesRoutes';
 import authRoutes from './routes/authRoutes';
 import bookingsRoutes from './routes/bookingsRoutes';
 import reviewsRoutes from './routes/reviewsRoutes';
+import favoritesRoutes from './routes/favoritesRoutes';
 import cors from 'cors';
 import helmet from 'helmet';
 import adminRoutes from "./routes/adminRoutes";
@@ -43,6 +45,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api', bookingsRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -60,6 +63,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await ensureBookingsSchema();
+    await ensureFavoritesSchema();
 
      const defaultAvatarPath = path.join(__dirname, '../public/uploads/avatars/default.jpg');
     try {

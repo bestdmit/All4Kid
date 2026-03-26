@@ -1,6 +1,9 @@
-import { Card, Typography, Button, Popconfirm } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Typography, Button, Popconfirm, message } from "antd";
+import { DeleteOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
 import type { Specialist } from "../src/api/specialists";
+import { favoritesApi } from "./api/favorites";
+import { useAuth } from "../hooks/useAuth";
 import "./specialistCard.css";
 
 const { Title, Text } = Typography;
@@ -51,12 +54,59 @@ const deleteButtonStyle: React.CSSProperties = {
   width: "100%",
 };
 
+const favoriteButtonStyle: React.CSSProperties = {
+  position: "absolute",
+  top: "8px",
+  right: "8px",
+  zIndex: 2,
+  fontSize: "20px",
+  color: "#E31b23",
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
+  borderRadius: "50%",
+  width: "32px",
+  height: "32px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
 export default function SpecialistCard({ 
   specialist, 
   forDelete = false, 
   onDelete, onClick,
   isLoading = false 
 }: SpecialistCardProps) {
+  const { isAuthenticated } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFavoriteStatus = async () => {
+      if (!isAuthenticated || forDelete) {
+        setIsFavorite(false);
+        return;
+      }
+
+      try {
+        const status = await favoritesApi.getFavoriteStatus(specialist.id);
+        if (!cancelled) {
+          setIsFavorite(status);
+        }
+      } catch {
+        if (!cancelled) {
+          setIsFavorite(false);
+        }
+      }
+    };
+
+    loadFavoriteStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, specialist.id, forDelete]);
   
   const handleDelete = () => {
     if (onDelete) {
@@ -81,6 +131,38 @@ export default function SpecialistCard({
 
   const confirmDelete = () => {
     handleDelete();
+  };
+
+  const handleToggleFavorite = async (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+
+    if (!isAuthenticated) {
+      message.info('Войдите в аккаунт, чтобы добавить специалиста в избранное');
+      return;
+    }
+
+    try {
+      setFavoriteLoading(true);
+      if (isFavorite) {
+        await favoritesApi.removeFavorite(specialist.id);
+        setIsFavorite(false);
+        message.success('Удалено из избранного');
+      } else {
+        await favoritesApi.addFavorite(specialist.id);
+        setIsFavorite(true);
+        message.success('Добавлено в избранное');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '';
+
+      if (errorMessage === 'UNAUTHORIZED') {
+        message.info('Войдите в аккаунт, чтобы добавить специалиста в избранное');
+        return;
+      }
+      message.error(errorMessage || 'Не удалось изменить избранное');
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
   const avatarSrc = specialist.avatar_url && specialist.avatar_url.trim() 
@@ -118,6 +200,20 @@ export default function SpecialistCard({
               {specialist.rating}({specialist.reviews_total ?? 0})
             </span>
           </div>
+
+          {!forDelete && (
+            isFavorite ? (
+              <HeartFilled
+                style={{ ...favoriteButtonStyle, cursor: favoriteLoading ? "not-allowed" : "pointer", opacity: favoriteLoading ? 0.6 : 1 }}
+                onClick={favoriteLoading ? undefined : handleToggleFavorite}
+              />
+            ) : (
+              <HeartOutlined
+                style={{ ...favoriteButtonStyle, cursor: favoriteLoading ? "not-allowed" : "pointer", opacity: favoriteLoading ? 0.6 : 1 }}
+                onClick={favoriteLoading ? undefined : handleToggleFavorite}
+              />
+            )
+          )}
         </div>
       }
     >

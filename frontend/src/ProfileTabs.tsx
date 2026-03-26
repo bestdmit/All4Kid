@@ -69,9 +69,29 @@ const isTerminalStatus = (status: Appointment['status']) => {
   return status === 'completed' || status === 'cancelled_by_parent' || status === 'cancelled_by_specialist' || status === 'no_show';
 };
 
+const toInputDateValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const isFutureDateValue = (value: string): boolean => {
+  if (!value) return false;
+
+  const selectedDate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return selectedDate.getTime() > today.getTime();
+};
+
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const [active, setActive] = useState<string>("children");
   const { appointmentsVersion } = useBookingEventsStore();
+  const maxBirthDate = toInputDateValue(new Date());
 
   const [childName, setChildName] = useState("");
   const [childBirth, setChildBirth] = useState("");
@@ -179,6 +199,12 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       message.error("Введите имя ребенка");
       return;
     }
+
+    if (childBirth && isFutureDateValue(childBirth)) {
+      message.error('Дата рождения не может быть в будущем');
+      return;
+    }
+
     try {
       setAdding(true);
       const newChildren = [...(user.children || []), { name: childName.trim(), birthDate: childBirth || null }];
@@ -241,6 +267,11 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     const trimmedName = editChildName.trim();
     if (!trimmedName) {
       message.error('Введите имя ребенка');
+      return;
+    }
+
+    if (editChildBirth && isFutureDateValue(editChildBirth)) {
+      message.error('Дата рождения не может быть в будущем');
       return;
     }
 
@@ -351,7 +382,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Input placeholder="Имя ребёнка" value={childName} onChange={e => setChildName(e.target.value)} />
-            <Input type="date" value={childBirth} onChange={e => setChildBirth(e.target.value)} />
+            <Input type="date" max={maxBirthDate} value={childBirth} onChange={e => setChildBirth(e.target.value)} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Button onClick={() => setAddModalVisible(false)}>Отмена</Button>
               <Button type="primary" onClick={handleAddChild} loading={adding}>Добавить</Button>
@@ -372,7 +403,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Input placeholder="Имя ребёнка" value={editChildName} onChange={e => setEditChildName(e.target.value)} />
-            <Input type="date" value={editChildBirth} onChange={e => setEditChildBirth(e.target.value)} />
+            <Input type="date" max={maxBirthDate} value={editChildBirth} onChange={e => setEditChildBirth(e.target.value)} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Button onClick={() => {
                 setEditModalVisible(false);

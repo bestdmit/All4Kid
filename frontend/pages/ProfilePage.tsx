@@ -1,27 +1,40 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import AppHeader from "../src/Header/AppHeader";
 import { useAuth } from "../hooks/useAuth";
 import { Navigate } from 'react-router-dom';
-import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input } from "antd";
+import { Button, Flex, message, Card, Typography, Space, Spin, Form, Input, Avatar, Upload, Modal, Alert } from "antd";
+import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSpecialistStore, type Specialist } from "../stores/specialistStore";
 import SpecialistCard from "../src/SpecialistCard";
+import { specialistApi, type SpecialistDeletionNotice } from "../src/api/specialists";
+import ProfileTabs from "../src/ProfileTabs";
+import SpecialistSlotsManager from "../src/components/specialist/SpecialistSlotsManager";
 
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading, logout, updateProfile, clearError } = useAuth();
-  const { specialists, getSpecialistsById, updateNameForCreator } = useSpecialistStore();
+  const { user, isAuthenticated, isLoading, logout, updateProfile, clearError, uploadAvatar, deleteAvatar } = useAuth();
+  const { getSpecialistsById, updateNameForCreator, removeSpecialistById, fetchSpecialists } = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [deletionNotices, setDeletionNotices] = useState<SpecialistDeletionNotice[]>([]);
+  const [acknowledgingNoticeId, setAcknowledgingNoticeId] = useState<number | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+
+    const bootstrapProfileData = async () => {
+      await fetchSpecialists();
       const list = getSpecialistsById(user.id);
       setUserSpecialists(list);
-    }
-  }, [user, specialists, getSpecialistsById]);
+      await loadDeletionNotices();
+    };
+
+    bootstrapProfileData();
+  }, [user, fetchSpecialists, getSpecialistsById]);
 
   useEffect(() => {
     if (user) {
@@ -46,20 +59,114 @@ export default function ProfilePage() {
   const handleDeleteSpecialist = async (id: number) => {
     try {
       setDeleting(id);
-      // Здесь будет реальный вызов API
-      await deleteSpecialist(id);
-      message.success("Специалист удален");
       
-      if (user?.fullName) {
-        
-        const specialists = getSpecialistsById(user.id);
-        setUserSpecialists(specialists);
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        message.error("Сессия истекла. Войдите заново");
+        logout();
+        return;
       }
-    } catch (error) {
-      message.error("Ошибка при удалении специалиста");
+
+      let reason: string | undefined;
+      if (user?.role === 'admin') {
+        reason = window.prompt('Укажите причину удаления объявления (минимум 5 символов):')?.trim();
+        if (!reason || reason.length < 5) {
+          message.error('Удаление отменено: нужна причина от 5 символов');
+          return;
+        }
+      }
+
+      await specialistApi.deleteById(id, accessToken, reason);
+      removeSpecialistById(id);
+
+      if (user) {
+        const updated = getSpecialistsById(user.id);
+        setUserSpecialists(updated);
+      }
+
+      message.success("Специалист удален");
+
+      if (user?.role === 'admin') {
+        await loadDeletionNotices();
+      }
+    } catch (error: any) {
+      if (error?.message === 'UNAUTHORIZED') {
+        message.error("Сессия истекла. Войдите заново");
+        logout();
+      } else if (error instanceof Error && error.message) {
+        message.error(error.message);
+      } else {
+        message.error("Ошибка при удалении специалиста");
+      }
     } finally {
       setDeleting(null);
     }
+  };
+
+  const loadDeletionNotices = async () => {
+    try {
+      if (!user) return;
+      const notices = await specialistApi.getMyDeletionNotices();
+      setDeletionNotices(notices);
+    } catch (error: any) {
+      if (error?.message !== 'UNAUTHORIZED') {
+        console.error('Не удалось загрузить уведомления об удалении:', error);
+      }
+    }
+  };
+
+  const acknowledgeNotice = async (id: number) => {
+    try {
+      setAcknowledgingNoticeId(id);
+      await specialistApi.acknowledgeDeletionNotice(id);
+      setDeletionNotices((prev) => prev.filter((item) => item.id !== id));
+      message.success('Уведомление отмечено как ознакомлен');
+    } catch (error: any) {
+      message.error(error?.message || 'Не удалось подтвердить уведомление');
+    } finally {
+      setAcknowledgingNoticeId(null);
+    }
+  };
+
+  const handleUploadAvatar = async (file: File) => {
+    try {
+      setUploadingAvatar(true);
+      const success = await uploadAvatar(file);
+      if (success) {
+        message.success('Аватар загружен');
+      } else {
+        message.error('Не удалось загрузить аватар');
+      }
+    } catch (err) {
+      message.error('Ошибка при загрузке аватара');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = () => {
+    Modal.confirm({
+      title: 'Удалить аватар?',
+      content: 'Вы уверены, что хотите удалить свой аватар?',
+      okText: 'Удалить',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        try {
+          setUploadingAvatar(true);
+          const success = await deleteAvatar();
+          if (success) {
+            message.success('Аватар удален');
+          } else {
+            message.error('Не удалось удалить аватар');
+          }
+        } catch (err) {
+          message.error('Ошибка при удалении аватара');
+        } finally {
+          setUploadingAvatar(false);
+        }
+      }
+    });
   };
 
   if (isInitialLoading || !user) {
@@ -74,14 +181,93 @@ export default function ProfilePage() {
     <>
       <AppHeader />
       <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        {deletionNotices.length > 0 && (
+          <Card style={{ marginBottom: '24px' }}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Title level={4} style={{ margin: 0 }}>Уведомления администратора</Title>
+              {deletionNotices.map((notice) => (
+                <Alert
+                  key={notice.id}
+                  type="warning"
+                  showIcon
+                  message={`Объявление «${notice.name}» удалено администратором`}
+                  description={
+                    <div>
+                      <div>Причина: {notice.deletion_reason}</div>
+                      <Button
+                        size="small"
+                        style={{ marginTop: 8 }}
+                        loading={acknowledgingNoticeId === notice.id}
+                        onClick={() => acknowledgeNotice(notice.id)}
+                      >
+                        Ознакомлен
+                      </Button>
+                    </div>
+                  }
+                />
+              ))}
+            </Space>
+          </Card>
+        )}
+
         <Card style={{ marginBottom: '24px' }}>
           <Title level={2}>Профиль пользователя</Title>
           
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <div>
-              <Text strong>ID: </Text>
-              <Text>{user.id}</Text>
+            {/* Аватар и управление */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingBottom: '16px', borderBottom: '1px solid #f0f0f0' }}>
+              <Avatar
+                size={80}
+                src={user.avatarUrl}
+                alt={user.fullName}
+                style={{ backgroundColor: '#1890ff' }}
+              >
+                {user.fullName?.[0]?.toUpperCase()}
+              </Avatar>
+              <div style={{ flex: 1 }}>
+                <Text strong style={{ fontSize: 16 }}>Фото профиля</Text>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                  <Upload
+                    maxCount={1}
+                    beforeUpload={(file) => {
+                      const isImage = file.type.startsWith('image/');
+                      if (!isImage) {
+                        message.error('Выберите изображение');
+                        return false;
+                      }
+                      const isLt5M = file.size / 1024 / 1024 < 5;
+                      if (!isLt5M) {
+                        message.error('Размер файла не должен превышать 5MB');
+                        return false;
+                      }
+                      handleUploadAvatar(file);
+                      return false;
+                    }}
+                  >
+                    <Button icon={<UploadOutlined />} loading={uploadingAvatar}>
+                      {user.avatarUrl ? 'Изменить' : 'Загрузить'}
+                    </Button>
+                  </Upload>
+                  {user.avatarUrl && (
+                    <Button 
+                      danger 
+                      icon={<DeleteOutlined />} 
+                      loading={uploadingAvatar}
+                      onClick={handleDeleteAvatar}
+                    >
+                      Удалить
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {user.role === 'admin' && (
+              <div>
+                <Text strong>ID: </Text>
+                <Text>{user.id}</Text>
+              </div>
+            )}
             
             <div>
               <Text strong>Email: </Text>
@@ -156,8 +342,12 @@ export default function ProfilePage() {
           </Space>
         </Card>
 
+        <Card style={{ marginBottom: '24px' }}>
+          <ProfileTabs user={user} updateProfile={updateProfile} />
+        </Card>
+
         {userSpecialists.length > 0 && (
-          <Card>
+          <Card style={{ marginBottom: '24px' }}>
             <Title level={3}>Мои объявления ({userSpecialists.length})</Title>
             <Flex wrap gap="middle" justify="start">
               {userSpecialists.map((spec) => (
@@ -172,14 +362,20 @@ export default function ProfilePage() {
             </Flex>
           </Card>
         )}
+
+        {userSpecialists.length > 0 && (
+          <Card>
+            <Title level={3}>Управление расписанием</Title>
+            <Text type="secondary">
+              Добавляйте свободные интервалы для каждого объявления. Родители увидят их на странице специалиста.
+            </Text>
+
+            {userSpecialists.map((spec) => (
+              <SpecialistSlotsManager key={`slots-${spec.id}`} specialist={spec} />
+            ))}
+          </Card>
+        )}
       </div>
     </>
   );
-}
-
-// Временные функции-заглушки (нужно будет заменить на реальные API вызовы)
-async function deleteSpecialist(id: number) {
-  // Здесь должен быть реальный API вызов
-  console.log(`Удаление специалиста с ID: ${id}`);
-  throw new Error("API для удаления еще не реализован");
 }

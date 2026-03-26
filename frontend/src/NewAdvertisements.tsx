@@ -1,15 +1,14 @@
 import {useEffect, useState} from 'react'
-import React from "react";
-import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select } from "antd";
+import {Form, Input, InputNumber, Button, Card, message, Space, Typography, Select, Divider} from "antd";
 import {type Category, useCategories} from "../hooks/useCategories.ts";
 import { useAuth } from '../hooks/useAuth';
+import { useAuthStore } from '../stores/auth.store';
 
 export interface CreateSpecialistDto {
   name: string;
   specialty: string;
   category: string;
   experience?: number;
-  rating?: number;
   location: string;
   price_per_hour?: number;
 }
@@ -109,13 +108,21 @@ export default function NewAdvertisements() {
       category: values.category,
       location: sanitizeText(values.location),
       experience: values.experience ?? 0,
-      rating: values.rating ?? 0,
       price_per_hour: values.price_per_hour ?? 0,
     };
 
     await createSpecialist(dataToSend, accessToken);
 
     message.success('Специалист успешно создан');
+    
+    // Обновляем роль пользователя на specialist если он был user
+    if (user && user.role === 'user') {
+      const setUser = useAuthStore.getState().setUser;
+      const updatedUser = { ...user, role: 'specialist' };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+    
     form.resetFields();
     form.setFieldsValue({
       name: user?.fullName || '',
@@ -146,7 +153,6 @@ export default function NewAdvertisements() {
       name: user?.fullName || '',
       category: 'Другое',
       experience: 0,
-      rating: 0,
       price_per_hour: 0
     });
   };
@@ -182,12 +188,11 @@ export default function NewAdvertisements() {
             name: user?.fullName || '',
             category: 'Другое',
             experience: 0,
-            rating: 0,
             price_per_hour: 0
           }}
         >
           <div style={{ marginBottom: 24 }}>
-            <Title level={4}>Основная информация</Title>
+            <Divider style={{fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4'}}>Основная информация</Divider>
             
             <Form.Item
               label="Имя специалиста"
@@ -257,9 +262,10 @@ export default function NewAdvertisements() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <Title level={4}>Дополнительная информация</Title>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+            <Divider style={{fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4'}}>Дополнительная информация</Divider>
+
+            <Space align={'center'} style={{justifyContent: 'center'}}>
+            <Space align={'center'} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, width: '100%' }}>
               <Form.Item
                 label="Опыт работы (лет)"
                 name="experience"
@@ -271,23 +277,6 @@ export default function NewAdvertisements() {
                   min={0}
                   max={50}
                   placeholder="0"
-                  style={{ width: '100%' }}
-                  disabled={loading || !isAuthenticated}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Рейтинг"
-                name="rating"
-                rules={[
-                  { type: 'number', min: 0, max: 5, message: 'Рейтинг должен быть от 0 до 5' }
-                ]}
-              >
-                <InputNumber 
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  placeholder="0.0"
                   style={{ width: '100%' }}
                   disabled={loading || !isAuthenticated}
                 />
@@ -307,7 +296,8 @@ export default function NewAdvertisements() {
                   disabled={loading || !isAuthenticated}
                 />
               </Form.Item>
-            </div>
+            </Space>
+            </Space>
           </div>
 
           <Form.Item>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSpecialistStore } from '../stores/specialistStore';
+import { useSpecialistStore } from '../../stores/specialistStore';
 
 export const useSpecialists = () => {
   const { specialists, loading, error, fetchSpecialists } = useSpecialistStore();

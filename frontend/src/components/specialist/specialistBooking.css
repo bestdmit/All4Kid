@@ -1,0 +1,252 @@
+.booking-card {
+  border-radius: 12px !important;
+  border: 1px solid #d9d9d9 !important;
+}
+
+.booking-card .ant-card-head {
+  border-bottom: 1px solid #d9d9d9 !important;
+  min-height: 56px;
+  padding: 0 16px;
+}
+
+.booking-card .ant-card-head-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 12px 0 !important;
+}
+
+.booking-card .ant-card-body {
+  padding: 14px 16px 16px !important;
+}
+
+.booking-content {
+  gap: 14px !important;
+}
+
+.booking-calendar-shell {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.booking-calendar-clean .ant-picker-panel {
+  border: 0 !important;
+}
+
+.booking-calendar-clean .ant-picker-cell-disabled .ant-picker-cell-inner {
+  background: transparent !important;
+}
+
+.booking-calendar-clean .ant-picker-cell::before {
+  background: transparent !important;
+}
+
+.booking-calendar-header {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #cfcfcf;
+}
+
+.booking-calendar-month-label {
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #262626;
+  white-space: nowrap;
+}
+
+.booking-calendar-nav-btn {
+  width: 36px;
+  min-width: 36px !important;
+  height: 36px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9d9d9 !important;
+  border-radius: 8px !important;
+  color: #8c8c8c !important;
+}
+
+.booking-calendar-clean .ant-picker-content th {
+  font-size: 12px;
+  color: #8a8a8a;
+  font-weight: 500;
+  padding-bottom: 5px;
+}
+
+.booking-calendar-clean .ant-picker-content td {
+  padding: 1px 0;
+}
+
+.booking-calendar-clean .ant-picker-calendar-date-content {
+  height: 0 !important;
+  min-height: 0 !important;
+}
+
+.booking-time-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 8px !important;
+}
+
+.booking-time-groups {
+  gap: 10px !important;
+}
+
+.booking-time-label {
+  font-size: 11px;
+  color: #7d7d7d !important;
+  letter-spacing: 0.01em;
+  margin-bottom: 4px !important;
+}
+
+.booking-time-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px !important;
+}
+
+.booking-time-button {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  font-size: 14px;
+  padding: 0 8px;
+}
+
+.booking-time-button.ant-btn-variant-outlined:not(:disabled):hover {
+  border-color: #7e57c2;
+  color: #7e57c2;
+}
+
+.booking-time-button.ant-btn-primary {
+  background: #5f5bf5;
+  border-color: #5f5bf5;
+}
+
+.booking-submit-btn {
+  margin-top: 10px;
+  border-radius: 10px !important;
+  height: 48px !important;
+  font-size: 20px !important;
+  font-weight: 500;
+}
+
+.booking-selected-slot {
+  font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+  .booking-card .ant-card-head-title {
+    font-size: 18px;
+  }
+
+  .booking-calendar-month-label {
+    font-size: 18px;
+  }
+
+  .booking-time-title {
+    font-size: 18px;
+  }
+
+  .booking-time-button {
+    font-size: 14px;
+    height: 34px;
+  }
+
+  .booking-submit-btn {
+    font-size: 16px !important;
+    height: 44px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .booking-card {
+    border-radius: 18px !important;
+    border-width: 1px !important;
+  }
+
+  .booking-card .ant-card-head {
+    min-height: 52px;
+    padding: 0 12px;
+  }
+
+  .booking-card .ant-card-head-title {
+    font-size: 16px;
+    padding: 10px 0 !important;
+  }
+
+  .booking-card .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .booking-content {
+    gap: 12px !important;
+  }
+
+  .booking-calendar-shell {
+    border-width: 1px;
+    border-radius: 14px;
+    padding: 8px;
+  }
+
+  .booking-calendar-header {
+    grid-template-columns: 30px 1fr 30px;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 8px;
+  }
+
+  .booking-calendar-month-label {
+    font-size: 16px;
+  }
+
+  .booking-calendar-nav-btn {
+    width: 30px;
+    min-width: 30px !important;
+    height: 30px;
+    border-radius: 6px !important;
+  }
+
+  .booking-calendar-clean .ant-picker-content th,
+  .booking-calendar-clean .ant-picker-cell-inner {
+    font-size: 12px;
+  }
+
+  .booking-time-title {
+    font-size: 16px;
+    margin-bottom: 8px !important;
+  }
+
+  .booking-time-label {
+    font-size: 11px;
+    margin-bottom: 4px !important;
+  }
+
+  .booking-time-buttons {
+    gap: 6px !important;
+  }
+
+  .booking-time-button {
+    height: 32px;
+    font-size: 12px;
+    border-radius: 8px;
+    border-width: 1px;
+  }
+
+  .booking-submit-btn {
+    height: 42px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    margin-top: 8px;
+  }
+}

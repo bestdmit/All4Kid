@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { query } from "../database/db";
+import { query, withTransaction } from "../database/db";
 import { AuthRequest } from "../middleware/auth";
 import path from "path";
 import fs from "fs/promises";
@@ -122,7 +122,6 @@ export const validateCreateSpecialist = [
     .isLength({ max: 2000 }),
 
   body("experience").optional().isNumeric(),
-  body("rating").optional().isNumeric(),
   body("price_per_hour").optional().isNumeric(),
 ];
 
@@ -136,9 +135,28 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
     const category = sanitizeString(req.query.category);
 
     let sql =
-      "SELECT spec.*, cat.slug FROM specialists spec INNER JOIN categories cat ON (spec.category = cat.name)";
+      `SELECT
+         spec.id,
+         spec.name,
+         spec.specialty,
+         spec.category,
+         spec.description,
+         spec.experience,
+         COALESCE(AVG(r.rating), 0)::numeric(3,2) AS rating,
+         spec.location,
+         spec.price_per_hour,
+         spec.avatar_url,
+         spec.created_at,
+         spec.user_id,
+         spec.created_by,
+         spec.is_approved,
+         cat.slug,
+         COUNT(r.id)::int AS reviews_total
+       FROM specialists spec
+       INNER JOIN categories cat ON (spec.category = cat.name)
+       LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)`;
     const params: any[] = [];
-    const cond: string[] = [];
+    const cond: string[] = ['spec.is_deleted_by_admin = FALSE'];
 
     if (search) {
       params.push(`%${search.toLowerCase()}%`);
@@ -151,6 +169,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
     }
 
     if (cond.length) sql += " WHERE " + cond.join(" AND ");
+    sql += " GROUP BY spec.id, cat.slug";
     sql += " ORDER BY spec.id DESC";
 
     const result = await query(sql, params);
@@ -177,7 +196,30 @@ export const getSpecialistById = async (req: Request, res: Response) => {
   try {
     const id = sanitizeNumber(req.params.id);
 
-    const result = await query("SELECT * FROM specialists WHERE id = $1", [id]);
+    const result = await query(
+      `SELECT
+         spec.id,
+         spec.name,
+         spec.specialty,
+         spec.category,
+         spec.description,
+         spec.experience,
+         COALESCE(AVG(r.rating), 0)::numeric(3,2) AS rating,
+         spec.location,
+         spec.price_per_hour,
+         spec.avatar_url,
+         spec.created_at,
+         spec.user_id,
+         spec.created_by,
+         spec.is_approved,
+         spec.is_deleted_by_admin,
+         COUNT(r.id)::int AS reviews_total
+       FROM specialists spec
+       LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)
+       WHERE spec.id = $1
+       GROUP BY spec.id`,
+      [id]
+    );
     if (!result.rows.length) {
       return res.status(404).json({
         success: false,
@@ -185,9 +227,18 @@ export const getSpecialistById = async (req: Request, res: Response) => {
       });
     }
 
+    const specialist = result.rows[0];
+    if (specialist.is_deleted_by_admin) {
+      return res.status(410).json({
+        success: false,
+        message: "Это объявление было удалено администратором",
+        deletionReason: specialist.deletion_reason,
+      });
+    }
+
     res.json({
       success: true,
-      data: result.rows[0],
+      data: specialist,
     });
   } catch (err) {
     console.error("Ошибка getSpecialistById:", err);
@@ -223,7 +274,6 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
       category,
       description,
       experience,
-      rating,
       location,
       price_per_hour,
     } = req.body;
@@ -237,12 +287,30 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
     const cleanLocation = sanitizeString(location);
 
     const cleanExp = sanitizeNumber(experience);
-    const cleanRating = sanitizeNumber(rating, 0, 5);
+    const cleanRating = 0;
     const cleanPrice = sanitizeNumber(price_per_hour);
 
-    const avatarUrl = avatarFile
-      ? `/uploads/avatars/${avatarFile.filename}`
-      : "/uploads/avatars/default.jpg";
+    // Определяем аватар для специалиста
+    let avatarUrl: string;
+    
+    if (avatarFile) {
+      // Если загружен файл при создании специалиста
+      avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
+    } else {
+      // Получаем аватар пользователя из базы
+      const userResult = await query(
+        'SELECT avatar_url FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      if (userResult.rows.length > 0 && userResult.rows[0].avatar_url) {
+        // Используем аватар пользователя если он есть
+        avatarUrl = userResult.rows[0].avatar_url;
+      } else {
+        // Иначе используем default
+        avatarUrl = "/uploads/avatars/default.jpg";
+      }
+    }
 
     const result = await query(
       `INSERT INTO specialists 
@@ -374,7 +442,6 @@ export const updateSpecialist = async (req: Request, res: Response) => {
       category,
       description,
       experience,
-      rating,
       location,
       price_per_hour,
       avatar_url,
@@ -387,11 +454,10 @@ export const updateSpecialist = async (req: Request, res: Response) => {
          category = $3,
          description = $4,
          experience = $5,
-         rating = $6,
-         location = $7,
-         price_per_hour = $8,
-         avatar_url = $9
-       WHERE id = $10
+         location = $6,
+         price_per_hour = $7,
+         avatar_url = $8
+       WHERE id = $9
        RETURNING *`,
       [
         sanitizeString(name),
@@ -399,7 +465,6 @@ export const updateSpecialist = async (req: Request, res: Response) => {
         sanitizeString(category),
         sanitizeString(description),
         sanitizeNumber(experience),
-        sanitizeNumber(rating, 0, 5),
         sanitizeString(location),
         sanitizeNumber(price_per_hour),
         sanitizeString(avatar_url),
@@ -428,10 +493,10 @@ export const updateSpecialist = async (req: Request, res: Response) => {
 
 export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
+    if (!req.user) {
+      return res.status(401).json({
         success: false,
-        message: "Недостаточно прав",
+        message: "Требуется авторизация",
       });
     }
 
@@ -442,13 +507,100 @@ export const deleteSpecialist = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: "Специалист не найден" });
     }
 
-    await safeDeleteFile(result.rows[0].avatar_url);
+    const specialist = result.rows[0];
 
-    await query("DELETE FROM specialists WHERE id = $1", [id]);
+    const isAdmin = req.user.role === "admin";
+    const isOwner =
+      specialist.user_id === req.user.id ||
+      specialist.created_by === req.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: "Недостаточно прав для удаления этого специалиста",
+      });
+    }
+
+    if (isAdmin) {
+      const reason = sanitizeString(req.body?.reason);
+      if (!reason || reason.length < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Укажите причину удаления (минимум 5 символов)',
+        });
+      }
+
+      await withTransaction(async (client) => {
+        // Освобождаем слоты для отменяемых записей
+        await client.query(
+          `UPDATE specialist_slots
+           SET is_booked = FALSE
+           WHERE id IN (
+             SELECT slot_id FROM appointments
+             WHERE specialist_id = $1 
+               AND status IN ('pending', 'confirmed')
+               AND slot_id IS NOT NULL
+           )`,
+          [id]
+        );
+
+        // Отменяем активные записи
+        await client.query(
+          `UPDATE appointments
+           SET status = 'cancelled_by_specialist',
+               cancel_reason = $1,
+               updated_at = NOW()
+           WHERE specialist_id = $2
+             AND status IN ('pending', 'confirmed')`,
+          [`Администратор удалил профиль: ${reason}`, id]
+        );
+
+        // Помечаем специалиста как удаленного
+        await client.query(
+          `UPDATE specialists
+           SET is_deleted_by_admin = TRUE,
+               deletion_reason = $1,
+               deletion_reason_acknowledged = FALSE,
+               deleted_at = NOW()
+           WHERE id = $2`,
+          [reason, id]
+        );
+      });
+
+      return res.json({
+        success: true,
+        message: 'Объявление скрыто администратором',
+      });
+    }
+
+    await safeDeleteFile(specialist.avatar_url);
+
+    // Use transaction to ensure all cascade operations complete atomically
+    await withTransaction(async (client) => {
+      // Cancel all active appointments for this specialist FIRST
+      // This must happen before deletion to properly record cancellation reason
+      const cancelResult = await client.query(
+        `UPDATE appointments
+         SET status = 'cancelled_by_specialist',
+             cancel_reason = 'Specialist deleted',
+             updated_at = NOW()
+         WHERE specialist_id = $1 
+         AND status IN ('pending', 'confirmed')`,
+        [id]
+      );
+      console.log(`Cancelled ${cancelResult.rowCount} appointments for specialist ${id}`);
+
+      // Delete specialist - ON DELETE CASCADE will handle:
+      // - specialist_slots deletion
+      // - appointments deletion (if not already cancelled)
+      // This is the safest approach that respects foreign key constraints
+      await client.query("DELETE FROM specialists WHERE id = $1", [id]);
+      console.log(`Deleted specialist ${id} and cascaded deletions`);
+    });
 
     res.json({
       success: true,
-      message: "Специалист удалён",
+      message: "Specialist deleted",
     });
   } catch (err) {
     console.error("Ошибка deleteSpecialist:", err);
@@ -470,7 +622,7 @@ export const getMySpecialists = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      "SELECT * FROM specialists WHERE user_id = $1 ORDER BY id DESC",
+      "SELECT * FROM specialists WHERE user_id = $1 AND is_deleted_by_admin = FALSE ORDER BY id DESC",
       [req.user.id]
     );
 
@@ -482,5 +634,64 @@ export const getMySpecialists = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error("Ошибка getMySpecialists:", err);
     res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+};
+
+export const getMyDeletionNotices = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Не авторизован' });
+    }
+
+    const result = await query(
+      `SELECT id, name, specialty, deletion_reason, deleted_at
+       FROM specialists
+       WHERE is_deleted_by_admin = TRUE
+         AND deletion_reason_acknowledged = FALSE
+         AND (user_id = $1 OR created_by = $1)
+       ORDER BY deleted_at DESC, id DESC`,
+      [req.user.id]
+    );
+
+    return res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount,
+    });
+  } catch (err) {
+    console.error('Ошибка getMyDeletionNotices:', err);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+export const acknowledgeDeletionNotice = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Не авторизован' });
+    }
+
+    const id = sanitizeNumber(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Некорректный id объявления' });
+    }
+
+    const updated = await query(
+      `UPDATE specialists
+       SET deletion_reason_acknowledged = TRUE
+       WHERE id = $1
+         AND is_deleted_by_admin = TRUE
+         AND (user_id = $2 OR created_by = $2)
+       RETURNING id`,
+      [id, req.user.id]
+    );
+
+    if (!updated.rows.length) {
+      return res.status(404).json({ success: false, message: 'Уведомление не найдено' });
+    }
+
+    return res.json({ success: true, message: 'Уведомление подтверждено' });
+  } catch (err) {
+    console.error('Ошибка acknowledgeDeletionNotice:', err);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
   }
 };

@@ -78,7 +78,6 @@ UPDATE specialists SET
     ELSE '/uploads/avatars/default.jpg'
   END;
 
-  -- Создаем таблицу пользователей (родителей)
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -92,13 +91,14 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Обновляем таблицу специалистов, связываем с пользователями
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS children JSONB DEFAULT '[]';
+
 ALTER TABLE specialists 
 ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
 ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS certificates JSONB DEFAULT '[]';
 
--- Таблица для хранения refresh токенов
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -107,14 +107,13 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Добавляем тестовых пользователей
 INSERT INTO users (email, password_hash, full_name, phone, role) VALUES
-('parent@example.com', '$2b$10$HvApX8AdKYAXoYNlV6SWlOuhHGckOiEZrFHFx1nP3yd298bhieq0O', 'Анна Иванова', '+79001234567', 'user'),
-('admin@example.com', '$2b$10$x8hRXl/35bWZBb/pZCWo.u5/HKTIUF35V7nr0GTyD0HPqdxpB5pqS', 'Администратор', '+79007654321', 'admin'),
-('specialist@example.com', '$2b$10$l6ixMIso0JM1JijftqKZn.MpKJPXjqkHiDIX9/M2x8QTdbk.0TtB2', 'Иван Петров', '+79001112233', 'specialist')
+('parent@example.com', '$2b$10$I69n4xm1.cDbbDhjpFMFmuMFQ3A9pMEfSPNECIHEWeWR2nrGT8Lb.', 'Анна Иванова', '+79001234567', 'user'),
+('parent2@example.com', '$2b$10$Pln6ZHOpUQ9DNIlJgdBtEeNRceZv.yG.xNvhkuq4Kbg0SIthodGOa', 'Ольга Смирнова', '+79001234568', 'user'),
+('admin@example.com', '$2b$10$rXbq58SRC7qx6f35M/LJW.6sZWzk20kn3hfVb9xTTVrrg6NF8X3Rq', 'Администратор', '+79007654321', 'admin'),
+('specialist@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Иван Петров', '+79001112233', 'specialist')
 ON CONFLICT (email) DO NOTHING;
 
--- Обновляем существующих специалистов, привязываем к пользователю
 UPDATE specialists s
 SET user_id = (SELECT id FROM users WHERE email = 'specialist@example.com')
 WHERE s.name = 'Иван Петров';
@@ -123,13 +122,12 @@ ALTER TABLE specialists
 ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE CASCADE;
 
--- Таблица отзывов
 CREATE TABLE IF NOT EXISTS reviews (
   id SERIAL PRIMARY KEY,
   specialist_id INTEGER NOT NULL REFERENCES specialists(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment TEXT NOT NULL,
+  comment TEXT NOT NULL DEFAULT '',
   is_verified BOOLEAN DEFAULT FALSE,
   is_approved BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -140,8 +138,8 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE INDEX IF NOT EXISTS idx_reviews_specialist_id ON reviews(specialist_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(is_approved);
 
--- Функция пересчета рейтинга специалиста по подтвержденным отзывам
 CREATE OR REPLACE FUNCTION refresh_specialist_rating_from_reviews()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -169,7 +167,37 @@ AFTER INSERT OR UPDATE OR DELETE ON reviews
 FOR EACH ROW
 EXECUTE FUNCTION refresh_specialist_rating_from_reviews();
 
--- Тестовые отзывы
+CREATE TABLE IF NOT EXISTS specialist_slots (
+  id SERIAL PRIMARY KEY,
+  specialist_id INTEGER NOT NULL REFERENCES specialists(id) ON DELETE CASCADE,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+  price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  is_booked BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (ends_at > starts_at),
+  UNIQUE (specialist_id, starts_at, ends_at)
+);
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id SERIAL PRIMARY KEY,
+  specialist_id INTEGER NOT NULL REFERENCES specialists(id) ON DELETE CASCADE,
+  parent_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  slot_id INTEGER NOT NULL UNIQUE REFERENCES specialist_slots(id) ON DELETE RESTRICT,
+  child_name VARCHAR(255) NOT NULL,
+  child_birth_date DATE,
+  comment TEXT NOT NULL DEFAULT '',
+  status VARCHAR(40) NOT NULL DEFAULT 'pending',
+  cancel_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (status IN ('pending', 'confirmed', 'cancelled_by_parent', 'cancelled_by_specialist', 'completed', 'no_show'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_specialist_slots_specialist_starts ON specialist_slots(specialist_id, starts_at);
+CREATE INDEX IF NOT EXISTS idx_appointments_parent_created ON appointments(parent_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_appointments_specialist_created ON appointments(specialist_id, created_at DESC);
+
 INSERT INTO reviews (specialist_id, user_id, rating, comment, is_verified, is_approved)
 SELECT 1, u.id, 5, 'Готовились к ОГЭ всего 3 месяца, результат превзошел ожидания.', TRUE, TRUE
 FROM users u

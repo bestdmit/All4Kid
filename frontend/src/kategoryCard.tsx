@@ -1,20 +1,35 @@
-import React from "react";
-import { Card,Typography  } from "antd";
+import { Card, Typography } from "antd";
+import { Link } from "react-router-dom";
 
 interface KategoryCardProps{
     imagePath: string;
     titleText:string;
+    to?: string;
 }
 
-export default function KategoryCard({imagePath,titleText}:KategoryCardProps){
+export default function KategoryCard({imagePath,titleText,to}:KategoryCardProps){
+    const cardContent = (
+        <Card
+            hoverable={Boolean(to)}
+            variant="borderless"
+            cover = {<img
+                alt={titleText || "Изображение карточки"}
+                src={imagePath}
+                style={{ height: "7vh", objectFit: 'cover',width:"auto",marginLeft:"auto",marginRight:"auto",marginTop:"1vh" }}
+            />}
+            style={{ width: 300 }}
+        >
+            <Typography.Title level={3} style={{marginTop:0,textAlign:"center"}}>{titleText}</Typography.Title>
+        </Card>
+    );
+
     return <>
-        <Card variant="borderless" cover = {<img
-                  alt={titleText || "Изображение карточки"}
-                  src={imagePath}
-                  style={{ height: "7vh", objectFit: 'cover',width:"auto",marginLeft:"auto",marginRight:"auto",marginTop:"1vh" }}
-                />} 
-                style={{ width: 300 }} >
-                    <Typography.Title level={3} style={{marginTop:0,textAlign:"center"}}>{titleText}</Typography.Title>
-            </Card>
+        {to ? (
+            <Link to={to} style={{ textDecoration: "none", color: "inherit" }}>
+                {cardContent}
+            </Link>
+        ) : (
+            cardContent
+        )}
     </>
 }

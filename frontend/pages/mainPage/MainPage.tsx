@@ -1,4 +1,3 @@
-import React from "react";
 import AppHeader from '../../src/Header/AppHeader';
 import ReasonCard from "../../src/reasonCard";
 import KategoryCard from "../../src/kategoryCard";
@@ -76,10 +75,10 @@ export default function MainPage(){
                 >
                     <Title style={{textAlign:"center"}}>Популярные категории</Title>
                     <Flex justify="center" align = "center" gap={"middle"}>
-                        <KategoryCard imagePath="../../src/images/kategories/sport.png" titleText="Спорт"/>
-                        <KategoryCard imagePath="../../src/images/kategories/Education.png" titleText="Образование"/>
-                        <KategoryCard imagePath="../../src/images/kategories/creativity.png" titleText="Творчество"/>
-                        <KategoryCard imagePath="../../src/images/kategories/Entertainment.png" titleText="Развлечения"/>
+                        <KategoryCard imagePath="../../src/images/kategories/sport.png" titleText="Спорт" to="/specialists?category=sports"/>
+                        <KategoryCard imagePath="../../src/images/kategories/Education.png" titleText="Образование" to="/specialists?category=education"/>
+                        <KategoryCard imagePath="../../src/images/kategories/creativity.png" titleText="Творчество" to="/specialists?category=creativity"/>
+                        <KategoryCard imagePath="../../src/images/kategories/Entertainment.png" titleText="Развлечения" to="/specialists?category=entertainment"/>
 
                     </Flex>
                 </Card>

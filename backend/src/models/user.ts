@@ -8,6 +8,7 @@ export interface User {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  children?: { name: string; birth_date?: string }[];
 }
 
 export interface LoginDto {
@@ -30,6 +31,7 @@ export interface AuthResponse {
     phone?: string;
     avatarUrl: string;
     role: string;
+    children?: { name: string; birthDate?: string }[];
   };
   accessToken: string;
   refreshToken: string;

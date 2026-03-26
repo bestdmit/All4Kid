@@ -1,7 +1,23 @@
-import { Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
-import { query } from '../database/db';
-import { AuthRequest } from '../middleware/auth';
+import { Request, Response } from "express";
+import { body, validationResult } from "express-validator";
+import { query } from "../database/db";
+import { AuthRequest } from "../middleware/auth";
+
+// --- Helper Functions ---
+
+function sanitizeNumber(value: any, min = 0, max: number | null = null): number {
+  let num = parseFloat(String(value));
+  if (isNaN(num)) num = min;
+  if (num < min) num = min;
+  if (max !== null && num > max) num = max;
+  return num;
+}
+
+function sanitizeString(value: any) {
+  return typeof value === "string"
+    ? value.trim().replace(/\s{2,}/g, " ")
+    : "";
+}
 
 function formatValidationErrors(req: Request) {
   const errors = validationResult(req);
@@ -16,31 +32,27 @@ function formatValidationErrors(req: Request) {
   });
 }
 
-function sanitizeString(value: unknown): string {
-  return typeof value === 'string' ? value.trim().replace(/\s{2,}/g, ' ') : '';
-}
-
 function parsePositiveInt(value: unknown): number | null {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     return null;
   }
-
   return parsed;
 }
 
-async function recalculateSpecialistRating(specialistId: number) {
-  await query(
-    `UPDATE specialists
-     SET rating = COALESCE((
-       SELECT ROUND(AVG(rating)::numeric, 2)
-       FROM reviews
-       WHERE specialist_id = $1 AND is_approved = TRUE
-     ), 0)
-     WHERE id = $1`,
+async function recomputeSpecialistRating(specialistId: number) {
+  const agg = await query(
+    `SELECT COALESCE(AVG(rating), 0)::numeric(3,2) AS avg_rating
+     FROM reviews
+     WHERE specialist_id = $1 AND is_approved = TRUE`,
     [specialistId]
   );
+  const avg = agg.rows[0]?.avg_rating ?? 0;
+  await query("UPDATE specialists SET rating = $1 WHERE id = $2", [avg, specialistId]);
+  return Number(avg);
 }
+
+// --- Validation Middleware ---
 
 export const validateCreateReview = [
   body('rating')
@@ -70,49 +82,49 @@ export const validateUpdateReview = [
     .withMessage('Комментарий должен быть от 10 до 1000 символов'),
 ];
 
+// --- Controllers ---
+
+export const getUnapprovedReviews = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+        `SELECT *
+       FROM reviews
+       WHERE is_approved = FALSE
+       ORDER BY created_at DESC`
+    );
+
+    res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount,
+    });
+  } catch (err) {
+    console.error("Ошибка getUnapprovedReviews:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+};
+
 export const getSpecialistReviews = async (req: Request, res: Response) => {
   try {
-    const specialistId = parsePositiveInt(req.params.specialistId);
+    const specialistId = sanitizeNumber(req.params.specialistId || req.params.id, 0); 
     if (!specialistId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Некорректный id специалиста',
-      });
+      return res.status(400).json({ success: false, message: "Некорректный id специалиста" });
     }
 
-    const specialistResult = await query('SELECT id FROM specialists WHERE id = $1', [
-      specialistId,
-    ]);
-
-    if (!specialistResult.rows.length) {
-      return res.status(404).json({
-        success: false,
-        message: 'Специалист не найден',
-      });
-    }
-
-    const reviewsResult = await query(
+    const result = await query(
       `SELECT
-         r.id,
-         r.specialist_id,
-         r.user_id,
-         r.rating,
-         r.comment,
-         r.is_approved,
-         r.created_at,
+         r.*,
          u.full_name AS user_name,
          u.avatar_url AS user_avatar
        FROM reviews r
-       INNER JOIN users u ON u.id = r.user_id
+       JOIN users u ON u.id = r.user_id
        WHERE r.specialist_id = $1 AND r.is_approved = TRUE
        ORDER BY r.created_at DESC`,
       [specialistId]
     );
 
-    const statsResult = await query(
-      `SELECT
-         COUNT(*)::int AS total,
-         COALESCE(ROUND(AVG(rating)::numeric, 2), 0) AS average_rating
+    const avgRes = await query(
+      `SELECT COALESCE(AVG(rating), 0)::numeric(3,2) AS average_rating
        FROM reviews
        WHERE specialist_id = $1 AND is_approved = TRUE`,
       [specialistId]
@@ -120,9 +132,9 @@ export const getSpecialistReviews = async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      data: reviewsResult.rows,
-      total: statsResult.rows[0].total,
-      average_rating: Number(statsResult.rows[0].average_rating),
+      data: result.rows,
+      total: result.rowCount,
+      average_rating: Number(avgRes.rows[0]?.average_rating ?? 0),
     });
   } catch (error) {
     console.error('Ошибка getSpecialistReviews:', error);
@@ -133,6 +145,7 @@ export const getSpecialistReviews = async (req: Request, res: Response) => {
   }
 };
 
+// Functions from HEAD but updated to use recomputeSpecialistRating
 export const createReview = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -201,7 +214,7 @@ export const createReview = async (req: AuthRequest, res: Response) => {
       [specialistId, req.user.id, rating, comment]
     );
 
-    await recalculateSpecialistRating(specialistId);
+    await recomputeSpecialistRating(specialistId);
 
     return res.status(201).json({
       success: true,
@@ -325,17 +338,20 @@ export const updateReview = async (req: AuthRequest, res: Response) => {
            comment = COALESCE($2, comment),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $3
-       RETURNING id, specialist_id, user_id, rating, comment, is_verified, is_approved, created_at, updated_at`,
+       RETURNING *`,
       [nextRating, nextComment, reviewId]
     );
 
-    await recalculateSpecialistRating(review.specialist_id);
-
+    if (updated.rows.length > 0) {
+        await recomputeSpecialistRating(review.specialist_id);
+    }
+    
     return res.json({
       success: true,
       data: updated.rows[0],
       message: 'Отзыв обновлен',
     });
+
   } catch (error) {
     console.error('Ошибка updateReview:', error);
     return res.status(500).json({
@@ -344,6 +360,46 @@ export const updateReview = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+export const approveReview = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Требуется авторизация" });
+    }
+
+    const reviewId = sanitizeNumber(req.body.id, 0);
+    if (!reviewId) {
+      return res.status(400).json({ success: false, message: "Некорректный id отзыва" });
+    }
+
+    const updated = await query(
+        `UPDATE reviews SET is_approved = $1
+       WHERE id = $2 RETURNING *`,
+        [true, reviewId]
+    );
+
+    if (updated.rows.length === 0) {
+       return res.status(404).json({ success: false, message: "Отзыв не найден" });
+    }
+
+    const specs = await query(
+        'SELECT specialist_id FROM reviews WHERE id = $1',
+        [reviewId]
+    );
+    
+    if (specs.rows.length > 0) {
+        await recomputeSpecialistRating(specs.rows[0].specialist_id);
+    }
+
+    res.json({
+      success: true,
+      data: updated.rows,
+    });
+  } catch (err) {
+    console.error("Ошибка approveReview:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+}
 
 export const deleteReview = async (req: AuthRequest, res: Response) => {
   try {
@@ -386,7 +442,8 @@ export const deleteReview = async (req: AuthRequest, res: Response) => {
     }
 
     await query('DELETE FROM reviews WHERE id = $1', [reviewId]);
-    await recalculateSpecialistRating(review.specialist_id);
+    
+    await recomputeSpecialistRating(review.specialist_id);
 
     return res.json({
       success: true,

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import upload from '../storage/storage';
 import {
   register,
   login,
@@ -6,14 +7,16 @@ import {
   logout,
   getCurrentUser,
   updateProfile,
-  validateProfileUpdate
+  validateProfileUpdate,
+  updateAvatarUser,
+  deleteAvatarUser
 } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 // POST /api/auth/register - регистрация
-router.post('/register', register);
+router.post('/register', upload.single('avatar'), register);
 
 // POST /api/auth/login - вход
 router.post('/login', login);
@@ -29,5 +32,11 @@ router.get('/me', authenticateToken, getCurrentUser);
 
 // PATCH /api/auth/me - обновление профиля (требует аутентификации)
 router.patch('/me', authenticateToken, validateProfileUpdate, updateProfile);
+
+// PATCH /api/auth/me/avatar - загрузка аватара (требует аутентификации)
+router.patch('/me/avatar', authenticateToken, upload.single('avatar'), updateAvatarUser);
+
+// DELETE /api/auth/me/avatar - удаление аватара (требует аутентификации)
+router.delete('/me/avatar', authenticateToken, deleteAvatarUser);
 
 export default router;

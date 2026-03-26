@@ -1,5 +1,4 @@
-import React from "react";
-import { Card, Typography, Button, message, Popconfirm } from "antd";
+import { Card, Typography, Button, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import type { Specialist } from "../src/api/specialists";
 
@@ -9,12 +8,14 @@ interface SpecialistCardProps {
   specialist: Specialist;
   forDelete?: boolean;
   onDelete?: (id: number) => void;
+  onClick?: (id: number) => void;
   isLoading?: boolean;
 }
 
 const cardStyle: React.CSSProperties = {
   width: "15rem",
   position: "relative",
+  cursor: "pointer"
 };
 
 const coverStyle: React.CSSProperties = {
@@ -49,7 +50,7 @@ const deleteButtonStyle: React.CSSProperties = {
 export default function SpecialistCard({ 
   specialist, 
   forDelete = false, 
-  onDelete,
+  onDelete, onClick,
   isLoading = false 
 }: SpecialistCardProps) {
   
@@ -59,16 +60,42 @@ export default function SpecialistCard({
     }
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(specialist.id);
+    }
+  };
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (event) => {
+    if (!onClick) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleClick();
+    }
+  };
+
   const confirmDelete = () => {
     handleDelete();
   };
 
+  const avatarSrc = specialist.avatar_url && specialist.avatar_url.trim() 
+    ? specialist.avatar_url 
+    : '/uploads/avatars/default.jpg';
+
   return (
-    <Card variant="borderless" style={cardStyle} 
+    <Card
+      variant="borderless"
+      style={cardStyle}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `Открыть страницу специалиста ${specialist.name}` : undefined}
       cover={
         <div style={{ ...coverStyle, position: 'relative' }}>
           <img 
-            src={specialist.avatar_url}
+            src={avatarSrc}
             alt={specialist.name}
             style={{ 
               width: '100%', 
@@ -106,6 +133,7 @@ export default function SpecialistCard({
             icon={<DeleteOutlined />}
             loading={isLoading}
             style={deleteButtonStyle}
+            onClick={(e) => e.stopPropagation()}
           >
             Удалить
           </Button>

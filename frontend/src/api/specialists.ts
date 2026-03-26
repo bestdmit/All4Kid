@@ -45,17 +45,24 @@ export const specialistApi = {
   },
 
   fetchByID: async (id: number): Promise<Specialist> => {
-    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`);    if (response.status === 410) {
+    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`);
+    
+    if (response.status === 410) {
       const result: any = await response.json();
       throw new Error(result.message || 'Это объявление было удалено администратором');
-    }    if (!response.ok) {
-      throw new Error(`Ошибка HTTP при получении специалистов: ${response.status}`);
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP при получении специалиста: ${response.status}`);
     }
     const result: ApiResponse<Specialist> = await response.json();
 
     if (!result.success || !result.data) {
       throw new Error(result.message || "Ошибка формата данных");
     }
+
+    // DEBUG: Temporary log to see what the frontend gets
+    // console.log("Fetched specialist successfully:", result.data);
 
     return result.data;
   },

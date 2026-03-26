@@ -40,7 +40,11 @@ export default function MainPage(){
                             </div>
                             <div className="reasonCard">
                                 <ReasonCard imagePath="../../src/images/reasons/FamilyLogo.png" titleText="Семейный профиль"
-                                    descriptionText="Прикрепляйте каждого специалиста к конкретному ребёнку"/>
+                                    descriptionText="Прикрепляйте каждого специалиста к конкретного ребёнку"/>
+                            </div>
+                            <div className="reasonCard">
+                                <ReasonCard imagePath="../../src/images/reasons/CalendarLogo.png" titleText="Удобная запись"
+                                    descriptionText="Выбирайте удобное время онлайн без звонков и ожидания"/>
                             </div>
                         </div>
                     </Card>

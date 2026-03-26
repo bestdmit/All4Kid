@@ -4,20 +4,97 @@
     align-items: center;
     justify-content: space-between;
     display: flex;
-    padding: 1vh;
-    padding-left: 10rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+}
+
+.burgerButton {
+    display: none;
+    min-width: auto;
+    min-height: auto;
+    color: #6155F5;
 }
 
 .buttonBlock{
-    margin-right: 15rem;
-    margin-left: auto;
-    width:fit-content;
+    margin: 0;
     display: flex;
-    gap: 2rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    align-items: center;
 }
+
+.buttonBlock.open {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+}
+
 .title{
-    width:fit-content;
+    width: fit-content;
     color: #6155F5 !important;
     margin: 0 !important;
-    margin-left: 10rem;
+}
+
+@media (min-width: 1024px) {
+    .header {
+        padding: 1rem 10rem;
+    }
+
+    .buttonBlock {
+        margin-left: auto;
+        gap: 1.25rem;
+    }
+
+    .title {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        justify-content: flex-start;
+    }
+
+    .buttonBlock {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .buttonBlock a,
+    .buttonBlock button {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .burgerButton {
+        display: inline-flex;
+    }
+
+    .buttonBlock {
+        display: none;
+    }
+
+    .buttonBlock.open {
+        display: flex;
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .buttonBlock.open {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    .title {
+        font-size: 1rem;
+    }
 }

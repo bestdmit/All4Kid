@@ -50,6 +50,17 @@
   max-width: 300px;
   min-width: 220px;
 }
+.bestSpecialistsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  justify-items: center;
+}
+.bestSpecialistsGrid .ant-card {
+  width: 100%;
+  max-width: 15rem;
+}
+
 @media (max-width: 1200px) {
   .reasonCard, .categoryCard {
     flex: 1 1 calc(33.333% - 1rem);
@@ -83,10 +94,33 @@
     padding: 1rem 0.75rem;
   }
   .reasonCard, .categoryCard {
-    flex: 1 1 100%;
-    max-width: 100%;
+    flex: 1 1 calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+  }
+  .bestSpecialistsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .heroButton .ant-btn {
     width: 100%;
   }
 }
+
+@media (max-width: 480px) {
+  .sectionCard {
+    padding: 0.75rem 0.5rem;
+  }
+  .reasonCard, .categoryCard {
+    flex: 1 1 calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+  }
+  .bestSpecialistsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .heroTitle {
+    font-size: 1.3rem;
+  }
+  .heroText {
+    font-size: 0.95rem;
+  }
+}
+

@@ -1,4 +1,4 @@
-import { Flex, Spin, Empty } from "antd";
+import { Spin, Empty, Flex } from "antd";
 import SpecialistCard from "./SpecialistCard";
 import { useSpecialists } from "../hooks/specialists/useSpecialists.ts";
 import type { Specialist } from "./api/specialists";

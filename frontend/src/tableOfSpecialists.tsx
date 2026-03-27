@@ -42,7 +42,7 @@ function TableSpecialists() {
 
   const syncFiltersToUrl = (search: string, category: string) => {
     const nextParams = new URLSearchParams();
-    if (search.trim()) nextParams.set('search', search.trim());
+    if (search?.trim()) nextParams.set('search', search?.trim());
     if (category) nextParams.set('category', category);
     setSearchParams(nextParams, { replace: true });
   };
@@ -99,21 +99,33 @@ function TableSpecialists() {
     }
   };
 
-  const normalizedDistrict = district.trim().toLowerCase();
-  const normalizedSpecialty = specialty.trim().toLowerCase();
+  const normalizedDistrict = district?.trim().toLowerCase();
+  const normalizedSpecialty = specialty?.trim().toLowerCase();
   const parsedMinRating = Number(minRating);
 
   const displayData = useMemo(() => {
     return specialists.filter((item) => {
       const districtOk = !normalizedDistrict || (item.location || '').toLowerCase().includes(normalizedDistrict);
       const specialtyOk = !normalizedSpecialty || (item.specialty || '').toLowerCase().includes(normalizedSpecialty);
-      const ratingOk = !minRating.trim() || (!Number.isNaN(parsedMinRating) && item.rating >= parsedMinRating);
+      const ratingOk = !minRating?.trim() || (!Number.isNaN(parsedMinRating) && item.rating >= parsedMinRating);
       return districtOk && specialtyOk && ratingOk;
     });
   }, [specialists, normalizedDistrict, normalizedSpecialty, minRating, parsedMinRating]);
 
   const hasActiveFilters = Boolean(searchTerm || selectedCategory || district || specialty || minRating);
   const displayLoading = (isSearching || loading) && specialists.length === 0;
+
+
+  const districtOptions = useMemo(() => {
+    const uniq = new Set(specialists.map((s) => s.location).filter(Boolean));
+    return Array.from(uniq);
+  }, [specialists]);
+
+  const specialtyOptions = useMemo(() => {
+    const uniq = new Set(specialists.map((s) => s.specialty).filter(Boolean));
+    return Array.from(uniq);
+  }, [specialists]);
+
 
   if (displayLoading) {
     return <div className="specialists-loading">Загрузка...</div>;
@@ -129,16 +141,6 @@ function TableSpecialists() {
       </div>
     );
   }
-
-  const districtOptions = useMemo(() => {
-    const uniq = new Set(specialists.map((s) => s.location).filter(Boolean));
-    return Array.from(uniq);
-  }, [specialists]);
-
-  const specialtyOptions = useMemo(() => {
-    const uniq = new Set(specialists.map((s) => s.specialty).filter(Boolean));
-    return Array.from(uniq);
-  }, [specialists]);
 
   return (
     <div className="specialists-page">

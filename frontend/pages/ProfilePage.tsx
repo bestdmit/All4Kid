@@ -228,7 +228,7 @@ export default function ProfilePage() {
               <div className="profile-user-info">
                 <div className="profile-photo-controls">
                   <Text strong style={{ fontSize: 16 }}>Фото профиля</Text>
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   <Upload
                     maxCount={1}
                     beforeUpload={(file) => {

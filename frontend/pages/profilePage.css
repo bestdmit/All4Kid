@@ -87,9 +87,10 @@
     height: 68px;
   }
 
-  /* На мобильном фото-контроли лучше не раздувают шапку */
   .profile-photo-controls {
-    display: none;
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .profile-main-card .ant-form-item-label > label {

@@ -11,7 +11,7 @@ const { Title, Text, Paragraph } = Typography;
 const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuthStore();
-    const { reviews, total, error, refetch } = useSpecialistReviews(specialist.id);
+    const { reviews, total, error } = useSpecialistReviews(specialist.id);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [form] = Form.useForm();

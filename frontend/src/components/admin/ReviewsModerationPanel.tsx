@@ -1,4 +1,4 @@
-import { Button, message, Rate, Space, Typography, Card, Avatar, Tooltip } from "antd";
+import { Button, message, Rate, Space, Typography, Card, Avatar } from "antd";
 import { Link } from "react-router-dom";
 import { UserOutlined } from "@ant-design/icons";
 import { useEffect, useMemo, useState } from "react";

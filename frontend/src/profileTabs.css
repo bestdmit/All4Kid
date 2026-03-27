@@ -20,3 +20,9 @@
   }
 }
 
+@media (max-width: 800px) {
+  .records-tab {
+    flex-direction: column;
+  }
+}
+

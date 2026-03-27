@@ -10,7 +10,7 @@ All4Kid — это удобный и современный агрегатор, 
 
 **Целевая аудитория:** Родители детей в возрасте от 0 до 16 лет, проживающие в крупных городах.
 
- **Ссылка на проект:** [http://178.72.152.25/](http://178.72.152.25/)
+ **Ссылка на проект:** [https://all-4-kid.ru/](https://all-4-kid.ru/)
  **Фигма:**[Ссылка](https://www.figma.com/design/SEm64VHzqQ2vxbtfv7hZm3/All4kid?node-id=0-1&t=KfQK3JIvG61nSXvV-1)
 ## Основной функционал (V0)
 
@@ -33,6 +33,17 @@ All4Kid — это удобный и современный агрегатор, 
 - **Фронтенд:** TypeScript, React, Tailwind CSS
 - **Бэкенд:** Node.js, Express.js
 - **База данных:** PostgreSQL
+
+## Администрирование:
+- **Логин:** admin@example.com **Пароль:** gdsta_3231
+- **Логин:** admin1@example.com **Пароль:** ghwer1hg
+- **Логин:** admin2@example.com **Пароль:** ghwer2hg
+- **Логин:** admin3@example.com **Пароль:** ghwer3hg
+- **Логин:** admin4@example.com **Пароль:** ghwer4hg
+- **Логин:** admin5@example.com **Пароль:** ghwer5hg
+- **Логин:** admin6@example.com **Пароль:** ghwer6hg
+- **Логин:** admin7@example.com **Пароль:** ghwer7hg
+- **Логин:** admin8@example.com **Пароль:** ghwer8hg
 
 ## Настройка проверки email
 

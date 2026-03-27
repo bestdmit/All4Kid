@@ -14,13 +14,13 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        <Route path='/' element={< MainPage/>}/>
         <Route path="/specialists" element={< TableSpecialistsPage/>} />
         <Route path="/specialists/:id" element={<SpecialisPage />} />
         <Route path="/auth" element={< AuthorizationPage/>} />
         <Route path="/create" element={<NewAdvertisementsPage/>} />
         <Route path="/profile" element={<ProfilePage />} />
         {user?.role == 'admin' ? <Route path="/admin" element={<AdminPage />}/> : <Route path="/admin" element={<Navigate to="/" replace />} />}
+        <Route path='*' element={< MainPage/>}/>
       </Routes>
     </div>
   );

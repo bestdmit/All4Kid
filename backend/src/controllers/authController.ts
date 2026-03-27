@@ -603,6 +603,19 @@ export const updateAvatarUser = async (req: AuthRequest, res: Response) => {
 
     const user = result.rows[0];
 
+    if (user.role == 'specialist') {
+      const result = await query(
+        'SELECT avatar_url FROM specialists WHERE user_id = $1', [req.user.id]
+      );
+
+      if (result.rows[0].avatar_url == '/uploads/avatars/default.jpg'){
+        await query(
+            'UPDATE specialists SET avatar_url = $1 WHERE user_id = $2',
+            [newUrl, req.user.id]
+        );
+      }
+    }
+
     return res.json({
       success: true,
       data: {
@@ -641,6 +654,7 @@ export const deleteAvatarUser = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'Пользователь не найден' });
     }
 
+    const prevAvatar = userResult.rows[0].avatar_url;
     await safeDeleteFile(userResult.rows[0].avatar_url);
 
     const result = await query(
@@ -649,6 +663,19 @@ export const deleteAvatarUser = async (req: AuthRequest, res: Response) => {
     );
 
     const user = result.rows[0];
+
+    if (user.role == 'specialist') {
+      const result = await query(
+          'SELECT avatar_url FROM specialists WHERE user_id = $1', [req.user.id]
+      );
+
+      if (result.rows[0].avatar_url == prevAvatar){
+        await query(
+            'UPDATE specialists SET avatar_url = $1 WHERE user_id = $2',
+            ['/uploads/avatars/default.jpg', req.user.id]
+        );
+      }
+    }
 
     return res.json({
       success: true,

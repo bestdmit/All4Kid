@@ -650,6 +650,69 @@ export const hideAppointment = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const deleteAppointmentsByChild = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Требуется авторизация' });
+    }
+
+    const childName = sanitizeString(req.body.childName);
+    const childBirthDateRaw = sanitizeString(req.body.childBirthDate);
+
+    if (!childName) {
+      return res.status(400).json({ success: false, message: 'Некорректное имя ребенка' });
+    }
+
+    const normalizedBirthDate = childBirthDateRaw || null;
+
+    const data = await withTransaction(async (client) => {
+      const matched = await client.query(
+        `SELECT a.id, a.slot_id
+         FROM appointments a
+         WHERE a.parent_user_id = $1
+           AND LOWER(TRIM(a.child_name)) = LOWER($2)
+           AND COALESCE(a.child_birth_date::text, '') = COALESCE($3, '')`,
+        [req.user!.id, childName, normalizedBirthDate]
+      );
+
+      if (!matched.rows.length) {
+        return { deletedCount: 0 };
+      }
+
+      const appointmentIds = matched.rows.map((row: { id: number }) => row.id);
+      const slotIds = matched.rows
+        .map((row: { slot_id: number | null }) => row.slot_id)
+        .filter((value): value is number => Number.isFinite(value));
+
+      await client.query(
+        `DELETE FROM appointments WHERE id = ANY($1::int[])`,
+        [appointmentIds]
+      );
+
+      if (slotIds.length) {
+        await client.query(
+          `UPDATE specialist_slots
+           SET is_booked = FALSE
+           WHERE id = ANY($1::int[])
+             AND starts_at > NOW()`,
+          [slotIds]
+        );
+      }
+
+      return { deletedCount: appointmentIds.length };
+    });
+
+    return res.json({
+      success: true,
+      data,
+      message: data.deletedCount > 0 ? 'Записи ребенка удалены' : 'Записи ребенка не найдены',
+    });
+  } catch (error) {
+    console.error('Ошибка deleteAppointmentsByChild:', error);
+    return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
 export const validateAppointmentDate = (value: string) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;

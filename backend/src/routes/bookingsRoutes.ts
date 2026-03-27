@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createAppointment,
   createSpecialistSlot,
+  deleteAppointmentsByChild,
   deleteSpecialistSlot,
   getMyAppointments,
   getMySpecialistAppointments,
@@ -22,5 +23,6 @@ router.get('/appointments/me', authenticateToken, getMyAppointments);
 router.get('/appointments/specialist/me', authenticateToken, getMySpecialistAppointments);
 router.patch('/appointments/:id/status', authenticateToken, updateAppointmentStatus);
 router.patch('/appointments/:id/hide', authenticateToken, hideAppointment);
+router.delete('/appointments/by-child', authenticateToken, deleteAppointmentsByChild);
 
 export default router;

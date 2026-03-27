@@ -55,6 +55,11 @@ export interface CreateSlotDto {
   price?: number;
 }
 
+export interface DeleteChildAppointmentsDto {
+  childName: string;
+  childBirthDate?: string | null;
+}
+
 export const bookingsApi = {
   async parseErrorMessage(response: Response, fallback: string): Promise<string> {
     try {
@@ -319,5 +324,40 @@ export const bookingsApi = {
     if (!result.success) {
       throw new Error(result.message || 'Не удалось скрыть запись');
     }
+  },
+
+  async deleteAppointmentsByChild(dto: DeleteChildAppointmentsDto): Promise<number> {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const response = await fetch('/api/appointments/by-child', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(dto),
+    });
+
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (response.status === 403) {
+      throw new Error(await bookingsApi.parseErrorMessage(response, 'Недостаточно прав для удаления записей ребенка'));
+    }
+
+    if (!response.ok) {
+      throw new Error(await bookingsApi.parseErrorMessage(response, `Ошибка HTTP при удалении записей ребенка: ${response.status}`));
+    }
+
+    const result: ApiResponse<{ deletedCount?: number }> = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || 'Не удалось удалить записи ребенка');
+    }
+
+    return result.data?.deletedCount || 0;
   },
 };

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Button, message, Input, Typography, Card, Row, Col, Avatar, Modal, Tooltip, Empty, Select } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { User } from "../stores/auth.store";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { bookingsApi, type Appointment } from "./api/bookings";
+import { favoritesApi } from "./api/favorites";
 import { specialistApi } from "./api/specialists";
 import { useBookingEventsStore } from "../stores/bookingEvents.store";
 import ReviewsModerationPanel from "./components/admin/ReviewsModerationPanel";
+import SpecialistCard from "./SpecialistCard";
 import "./profileTabs.css";
 
 const { Text } = Typography;
@@ -69,20 +71,48 @@ const isTerminalStatus = (status: Appointment['status']) => {
   return status === 'completed' || status === 'cancelled_by_parent' || status === 'cancelled_by_specialist' || status === 'no_show';
 };
 
+const toInputDateValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const isFutureDateValue = (value: string): boolean => {
+  if (!value) return false;
+
+  const selectedDate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return selectedDate.getTime() > today.getTime();
+};
+
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
+  const navigate = useNavigate();
   const [active, setActive] = useState<string>("children");
   const { appointmentsVersion } = useBookingEventsStore();
+  const maxBirthDate = toInputDateValue(new Date());
 
   const [childName, setChildName] = useState("");
   const [childBirth, setChildBirth] = useState("");
   const [adding, setAdding] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingChildIndex, setEditingChildIndex] = useState<number | null>(null);
+  const [editChildName, setEditChildName] = useState("");
+  const [editChildBirth, setEditChildBirth] = useState("");
+  const [editing, setEditing] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [incomingAppointments, setIncomingAppointments] = useState<Appointment[]>([]);
   const [adminAppointments, setAdminAppointments] = useState<Appointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [updatingAppointmentId, setUpdatingAppointmentId] = useState<number | null>(null);
   const [hidingAppointmentId, setHidingAppointmentId] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
 
   const [mySpecialists, setMySpecialists] = useState<any[]>([]);
   const [selectedSpecialistId, setSelectedSpecialistId] = useState<number | null>(null);
@@ -123,6 +153,22 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       message.error(err?.message || 'Не удалось загрузить входящие записи');
     } finally {
       setLoadingAppointments(false);
+    }
+  };
+
+  const loadFavorites = async () => {
+    try {
+      setLoadingFavorites(true);
+      const data = await favoritesApi.getMyFavorites();
+      setFavorites(data);
+    } catch (err: any) {
+      if (err?.message === 'UNAUTHORIZED') {
+        setFavorites([]);
+        return;
+      }
+      message.error(err?.message || 'Не удалось загрузить избранное');
+    } finally {
+      setLoadingFavorites(false);
     }
   };
 
@@ -174,6 +220,12 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       message.error("Введите имя ребенка");
       return;
     }
+
+    if (childBirth && isFutureDateValue(childBirth)) {
+      message.error('Дата рождения не может быть в будущем');
+      return;
+    }
+
     try {
       setAdding(true);
       const newChildren = [...(user.children || []), { name: childName.trim(), birthDate: childBirth || null }];
@@ -204,6 +256,17 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
       onOk: async () => {
         try {
           const current = user.children || [];
+          const childToDelete = current[index];
+          if (!childToDelete) {
+            message.error('Ребенок не найден');
+            return;
+          }
+
+          await bookingsApi.deleteAppointmentsByChild({
+            childName: String(childToDelete.name || '').trim(),
+            childBirthDate: childToDelete.birthDate || null,
+          });
+
           const newChildren = current.filter((_: any, i: number) => i !== index);
           const ok = await updateProfile({ children: newChildren });
           if (ok) {
@@ -217,6 +280,66 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         }
       }
     });
+  };
+
+  const handleOpenEditChild = (index: number) => {
+    const children = user.children || [];
+    const child = children[index];
+    if (!child) return;
+
+    setEditingChildIndex(index);
+    setEditChildName(String(child.name || ''));
+    setEditChildBirth(child.birthDate || '');
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEditedChild = async () => {
+    if (editingChildIndex === null) return;
+
+    const trimmedName = editChildName.trim();
+    if (!trimmedName) {
+      message.error('Введите имя ребенка');
+      return;
+    }
+
+    if (editChildBirth && isFutureDateValue(editChildBirth)) {
+      message.error('Дата рождения не может быть в будущем');
+      return;
+    }
+
+    const current = user.children || [];
+    if (!current[editingChildIndex]) {
+      message.error('Ребенок не найден');
+      return;
+    }
+
+    const newChildren = current.map((child, index) => {
+      if (index !== editingChildIndex) return child;
+
+      return {
+        name: trimmedName,
+        birthDate: editChildBirth || null,
+      };
+    });
+
+    try {
+      setEditing(true);
+      const ok = await updateProfile({ children: newChildren });
+      if (ok) {
+        message.success('Данные ребенка обновлены');
+        setEditModalVisible(false);
+        setEditingChildIndex(null);
+        setEditChildName('');
+        setEditChildBirth('');
+      } else {
+        message.error('Не удалось сохранить изменения');
+      }
+    } catch (err: any) {
+      console.error(err);
+      message.error(err?.message || 'Ошибка при сохранении');
+    } finally {
+      setEditing(false);
+    }
   };
 
   const renderChildrenTab = () => {
@@ -267,7 +390,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
 
                     <div style={{ display: 'flex', gap: 8 }}>
                       <Tooltip title="Редактировать">
-                        <Button type="text" icon={<EditOutlined />} />
+                        <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenEditChild(idx)} />
                       </Tooltip>
                       <Tooltip title="Удалить">
                         <Button type="text" danger icon={<DeleteOutlined />} onClick={() => confirmDeleteChild(idx)} />
@@ -291,10 +414,40 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Input placeholder="Имя ребёнка" value={childName} onChange={e => setChildName(e.target.value)} />
-            <Input type="date" value={childBirth} onChange={e => setChildBirth(e.target.value)} />
+            <Input type="date" max={maxBirthDate} value={childBirth} onChange={e => setChildBirth(e.target.value)} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Button onClick={() => setAddModalVisible(false)}>Отмена</Button>
               <Button type="primary" onClick={handleAddChild} loading={adding}>Добавить</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          title="Редактировать ребёнка"
+          open={editModalVisible}
+          onCancel={() => {
+            setEditModalVisible(false);
+            setEditingChildIndex(null);
+            setEditChildName('');
+            setEditChildBirth('');
+          }}
+          footer={null}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Input placeholder="Имя ребёнка" value={editChildName} onChange={e => setEditChildName(e.target.value)} />
+            <Input type="date" max={maxBirthDate} value={editChildBirth} onChange={e => setEditChildBirth(e.target.value)} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <Button onClick={() => {
+                setEditModalVisible(false);
+                setEditingChildIndex(null);
+                setEditChildName('');
+                setEditChildBirth('');
+              }}>
+                Отмена
+              </Button>
+              <Button type="primary" onClick={handleSaveEditedChild} loading={editing}>
+                Сохранить
+              </Button>
             </div>
           </div>
         </Modal>
@@ -314,6 +467,10 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
 
     if (active === 'admin_incoming' && user.role === 'admin') {
       loadIncomingAppointments(true);
+    }
+
+    if (active === 'favorites') {
+      loadFavorites();
     }
   }, [appointmentsVersion, active, user.role]);
 
@@ -551,7 +708,26 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
           </div>
         );
       case "favorites":
-        return <Text>Избранные специалисты пока не добавлены</Text>;
+        return (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 18 }}>Избранные специалисты</Text>
+              <Button onClick={loadFavorites} loading={loadingFavorites}>Обновить</Button>
+            </div>
+
+            {!loadingFavorites && favorites.length === 0 && (
+              <Empty description="Избранных специалистов пока нет" style={{ marginTop: 24 }} />
+            )}
+
+            <Row gutter={[16, 16]}>
+              {favorites.map((spec) => (
+                <Col key={spec.id} xs={24} sm={12} md={8} lg={6}>
+                  <SpecialistCard specialist={spec} onClick={(id) => navigate(`/specialists/${id}`)} />
+                </Col>
+              ))}
+            </Row>
+          </div>
+        );
       case "review_moderation":
         return (
           <div style={{ paddingTop: 8 }}>
@@ -582,6 +758,9 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
               }
               if (tab.key === 'admin_incoming') {
                 loadIncomingAppointments(true);
+              }
+              if (tab.key === 'favorites') {
+                loadFavorites();
               }
             }}
             style={{

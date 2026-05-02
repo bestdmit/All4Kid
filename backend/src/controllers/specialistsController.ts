@@ -117,9 +117,16 @@ export const validateCreateSpecialist = [
     .isLength({ max: 150 }),
 
   body("description")
-    .optional()
     .trim()
-    .isLength({ max: 2000 }),
+    .notEmpty()
+    .withMessage("Введите информацию о специалисте")
+    .isLength({ min: 10, max: 2000 }),
+
+  body("education")
+    .trim()
+    .notEmpty()
+    .withMessage("Введите информацию об образовании")
+    .isLength({ min: 5, max: 1000 }),
 
   body("experience").optional().isNumeric(),
   body("price_per_hour").optional().isNumeric(),
@@ -141,6 +148,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
          spec.specialty,
          spec.category,
          spec.description,
+         spec.education,
          spec.experience,
          COALESCE(AVG(r.rating), 0)::numeric(3,2) AS rating,
          spec.location,
@@ -203,6 +211,7 @@ export const getSpecialistById = async (req: Request, res: Response) => {
          spec.specialty,
          spec.category,
          spec.description,
+         spec.education,
          spec.experience,
          COALESCE(AVG(r.rating), 0)::numeric(3,2) AS rating,
          spec.location,
@@ -273,6 +282,7 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
       specialty,
       category,
       description,
+      education,
       experience,
       location,
       price_per_hour,
@@ -284,6 +294,7 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
     const cleanSpecialty = sanitizeString(specialty);
     const cleanCategory = sanitizeString(category) || "Другое";
     const cleanDescription = sanitizeString(description);
+    const cleanEducation = sanitizeString(education);
     const cleanLocation = sanitizeString(location);
 
     const cleanExp = sanitizeNumber(experience);
@@ -313,16 +324,17 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      `INSERT INTO specialists 
-       (name, specialty, category, description, experience, rating, location, 
+      `INSERT INTO specialists
+       (name, specialty, category, description, education, experience, rating, location,
         price_per_hour, avatar_url, user_id, created_by, is_approved)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING *`,
       [
         cleanName,
         cleanSpecialty,
         cleanCategory,
         cleanDescription,
+        cleanEducation,
         cleanExp,
         cleanRating,
         cleanLocation,
@@ -441,6 +453,7 @@ export const updateSpecialist = async (req: Request, res: Response) => {
       specialty,
       category,
       description,
+      education,
       experience,
       location,
       price_per_hour,
@@ -453,17 +466,19 @@ export const updateSpecialist = async (req: Request, res: Response) => {
          specialty = $2,
          category = $3,
          description = $4,
-         experience = $5,
-         location = $6,
-         price_per_hour = $7,
-         avatar_url = $8
-       WHERE id = $9
+         education = $5,
+         experience = $6,
+         location = $7,
+         price_per_hour = $8,
+         avatar_url = $9
+       WHERE id = $10
        RETURNING *`,
       [
         sanitizeString(name),
         sanitizeString(specialty),
         sanitizeString(category),
         sanitizeString(description),
+        sanitizeString(education),
         sanitizeNumber(experience),
         sanitizeString(location),
         sanitizeNumber(price_per_hour),

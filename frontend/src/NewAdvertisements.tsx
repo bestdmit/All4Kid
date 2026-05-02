@@ -8,6 +8,8 @@ export interface CreateSpecialistDto {
   name: string;
   specialty: string;
   category: string;
+  description: string;
+  education: string;
   experience?: number;
   location: string;
   price_per_hour?: number;
@@ -106,6 +108,8 @@ export default function NewAdvertisements() {
       name: sanitizeText(values.name),
       specialty: sanitizeText(values.specialty),
       category: values.category,
+      description: sanitizeText(values.description),
+      education: sanitizeText(values.education),
       location: sanitizeText(values.location),
       experience: values.experience ?? 0,
       price_per_hour: values.price_per_hour ?? 0,
@@ -127,6 +131,8 @@ export default function NewAdvertisements() {
     form.setFieldsValue({
       name: user?.fullName || '',
       category: 'Другое',
+      description: '',
+      education: '',
       experience: 0,
       price_per_hour: 0,
     });
@@ -152,6 +158,8 @@ export default function NewAdvertisements() {
     form.setFieldsValue({
       name: user?.fullName || '',
       category: 'Другое',
+      description: '',
+      education: '',
       experience: 0,
       price_per_hour: 0
     });
@@ -187,6 +195,8 @@ export default function NewAdvertisements() {
           initialValues={{
             name: user?.fullName || '',
             category: 'Другое',
+            description: '',
+            education: '',
             experience: 0,
             price_per_hour: 0
           }}
@@ -256,6 +266,40 @@ export default function NewAdvertisements() {
               <Input 
                 placeholder="Город или район оказания услуг" 
                 allowClear
+                disabled={loading || !isAuthenticated}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="О специалисте"
+              name="description"
+              rules={[
+                { required: true, message: 'Пожалуйста, заполните информацию о специалисте' },
+                { min: 10, message: 'Минимум 10 символов' }
+              ]}
+            >
+              <Input.TextArea
+                placeholder="Расскажите о методике, с кем работаете и какой результат даёте детям"
+                autoSize={{ minRows: 3, maxRows: 6 }}
+                showCount
+                maxLength={2000}
+                disabled={loading || !isAuthenticated}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Образование"
+              name="education"
+              rules={[
+                { required: true, message: 'Пожалуйста, укажите образование' },
+                { min: 5, message: 'Минимум 5 символов' }
+              ]}
+            >
+              <Input.TextArea
+                placeholder="Например: МПГУ, педагогическое образование, 2018"
+                autoSize={{ minRows: 2, maxRows: 4 }}
+                showCount
+                maxLength={1000}
                 disabled={loading || !isAuthenticated}
               />
             </Form.Item>

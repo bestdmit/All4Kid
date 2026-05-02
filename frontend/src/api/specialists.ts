@@ -13,6 +13,7 @@ export interface Specialist {
   created_at: string;
   created_by: number;
   description: string;
+  education: string;
 }
 
 export interface SpecialistDeletionNotice {

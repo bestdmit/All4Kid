@@ -1,6 +1,6 @@
-import {useEffect, useState} from 'react'
-import {Form, Input, InputNumber, Button, Card, message, Space, Typography, Select, Divider} from "antd";
-import {type Category, useCategories} from "../hooks/useCategories.ts";
+import { useEffect, useState } from 'react'
+import { Form, Input, InputNumber, Button, Card, message, Space, Typography, Select, Divider } from "antd";
+import { type Category, useCategories } from "../hooks/useCategories.ts";
 import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../stores/auth.store';
 
@@ -38,18 +38,18 @@ export const createSpecialist = async (
 ): Promise<ApiResponse<Specialist>> => {
   try {
     console.log('📤 Отправляю данные на бэкенд:', specialistData);
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     // Добавляем токен авторизации, если он есть
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
     } else {
       throw new Error('Требуется авторизация');
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/specialists`, {
       method: 'POST',
       headers,
@@ -83,74 +83,74 @@ export default function NewAdvertisements() {
   const { error, loading: categoriesLoading, categories } = useCategories();
 
   useEffect(() => {
-    if(error) message.error(error);
+    if (error) message.error(error);
   }, [error]);
 
-  const {user, isAuthenticated, logout} = useAuth(); // Добавили logout для очистки невалидного токена
-  
+  const { user, isAuthenticated, logout } = useAuth(); // Добавили logout для очистки невалидного токена
+
   const handleSubmit = async (values: CreateSpecialistDto) => {
-  if (!isAuthenticated || loading) {
-    message.error('Необходимо войти в систему');
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) {
-      message.error('Сессия истекла. Войдите заново');
-      logout();
+    if (!isAuthenticated || loading) {
+      message.error('Необходимо войти в систему');
       return;
     }
 
-    const dataToSend: CreateSpecialistDto = {
-      name: sanitizeText(values.name),
-      specialty: sanitizeText(values.specialty),
-      category: values.category,
-      description: sanitizeText(values.description),
-      education: sanitizeText(values.education),
-      location: sanitizeText(values.location),
-      experience: values.experience ?? 0,
-      price_per_hour: values.price_per_hour ?? 0,
-    };
+    setLoading(true);
 
-    await createSpecialist(dataToSend, accessToken);
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        message.error('Сессия истекла. Войдите заново');
+        logout();
+        return;
+      }
 
-    message.success('Специалист успешно создан');
-    
-    // Обновляем роль пользователя на specialist если он был user
-    if (user && user.role === 'user') {
-      const setUser = useAuthStore.getState().setUser;
-      const updatedUser = { ...user, role: 'specialist' };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      const dataToSend: CreateSpecialistDto = {
+        name: sanitizeText(values.name),
+        specialty: sanitizeText(values.specialty),
+        category: values.category,
+        description: sanitizeText(values.description),
+        education: sanitizeText(values.education),
+        location: sanitizeText(values.location),
+        experience: values.experience ?? 0,
+        price_per_hour: values.price_per_hour ?? 0,
+      };
+
+      await createSpecialist(dataToSend, accessToken);
+
+      message.success('Специалист успешно создан');
+
+      // Обновляем роль пользователя на specialist если он был user
+      if (user && user.role === 'user') {
+        const setUser = useAuthStore.getState().setUser;
+        const updatedUser = { ...user, role: 'specialist' };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      form.resetFields();
+      form.setFieldsValue({
+        name: user?.fullName || '',
+        category: 'Другое',
+        description: '',
+        education: '',
+        experience: 0,
+        price_per_hour: 0,
+      });
+
+    } catch (error: any) {
+      if (
+        error.message?.includes('401') ||
+        error.message?.includes('UNAUTHORIZED')
+      ) {
+        message.error('Сессия истекла. Войдите заново');
+        logout();
+      } else {
+        message.error('Ошибка при создании специалиста');
+      }
+    } finally {
+      setLoading(false);
     }
-    
-    form.resetFields();
-    form.setFieldsValue({
-      name: user?.fullName || '',
-      category: 'Другое',
-      description: '',
-      education: '',
-      experience: 0,
-      price_per_hour: 0,
-    });
-
-  } catch (error: any) {
-    if (
-      error.message?.includes('401') ||
-      error.message?.includes('UNAUTHORIZED')
-    ) {
-      message.error('Сессия истекла. Войдите заново');
-      logout();
-    } else {
-      message.error('Ошибка при создании специалиста');
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   const handleReset = () => {
@@ -171,12 +171,12 @@ export default function NewAdvertisements() {
         <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
           Добавить нового специалиста
         </Title>
-        
+
         {!isAuthenticated && (
-          <div style={{ 
-            backgroundColor: '#fff7e6', 
-            padding: '16px', 
-            borderRadius: '8px', 
+          <div style={{
+            backgroundColor: '#fff7e6',
+            padding: '16px',
+            borderRadius: '8px',
             marginBottom: '24px',
             border: '1px solid #ffd591'
           }}>
@@ -185,7 +185,7 @@ export default function NewAdvertisements() {
             </p>
           </div>
         )}
-        
+
         <Form
           form={form}
           layout="vertical"
@@ -202,17 +202,37 @@ export default function NewAdvertisements() {
           }}
         >
           <div style={{ marginBottom: 24 }}>
-            <Divider style={{fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4'}}>Основная информация</Divider>
-            
+            <Divider style={{ fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4' }}>Основная информация</Divider>
+
             <Form.Item
               label="Имя специалиста"
               name="name"
               rules={[
                 { required: true, message: 'Пожалуйста, введите имя специалиста' },
-                { min: 2, message: 'Имя должно содержать минимум 2 символа' }
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.trim().length < 2) {
+                      return Promise.reject(new Error('Имя должно содержать минимум 2 символа'));
+                    }
+                    if (value.trim().length > 50) {
+                      return Promise.reject(new Error('Имя слишком длинное (максимум 50 символов)'));
+                    }
+                    if (/[^a-zA-Zа-яА-ЯёЁ\s-]/.test(value)) {
+                      return Promise.reject(new Error('Имя может содержать только буквы, пробелы и дефисы'));
+                    }
+                    if (/[-]{2,}/.test(value)) {
+                      return Promise.reject(new Error('Имя не может содержать несколько дефисов подряд'));
+                    }
+                    if (/^\s*-|-$|^\s+/.test(value)) {
+                      return Promise.reject(new Error('Имя не должно начинаться или заканчиваться дефисом'));
+                    }
+                    return Promise.resolve();
+                  }
+                }
               ]}
             >
-              <Input 
+              <Input
                 allowClear
                 disabled={loading}
                 placeholder="Имя будет автоматически заполнено из вашего профиля"
@@ -224,11 +244,28 @@ export default function NewAdvertisements() {
               name="specialty"
               rules={[
                 { required: true, message: 'Пожалуйста, введите специальность' },
-                { min: 2, message: 'Специальность должна содержать минимум 2 символа' }
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.trim().length < 2) {
+                      return Promise.reject(new Error('Специальность должна содержать минимум 2 символа'));
+                    }
+                    if (value.trim().length > 100) {
+                      return Promise.reject(new Error('Специальность слишком длинная (максимум 100 символов)'));
+                    }
+                    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(value)) {
+                      return Promise.reject(new Error('Специальность должна содержать хотя бы одну букву'));
+                    }
+                    if (/(.)\1{4,}/.test(value)) {
+                      return Promise.reject(new Error('Избегайте слишком длинных повторяющихся символов'));
+                    }
+                    return Promise.resolve();
+                  }
+                }
               ]}
             >
-              <Input 
-                placeholder="Например: Тренер, Бэйбиситтер, Аниматор ..." 
+              <Input
+                placeholder="Например: Тренер, Бэйбиситтер, Аниматор ..."
                 allowClear
                 disabled={loading || !isAuthenticated}
               />
@@ -241,7 +278,7 @@ export default function NewAdvertisements() {
                 { required: true, message: 'Пожалуйста, выберите категорию' }
               ]}
             >
-              <Select 
+              <Select
                 placeholder="Выберите категорию специалиста"
                 loading={categoriesLoading}
                 allowClear
@@ -260,11 +297,28 @@ export default function NewAdvertisements() {
               name="location"
               rules={[
                 { required: true, message: 'Пожалуйста, введите местоположение' },
-                { min: 2, message: 'Местоположение должно содержать минимум 2 символа' }
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.trim().length < 2) {
+                      return Promise.reject(new Error('Местоположение должно содержать минимум 2 символа'));
+                    }
+                    if (value.trim().length > 100) {
+                      return Promise.reject(new Error('Слишком длинное название (максимум 100 символов)'));
+                    }
+                    if (/[^a-zA-Zа-яА-ЯёЁ0-9\s.,-]/.test(value)) {
+                      return Promise.reject(new Error('Допустимы только буквы, цифры, пробелы и знаки (.,-)'));
+                    }
+                    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(value)) {
+                      return Promise.reject(new Error('Местоположение должно содержать хотя бы одну букву'));
+                    }
+                    return Promise.resolve();
+                  }
+                }
               ]}
             >
-              <Input 
-                placeholder="Город или район оказания услуг" 
+              <Input
+                placeholder="Город или район оказания услуг"
                 allowClear
                 disabled={loading || !isAuthenticated}
               />
@@ -275,7 +329,25 @@ export default function NewAdvertisements() {
               name="description"
               rules={[
                 { required: true, message: 'Пожалуйста, заполните информацию о специалисте' },
-                { min: 10, message: 'Минимум 10 символов' }
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.trim().length < 10) {
+                      return Promise.reject(new Error('Минимум 10 символов'));
+                    }
+                    if (value.trim().length > 2000) {
+                      return Promise.reject(new Error('Максимум 2000 символов'));
+                    }
+                    const words = value.trim().split(/\s+/);
+                    if (words.length < 5) {
+                      return Promise.reject(new Error('Описание слишком короткое, напишите хотя бы 5 слов'));
+                    }
+                    if (/(.)\1{5,}/.test(value)) {
+                      return Promise.reject(new Error('Описание содержит недопустимое количество повторяющихся символов'));
+                    }
+                    return Promise.resolve();
+                  }
+                }
               ]}
             >
               <Input.TextArea
@@ -292,7 +364,21 @@ export default function NewAdvertisements() {
               name="education"
               rules={[
                 { required: true, message: 'Пожалуйста, укажите образование' },
-                { min: 5, message: 'Минимум 5 символов' }
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.trim().length < 5) {
+                      return Promise.reject(new Error('Минимум 5 символов'));
+                    }
+                    if (value.trim().length > 1000) {
+                      return Promise.reject(new Error('Максимум 1000 символов'));
+                    }
+                    if (!/[a-zA-Zа-яА-ЯёЁ]/.test(value)) {
+                      return Promise.reject(new Error('Укажите корректное название учебного заведения'));
+                    }
+                    return Promise.resolve();
+                  }
+                }
               ]}
             >
               <Input.TextArea
@@ -306,49 +392,77 @@ export default function NewAdvertisements() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <Divider style={{fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4'}}>Дополнительная информация</Divider>
+            <Divider style={{ fontSize: '20px', fontWeight: 'initial', borderColor: '#a6a4a4' }}>Дополнительная информация</Divider>
 
-            <Space align={'center'} style={{justifyContent: 'center'}}>
-            <Space align={'center'} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, width: '100%' }}>
-              <Form.Item
-                label="Опыт работы (лет)"
-                name="experience"
-                rules={[
-                  { type: 'number', min: 0, max: 50, message: 'Опыт должен быть от 0 до 50 лет' }
-                ]}
-              >
-                <InputNumber 
-                  min={0}
-                  max={50}
-                  placeholder="0"
-                  style={{ width: '100%' }}
-                  disabled={loading || !isAuthenticated}
-                />
-              </Form.Item>
+            <Space align={'center'} style={{ justifyContent: 'center' }}>
+              <Space align={'center'} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, width: '100%' }}>
+                <Form.Item
+                  label="Опыт работы (лет)"
+                  name="experience"
+                  rules={[
+                    {
+                      validator: (_, value) => {
+                        if (value === undefined || value === null) return Promise.resolve();
+                        if (typeof value !== 'number') {
+                          return Promise.reject(new Error('Опыт должен быть числом'));
+                        }
+                        if (value < 0 || value > 50) {
+                          return Promise.reject(new Error('Опыт должен быть от 0 до 50 лет'));
+                        }
+                        if (!Number.isInteger(value)) {
+                          return Promise.reject(new Error('Опыт должен быть целым числом'));
+                        }
+                        return Promise.resolve();
+                      }
+                    }
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    max={50}
+                    placeholder="0"
+                    style={{ width: '100%' }}
+                    disabled={loading || !isAuthenticated}
+                  />
+                </Form.Item>
 
-              <Form.Item
-                label="Цена за час (₽)"
-                name="price_per_hour"
-                rules={[
-                  { type: 'number', min: 0, message: 'Цена не может быть отрицательной' }
-                ]}
-              >
-                <InputNumber 
-                  min={0}
-                  placeholder="0"
-                  style={{ width: '100%' }}
-                  disabled={loading || !isAuthenticated}
-                />
-              </Form.Item>
-            </Space>
+                <Form.Item
+                  label="Цена за час (₽)"
+                  name="price_per_hour"
+                  rules={[
+                    {
+                      validator: (_, value) => {
+                        if (value === undefined || value === null) return Promise.resolve();
+                        if (typeof value !== 'number') {
+                          return Promise.reject(new Error('Цена должна быть числом'));
+                        }
+                        if (value < 0) {
+                          return Promise.reject(new Error('Цена не может быть отрицательной'));
+                        }
+                        if (value > 1000000) {
+                          return Promise.reject(new Error('Укажите более реалистичную цену (до 1 000 000)'));
+                        }
+                        return Promise.resolve();
+                      }
+                    }
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    style={{ width: '100%' }}
+                    disabled={loading || !isAuthenticated}
+                  />
+                </Form.Item>
+              </Space>
             </Space>
           </div>
 
           <Form.Item>
             <Space size="middle" style={{ width: '100%', justifyContent: 'center' }}>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 size="large"
                 style={{ minWidth: 120 }}
@@ -356,9 +470,9 @@ export default function NewAdvertisements() {
               >
                 {loading ? 'Создание...' : 'Создать'}
               </Button>
-              
-              <Button 
-                htmlType="button" 
+
+              <Button
+                htmlType="button"
                 onClick={handleReset}
                 size="large"
                 disabled={loading || !isAuthenticated}

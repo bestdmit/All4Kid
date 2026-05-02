@@ -261,6 +261,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           return false;
         } catch (error: any) {
           console.error('Update profile error:', error);
+          if (error.message === 'UNAUTHORIZED') {
+            get().logout();
+          }
           set({
             error: error.message || 'Ошибка соединения с сервером'
           });
@@ -294,6 +297,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           return false;
         } catch (error: any) {
           console.error('Upload avatar error:', error);
+          if (error.message === 'UNAUTHORIZED') {
+            get().logout();
+          }
           set({
             error: error.message || 'Ошибка при загрузке аватара'
           });
@@ -327,6 +333,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           return false;
         } catch (error: any) {
           console.error('Delete avatar error:', error);
+          if (error.message === 'UNAUTHORIZED') {
+            get().logout();
+          }
           set({
             error: error.message || 'Ошибка при удалении аватара'
           });

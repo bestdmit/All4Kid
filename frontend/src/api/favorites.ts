@@ -1,4 +1,5 @@
 import type { Specialist } from './specialists';
+import { useAuthStore } from '../../stores/auth.store';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -40,6 +41,7 @@ export const favoritesApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -65,6 +67,7 @@ export const favoritesApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -91,6 +94,7 @@ export const favoritesApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -115,6 +119,7 @@ export const favoritesApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 

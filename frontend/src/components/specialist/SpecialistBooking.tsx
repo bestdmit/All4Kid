@@ -4,7 +4,6 @@ import { Button, Calendar, Card, Checkbox, DatePicker, Form, Input, Modal, Radio
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import ruRu from 'antd/es/date-picker/locale/ru_RU';
 import type { Specialist } from '../../api/specialists.ts';
-import { useSpecialistSlots } from '../../../hooks/bookings/useSpecialistSlots';
 import { bookingsApi, type Slot } from '../../api/bookings';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useBookingEventsStore } from '../../../stores/bookingEvents.store';
@@ -102,7 +101,12 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
     const [form] = Form.useForm();
     const childMode = Form.useWatch('childMode', form) as 'existing' | 'new' | undefined;
 
-    const { loading, error, slots, refetch } = useSpecialistSlots(specialist.id, selectedDate);
+    const slots = useMemo(() => {
+        const selectedKey = toDateKey(selectedDate);
+        return allFutureSlots.filter(
+            (slot) => toDateKey(new Date(slot.starts_at)) === selectedKey
+        );
+    }, [allFutureSlots, selectedDate]);
 
     const selectedSlot = useMemo<Slot | null>(
         () => slots.find((slot) => slot.id === selectedSlotId) || null,
@@ -264,7 +268,6 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
             touchAppointments();
             closeModal();
             setSelectedSlotId(null);
-            await refetch();
             await loadAllFutureSlots();
         } catch (e: any) {
             if (e?.message === 'UNAUTHORIZED') {
@@ -389,10 +392,10 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
                         Доступное время
                     </Text>
 
-                    {loading ? (
+                    {calendarLoading ? (
                         <Spin size="small" />
-                    ) : error ? (
-                        <Text type="danger">{error}</Text>
+                    ) : calendarError ? (
+                        <Text type="danger">{calendarError}</Text>
                     ) : slots.length === 0 ? (
                         <Text type="secondary">На выбранную дату свободных слотов нет</Text>
                     ) : (

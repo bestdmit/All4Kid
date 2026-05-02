@@ -5,6 +5,17 @@ import { Typography } from 'antd';
 const { Text, Paragraph } = Typography;
 
 export const SpecialistDescription = ({specialist} : {specialist: Specialist}) => {
+    const getYearsLabel = (years: number) => {
+        const absYears = Math.abs(years);
+        const lastTwoDigits = absYears % 100;
+        const lastDigit = absYears % 10;
+
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return "лет";
+        if (lastDigit === 1) return "год";
+        if (lastDigit >= 2 && lastDigit <= 4) return "года";
+        return "лет";
+    };
+
     return (
         <>
             {/* About Section */}
@@ -38,7 +49,9 @@ export const SpecialistDescription = ({specialist} : {specialist: Specialist}) =
                 style={{ marginBottom: 16, borderRadius: 8 }}
                 styles={{ body: {padding: 16, fontSize: 16}, title: { fontSize: 24} }}
             >
-                <Text className="specialist-section-paragraph">{specialist.experience} года</Text>
+                <Text className="specialist-section-paragraph">
+                    {specialist.experience} {getYearsLabel(specialist.experience)}
+                </Text>
             </Card>
         </>
     )

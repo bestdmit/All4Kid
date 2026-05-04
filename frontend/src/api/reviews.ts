@@ -1,3 +1,5 @@
+import { useAuthStore } from '../../stores/auth.store';
+
 export interface Review {
   id: number;
   specialist_id: number;
@@ -66,6 +68,7 @@ export const reviewsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error("UNAUTHORIZED");
     }
 
@@ -93,6 +96,7 @@ export const reviewsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error("UNAUTHORIZED");
     }
 
@@ -120,6 +124,7 @@ export const reviewsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error("UNAUTHORIZED");
     }
 

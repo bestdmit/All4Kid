@@ -106,6 +106,7 @@ export const authApi = {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
     });
+    if (response.status === 401) throw new Error("UNAUTHORIZED");
     return response.json();
   },
 
@@ -118,6 +119,7 @@ export const authApi = {
       },
       body: JSON.stringify(data),
     });
+    if (response.status === 401) throw new Error("UNAUTHORIZED");
     return response.json();
   },
 
@@ -137,6 +139,7 @@ export const authApi = {
       },
       body: formData,
     });
+    if (response.status === 401) throw new Error("UNAUTHORIZED");
     return response.json();
   },
 
@@ -152,6 +155,7 @@ export const authApi = {
         Authorization: `Bearer ${accessToken}`,
       },
     });
+    if (response.status === 401) throw new Error("UNAUTHORIZED");
     return response.json();
   },
 };

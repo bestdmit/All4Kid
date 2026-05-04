@@ -4,6 +4,7 @@ export interface Specialist {
   specialty: string;      
   category: string;        
   description: string;     
+  education: string;
   experience: number;     
   rating: number;         
   location: string;       
@@ -17,6 +18,7 @@ export interface CreateSpecialistDto {
   specialty: string;
   category: string;
   description: string;
+  education: string;
   experience: number;
   rating: number;
   location: string;
@@ -29,6 +31,7 @@ export interface CreateSpecialistWithFileDto {
   specialty: string;
   category: string;
   description: string;
+  education: string;
   experience: number;
   rating: number;
   location: string;

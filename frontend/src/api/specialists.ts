@@ -1,3 +1,4 @@
+import { useAuthStore } from '../../stores/auth.store';
 const API_BASE_URL = "";
 
 export interface Specialist {
@@ -13,6 +14,7 @@ export interface Specialist {
   created_at: string;
   created_by: number;
   description: string;
+  education: string;
 }
 
 export interface SpecialistDeletionNotice {
@@ -172,6 +174,7 @@ export const specialistApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -205,6 +208,7 @@ export const specialistApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -234,6 +238,7 @@ export const specialistApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS specialists (
   category VARCHAR(100) DEFAULT 'Другое',
   FOREIGN KEY (category) REFERENCES categories(name),
   description TEXT DEFAULT '',
+  education TEXT DEFAULT '',
   avatar_url VARCHAR(500) DEFAULT '/uploads/avatars/default.jpg'
 );
 
@@ -66,6 +67,17 @@ UPDATE specialists SET
     WHEN specialty = 'Тренер по футболу' THEN 'Групповые занятия по футболу.'
     ELSE 'Специалист по работе с детьми'
   END,
+  education = CASE
+    WHEN specialty = 'Преподаватель рисования' THEN 'Художественная школа, преподаватель ИЗО'
+    WHEN specialty = 'Преподаватель вокала' THEN 'Музыкальный колледж, вокальное отделение'
+    WHEN specialty = 'Репетитор по математике' THEN 'Педагогическое образование, математика'
+    WHEN specialty = 'Репетитор по английскому языку для детей' THEN 'Лингвистический университет, преподаватель английского'
+    WHEN specialty = 'Аниматор-ведущая' THEN 'Курсы организации детских мероприятий'
+    WHEN specialty = 'Фокусник-иллюзионист для детей' THEN 'Школа сценического искусства'
+    WHEN specialty = 'Хореограф для детей' THEN 'Хореографическое училище'
+    WHEN specialty = 'Тренер по футболу' THEN 'Профильное спортивное образование'
+    ELSE 'Информация об образовании не указана'
+  END,
   avatar_url = CASE
     WHEN specialty = 'Преподаватель рисования' THEN '/uploads/avatars/default.jpg'
     WHEN specialty = 'Преподаватель вокала' THEN '/uploads/avatars/default.jpg'
@@ -97,7 +109,8 @@ ADD COLUMN IF NOT EXISTS children JSONB DEFAULT '[]';
 ALTER TABLE specialists 
 ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
 ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS certificates JSONB DEFAULT '[]';
+ADD COLUMN IF NOT EXISTS certificates JSONB DEFAULT '[]',
+ADD COLUMN IF NOT EXISTS education TEXT DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id SERIAL PRIMARY KEY,

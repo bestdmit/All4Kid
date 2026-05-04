@@ -1,3 +1,5 @@
+import { useAuthStore } from '../../stores/auth.store';
+
 export interface Slot {
   id: number;
   specialist_id: number;
@@ -110,6 +112,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -145,6 +148,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -178,6 +182,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -208,6 +213,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -241,6 +247,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -276,6 +283,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -309,6 +317,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 
@@ -342,6 +351,7 @@ export const bookingsApi = {
     });
 
     if (response.status === 401) {
+      useAuthStore.getState().logout();
       throw new Error('UNAUTHORIZED');
     }
 

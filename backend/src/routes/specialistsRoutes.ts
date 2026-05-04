@@ -4,6 +4,7 @@ import {
   getAllSpecialists,
   getSpecialistById,
   createSpecialist,
+  validateCreateSpecialist,
   updateSpecialist,
   deleteSpecialist,
   updateAvatar,
@@ -31,7 +32,7 @@ router.patch('/my/deletion-notices/:id/ack', authenticateToken, acknowledgeDelet
 router.get('/:id/reviews', getSpecialistReviews);
 router.get('/:id', getSpecialistById);
 
-router.post('/', authenticateToken, upload.single('avatar'), createSpecialist); // УБРАЛИ authorize('admin')
+router.post('/', authenticateToken, upload.single('avatar'), validateCreateSpecialist, createSpecialist);
 router.put('/:id', authenticateToken, upload.single('avatar'), updateSpecialist);
 router.delete('/:id', authenticateToken, deleteSpecialist);
 router.patch('/:id/avatar', authenticateToken, upload.single('avatar'), updateAvatar);

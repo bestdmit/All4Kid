@@ -3,6 +3,7 @@ import { query } from './db';
 export const ensureBookingsSchema = async () => {
   await query(`
     ALTER TABLE specialists
+    ADD COLUMN IF NOT EXISTS education TEXT NOT NULL DEFAULT '',
     ADD COLUMN IF NOT EXISTS is_deleted_by_admin BOOLEAN NOT NULL DEFAULT FALSE,
     ADD COLUMN IF NOT EXISTS deletion_reason TEXT,
     ADD COLUMN IF NOT EXISTS deletion_reason_acknowledged BOOLEAN NOT NULL DEFAULT TRUE,

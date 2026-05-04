@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, Typography, Button, Popconfirm, message } from "antd";
-import { DeleteOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
+import { Card, Typography, Button, Popconfirm, message, Space } from "antd";
+import { DeleteOutlined, EditOutlined, HeartFilled, HeartOutlined } from "@ant-design/icons";
 import type { Specialist } from "../src/api/specialists";
 import { favoritesApi } from "./api/favorites";
 import { useAuth } from "../hooks/useAuth";
@@ -12,6 +12,7 @@ interface SpecialistCardProps {
   specialist: Specialist;
   forDelete?: boolean;
   onDelete?: (id: number) => void;
+  onEdit?: (specialist: Specialist) => void;
   onClick?: (id: number) => void;
   isLoading?: boolean;
 }
@@ -73,7 +74,7 @@ const favoriteButtonStyle: React.CSSProperties = {
 export default function SpecialistCard({ 
   specialist, 
   forDelete = false, 
-  onDelete, onClick,
+  onDelete, onEdit, onClick,
   isLoading = false 
 }: SpecialistCardProps) {
   const { isAuthenticated } = useAuth();
@@ -166,7 +167,9 @@ export default function SpecialistCard({
   };
 
   const avatarSrc = specialist.avatar_url && specialist.avatar_url.trim() 
-    ? specialist.avatar_url 
+    ? (specialist.avatar_url.startsWith('http') || specialist.avatar_url.startsWith('/')
+        ? specialist.avatar_url
+        : `/${specialist.avatar_url}`)
     : '/uploads/avatars/default.jpg';
 
   return (
@@ -233,24 +236,36 @@ export default function SpecialistCard({
         </div>
       
         {forDelete && (
-          <Popconfirm
-            title="Удалить специалиста"
-            description="Вы уверены, что хотите удалить этого специалиста?"
-            onConfirm={confirmDelete}
-            okText="Да"
-            cancelText="Нет"
-          >
-            <Button 
-              type="primary" 
-              danger
-              icon={<DeleteOutlined />}
-              loading={isLoading}
-              style={deleteButtonStyle}
-              onClick={(e) => e.stopPropagation()}
+          <Space style={{ marginTop: "12px", width: "100%", justifyContent: "space-between" }}>
+            {onEdit && (
+              <Button
+                icon={<EditOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(specialist);
+                }}
+              >
+                Редактировать
+              </Button>
+            )}
+            <Popconfirm
+              title="Удалить объявления"
+              description="Вы уверены, что хотите удалить?"
+              onConfirm={confirmDelete}
+              okText="Да"
+              cancelText="Нет"
             >
-              Удалить
-            </Button>
-          </Popconfirm>
+              <Button 
+                type="primary" 
+                danger
+                icon={<DeleteOutlined />}
+                loading={isLoading}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Удалить
+              </Button>
+            </Popconfirm>
+          </Space>
         )}
       </div>
     </Card>

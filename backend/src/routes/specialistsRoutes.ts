@@ -32,7 +32,7 @@ router.get('/:id/reviews', getSpecialistReviews);
 router.get('/:id', getSpecialistById);
 
 router.post('/', authenticateToken, upload.single('avatar'), createSpecialist); // УБРАЛИ authorize('admin')
-router.put('/:id', authenticateToken, updateSpecialist);
+router.put('/:id', authenticateToken, upload.single('avatar'), updateSpecialist);
 router.delete('/:id', authenticateToken, deleteSpecialist);
 router.patch('/:id/avatar', authenticateToken, upload.single('avatar'), updateAvatar);
 router.delete('/:id/avatar', authenticateToken, deleteAvatar);

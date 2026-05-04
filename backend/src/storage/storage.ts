@@ -18,9 +18,13 @@ const storage = multer.diskStorage({
 const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const mimetypeOk =
+    file.mimetype?.startsWith('image/') ||
+    allowedTypes.test(file.mimetype) ||
+    // Some clients may send generic mimetype for images (esp. on Windows)
+    file.mimetype === 'application/octet-stream';
 
-  if (mimetype && extname) {
+  if (mimetypeOk && extname) {
     return cb(null, true);
   } else {
     cb(new Error('Разрешены только изображения (jpeg, jpg, png, gif, webp)'));

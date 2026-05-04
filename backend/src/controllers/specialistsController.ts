@@ -349,9 +349,9 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
           ? "Специалист создан успешно"
           : "Профиль создан и ожидает подтверждения",
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Ошибка createSpecialist:", err);
-    res.status(500).json({ success: false, message: "Ошибка сервера" });
+    res.status(500).json({ success: false, message: `Ошибка сервера: ${err.message}` });
   }
 };
 
@@ -432,9 +432,19 @@ export const deleteAvatar = async (req: Request, res: Response) => {
     PATCH — Обновление специалиста
 -------------------------------------------------------- */
 
-export const updateSpecialist = async (req: Request, res: Response) => {
+export const updateSpecialist = async (req: AuthRequest, res: Response) => {
   try {
     const id = sanitizeNumber(req.params.id);
+
+    // Дополнительная проверка: может ли пользователь редактировать этого специалиста
+    const specCheck = await query("SELECT user_id, avatar_url FROM specialists WHERE id = $1", [id]);
+    if (!specCheck.rows.length) {
+      return res.status(404).json({ success: false, message: "Специалист не найден" });
+    }
+
+    if (req.user?.role !== "admin" && specCheck.rows[0].user_id !== req.user?.id) {
+      return res.status(403).json({ success: false, message: "Нет прав для редактирования" });
+    }
 
     const {
       name,
@@ -444,8 +454,17 @@ export const updateSpecialist = async (req: Request, res: Response) => {
       experience,
       location,
       price_per_hour,
-      avatar_url,
     } = req.body;
+
+    const avatarFile = req.file;
+    let avatarUrl = specCheck.rows[0].avatar_url;
+
+    if (avatarFile) {
+      if (avatarUrl && avatarUrl !== "/uploads/avatars/default.jpg") {
+        await safeDeleteFile(avatarUrl);
+      }
+      avatarUrl = `/uploads/avatars/${avatarFile.filename}`;
+    }
 
     const updated = await query(
       `UPDATE specialists SET
@@ -467,7 +486,7 @@ export const updateSpecialist = async (req: Request, res: Response) => {
         sanitizeNumber(experience),
         sanitizeString(location),
         sanitizeNumber(price_per_hour),
-        sanitizeString(avatar_url),
+        avatarUrl,
         id,
       ]
     );
@@ -481,9 +500,9 @@ export const updateSpecialist = async (req: Request, res: Response) => {
       data: updated.rows[0],
       message: "Данные специалиста обновлены",
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Ошибка updateSpecialist:", err);
-    res.status(500).json({ success: false, message: "Ошибка сервера" });
+    res.status(500).json({ success: false, message: `Ошибка сервера: ${err.message}` });
   }
 };
 

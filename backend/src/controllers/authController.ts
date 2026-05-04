@@ -603,18 +603,7 @@ export const updateAvatarUser = async (req: AuthRequest, res: Response) => {
 
     const user = result.rows[0];
 
-    if (user.role == 'specialist') {
-      const result = await query(
-        'SELECT avatar_url FROM specialists WHERE user_id = $1', [req.user.id]
-      );
-
-      if (result.rows[0].avatar_url == '/uploads/avatars/default.jpg'){
-        await query(
-            'UPDATE specialists SET avatar_url = $1 WHERE user_id = $2',
-            [newUrl, req.user.id]
-        );
-      }
-    }
+    // ВАЖНО: аватар профиля пользователя не синхронизируется с аватаром объявлений (specialists.avatar_url)
 
     return res.json({
       success: true,
@@ -655,7 +644,7 @@ export const deleteAvatarUser = async (req: AuthRequest, res: Response) => {
     }
 
     const prevAvatar = userResult.rows[0].avatar_url;
-    await safeDeleteFile(userResult.rows[0].avatar_url);
+    await safeDeleteFile(prevAvatar);
 
     const result = await query(
       'UPDATE users SET avatar_url = NULL WHERE id = $1 RETURNING id, email, full_name, phone, avatar_url, role, created_at, children',
@@ -664,18 +653,7 @@ export const deleteAvatarUser = async (req: AuthRequest, res: Response) => {
 
     const user = result.rows[0];
 
-    if (user.role == 'specialist') {
-      const result = await query(
-          'SELECT avatar_url FROM specialists WHERE user_id = $1', [req.user.id]
-      );
-
-      if (result.rows[0].avatar_url == prevAvatar){
-        await query(
-            'UPDATE specialists SET avatar_url = $1 WHERE user_id = $2',
-            ['/uploads/avatars/default.jpg', req.user.id]
-        );
-      }
-    }
+    // ВАЖНО: аватар профиля пользователя не синхронизируется с аватаром объявлений (specialists.avatar_url)
 
     return res.json({
       success: true,

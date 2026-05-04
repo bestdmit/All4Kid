@@ -112,6 +112,55 @@ export const specialistApi = {
     return result.data || [];
   },
 
+  update: async (id: number, data: FormData, accessToken: string): Promise<Specialist> => {
+    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: data,
+    });
+
+    if (response.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.message || "Ошибка при обновлении специалиста");
+    }
+
+    const result: ApiResponse<Specialist> = await response.json();
+    if (!result.success || !result.data) {
+      throw new Error(result.message || "Ошибка при обновлении специалиста");
+    }
+    return result.data;
+  },
+
+  deleteAvatar: async (id: number, accessToken: string): Promise<Specialist> => {
+    const response = await fetch(`${API_BASE_URL}/api/specialists/${id}/avatar`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.message || "Ошибка при удалении аватара");
+    }
+
+    const result: ApiResponse<Specialist> = await response.json();
+    if (!result.success || !result.data) {
+      throw new Error(result.message || "Ошибка при удалении аватара");
+    }
+    return result.data;
+  },
+
   deleteById: async (id: number, accessToken: string, reason?: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/api/specialists/${id}`, {
       method: 'DELETE',

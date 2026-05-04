@@ -15,6 +15,7 @@ export interface Specialist {
   created_by: number;
   description: string;
   education: string;
+  is_approved?: boolean;
 }
 
 export interface SpecialistDeletionNotice {
@@ -222,6 +223,66 @@ export const specialistApi = {
     }
 
     return result.data || [];
+  },
+
+  getPendingModeration: async (): Promise<Specialist[]> => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/specialists/pending`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      useAuthStore.getState().logout();
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP при получении объявлений на модерации: ${response.status}`);
+    }
+
+    const result: ApiResponse<Specialist[]> = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || 'Не удалось получить объявления на модерации');
+    }
+
+    return result.data || [];
+  },
+
+  approveSpecialist: async (id: number): Promise<Specialist> => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/specialists/${id}/approve`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      useAuthStore.getState().logout();
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.message || 'Не удалось одобрить объявление');
+    }
+
+    const result: ApiResponse<Specialist> = await response.json();
+    if (!result.success || !result.data) {
+      throw new Error(result.message || 'Не удалось одобрить объявление');
+    }
+
+    return result.data;
   },
 
   acknowledgeDeletionNotice: async (id: number): Promise<void> => {

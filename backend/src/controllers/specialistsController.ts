@@ -164,7 +164,7 @@ export const getAllSpecialists = async (req: Request, res: Response) => {
        INNER JOIN categories cat ON (spec.category = cat.name)
        LEFT JOIN reviews r ON (r.specialist_id = spec.id AND r.is_approved = TRUE)`;
     const params: any[] = [];
-    const cond: string[] = ['spec.is_deleted_by_admin = FALSE'];
+    const cond: string[] = ['spec.is_deleted_by_admin = FALSE', 'spec.is_approved = TRUE'];
 
     if (search) {
       params.push(`%${search.toLowerCase()}%`);
@@ -242,6 +242,13 @@ export const getSpecialistById = async (req: Request, res: Response) => {
         success: false,
         message: "Это объявление было удалено администратором",
         deletionReason: specialist.deletion_reason,
+      });
+    }
+
+    if (!specialist.is_approved) {
+      return res.status(404).json({
+        success: false,
+        message: "Объявление еще не опубликовано и ожидает проверки администратором",
       });
     }
 
@@ -359,7 +366,7 @@ export const createSpecialist = async (req: AuthRequest, res: Response) => {
       message:
         req.user.role === "admin"
           ? "Специалист создан успешно"
-          : "Профиль создан и ожидает подтверждения",
+          : "Объявление отправлено на проверку администратором",
     });
   } catch (err: any) {
     console.error("Ошибка createSpecialist:", err);
@@ -734,5 +741,97 @@ export const acknowledgeDeletionNotice = async (req: AuthRequest, res: Response)
   } catch (err) {
     console.error('Ошибка acknowledgeDeletionNotice:', err);
     return res.status(500).json({ success: false, message: 'Ошибка сервера' });
+  }
+};
+
+export const getPendingSpecialists = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Недостаточно прав",
+      });
+    }
+
+    const result = await query(
+      `SELECT
+         spec.id,
+         spec.name,
+         spec.specialty,
+         spec.category,
+         spec.description,
+         spec.education,
+         spec.experience,
+         spec.location,
+         spec.price_per_hour,
+         spec.avatar_url,
+         spec.created_at,
+         spec.user_id,
+         spec.created_by,
+         spec.is_approved
+       FROM specialists spec
+       WHERE spec.is_deleted_by_admin = FALSE
+         AND spec.is_approved = FALSE
+       ORDER BY spec.created_at DESC, spec.id DESC`
+    );
+
+    return res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount,
+    });
+  } catch (err) {
+    console.error("Ошибка getPendingSpecialists:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Ошибка сервера",
+    });
+  }
+};
+
+export const approveSpecialist = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Недостаточно прав",
+      });
+    }
+
+    const id = sanitizeNumber(req.params.id);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Некорректный id объявления",
+      });
+    }
+
+    const updated = await query(
+      `UPDATE specialists
+       SET is_approved = TRUE
+       WHERE id = $1
+         AND is_deleted_by_admin = FALSE
+       RETURNING *`,
+      [id]
+    );
+
+    if (!updated.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Объявление не найдено",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: updated.rows[0],
+      message: "Объявление одобрено",
+    });
+  } catch (err) {
+    console.error("Ошибка approveSpecialist:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Ошибка сервера",
+    });
   }
 };

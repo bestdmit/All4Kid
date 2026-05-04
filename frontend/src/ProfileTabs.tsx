@@ -8,6 +8,7 @@ import { favoritesApi } from "./api/favorites";
 import { specialistApi } from "./api/specialists";
 import { useBookingEventsStore } from "../stores/bookingEvents.store";
 import ReviewsModerationPanel from "./components/admin/ReviewsModerationPanel";
+import SpecialistsModerationPanel from "./components/admin/SpecialistsModerationPanel";
 import SpecialistCard from "./SpecialistCard";
 import "./profileTabs.css";
 
@@ -25,6 +26,7 @@ const allTabs = [
   { key: "incoming", label: "Записи к моим услугам", roles: ['specialist', 'admin'] },
   { key: "admin_incoming", label: "Все записи (Админ)", roles: ['admin'] },
   { key: "favorites", label: "Избранное", roles: ['user', 'specialist', 'admin'] },
+  { key: "specialists_moderation", label: "Модерация объявлений", roles: ['admin'] },
   { key: "review_moderation", label: "Модерация отзывов", roles: ['admin'] },
 ];
 
@@ -732,6 +734,12 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
         return (
           <div style={{ paddingTop: 8 }}>
             <ReviewsModerationPanel cardStyle={{ background: "#fff" }} />
+          </div>
+        );
+      case "specialists_moderation":
+        return (
+          <div style={{ paddingTop: 8 }}>
+            <SpecialistsModerationPanel cardStyle={{ background: "#fff" }} />
           </div>
         );
       default:

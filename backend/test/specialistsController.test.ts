@@ -84,6 +84,7 @@ describe('specialistsController', () => {
         specialty: 'Тренер по футболу',
         category: 'Спорт',
         is_deleted_by_admin: false,
+        is_approved: true,
       },
     ],
   });
@@ -103,6 +104,7 @@ describe('specialistsController', () => {
       specialty: 'Тренер по футболу',
       category: 'Спорт',
       is_deleted_by_admin: false,
+      is_approved: true,
     },
   });
 });

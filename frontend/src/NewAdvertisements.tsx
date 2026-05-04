@@ -136,7 +136,7 @@ export default function NewAdvertisements() {
       const result = await createSpecialist(dataToSend, accessToken);
 
       if (result.success) {
-        message.success('Специалист успешно создан!');
+        message.success(result.message || 'Объявление отправлено на проверку администратором');
         form.resetFields();
         setAvatarFile(null);
       } else {

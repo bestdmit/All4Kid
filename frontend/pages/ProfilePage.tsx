@@ -16,7 +16,7 @@ const { Title, Text } = Typography;
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout, updateProfile, clearError, uploadAvatar, deleteAvatar } = useAuth();
-  const { getSpecialistsById, updateNameForCreator, removeSpecialistById, fetchSpecialists } = useSpecialistStore();
+  const { updateNameForCreator, removeSpecialistById, fetchSpecialists } = useSpecialistStore();
   const [userSpecialists, setUserSpecialists] = useState<Specialist[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,13 +46,13 @@ export default function ProfilePage() {
 
     const bootstrapProfileData = async () => {
       await fetchSpecialists();
-      const list = getSpecialistsById(user.id);
-      setUserSpecialists(list);
+      const list = await specialistApi.getMySpecialists();
+      setUserSpecialists(list as Specialist[]);
       await loadDeletionNotices();
     };
 
     bootstrapProfileData();
-  }, [user, fetchSpecialists, getSpecialistsById]);
+  }, [user, fetchSpecialists]);
 
   useEffect(() => {
     if (user) {
@@ -215,11 +215,8 @@ export default function ProfilePage() {
 
       await specialistApi.deleteById(id, accessToken, reason);
       removeSpecialistById(id);
-
-      if (user) {
-        const updated = getSpecialistsById(user.id);
-        setUserSpecialists(updated);
-      }
+      const updated = await specialistApi.getMySpecialists();
+      setUserSpecialists(updated as Specialist[]);
 
       message.success("Специалист удален");
 

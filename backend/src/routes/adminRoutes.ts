@@ -1,11 +1,12 @@
 import {Router} from "express";
-import {approveReview, deleteReview, getUnapprovedReviews} from "../controllers/reviewsController";
+import {approveReview, deleteReview, getUnapprovedReviews, getAllReviews} from "../controllers/reviewsController";
 import { approveSpecialist, getPendingSpecialists, getSpecialistByIdForAdmin } from "../controllers/specialistsController";
 import {authenticateToken, authorize} from "../middleware/auth";
 
 const router = Router();
 
 router.get('/reviews', getUnapprovedReviews);
+router.get('/reviews/all', authenticateToken, authorize('admin'), getAllReviews);
 router.post('/review/approve', authenticateToken, authorize('admin'), approveReview);
 router.post('/review/delete', authenticateToken, authorize('admin'), deleteReview);
 router.get('/specialists/pending', authenticateToken, authorize('admin'), getPendingSpecialists);

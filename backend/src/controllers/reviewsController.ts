@@ -106,6 +106,27 @@ export const getUnapprovedReviews = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllReviews = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+        `SELECT r.*, u.full_name as user_name, u.avatar_url as user_avatar, s.name as specialist_name
+       FROM reviews r
+       LEFT JOIN users u ON r.user_id = u.id
+       LEFT JOIN specialists s ON r.specialist_id = s.id
+       ORDER BY r.created_at DESC`
+    );
+
+    res.json({
+      success: true,
+      data: result.rows,
+      total: result.rowCount,
+    });
+  } catch (err) {
+    console.error("Ошибка getAllReviews:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+};
+
 export const getSpecialistReviews = async (req: Request, res: Response) => {
   try {
     const specialistId = sanitizeNumber(req.params.specialistId || req.params.id, 0); 
@@ -211,12 +232,12 @@ export const createReview = async (req: AuthRequest, res: Response) => {
 
     const createdReview = await query(
       `INSERT INTO reviews (specialist_id, user_id, rating, comment, is_verified, is_approved)
-       VALUES ($1, $2, $3, $4, FALSE, FALSE)
+       VALUES ($1, $2, $3, $4, FALSE, TRUE)
        RETURNING id, specialist_id, user_id, rating, comment, is_verified, is_approved, created_at, updated_at`,
       [specialistId, req.user.id, rating, comment]
     );
 
-    // await recomputeSpecialistRating(specialistId); // Rating doesn't change until approved
+    await recomputeSpecialistRating(specialistId); // Rating changes immediately since approved
 
     return res.status(201).json({
       success: true,

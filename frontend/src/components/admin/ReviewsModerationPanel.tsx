@@ -13,7 +13,7 @@ type Props = {
 };
 
 export default function ReviewsModerationPanel({
-  title = "Отзывы, ожидающие подтверждения",
+  title = "Управление отзывами",
   cardStyle,
 }: Props) {
   const [reviews, setReviews] = useState<Review[] | null>(null);
@@ -26,10 +26,10 @@ export default function ReviewsModerationPanel({
   useEffect(() => {
     let cancelled = false;
 
-    const fetchUnapproved = async () => {
+    const fetchAll = async () => {
       try {
         setLoading(true);
-        const res = await reviewsApi.fetchUnapproved();
+        const res = await reviewsApi.fetchAll();
 
         if (!res.success) {
           throw new Error(res.message || "Ошибка получения отзывов");
@@ -45,30 +45,12 @@ export default function ReviewsModerationPanel({
       }
     };
 
-    fetchUnapproved();
+    fetchAll();
 
     return () => {
       cancelled = true;
     };
   }, [refreshKey]);
-
-  const handleApproveReview = async (id: number) => {
-    try {
-      const res = await reviewsApi.approve(id);
-      if (!res.success) {
-        throw new Error(res.message || "Не удалось подтвердить отзыв");
-      }
-      message.success("Отзыв подтверждён");
-      setRefreshKey((x) => x + 1);
-    } catch (e: any) {
-      if (e?.message === "UNAUTHORIZED") {
-        message.error("Сессия истекла. Войдите заново");
-        navigate("/auth");
-        return;
-      }
-      message.error(e instanceof Error ? e.message : "Ошибка при подтверждении отзыва");
-    }
-  };
 
   const handleDeleteReview = async (id: number) => {
     try {
@@ -76,7 +58,7 @@ export default function ReviewsModerationPanel({
       if (!res.success) {
         throw new Error(res.message || "Не удалось удалить отзыв");
       }
-      message.success("Отзыв отклонён");
+      message.success("Отзыв удалён");
       setRefreshKey((x) => x + 1);
     } catch (e: any) {
       if (e?.message === "UNAUTHORIZED") {
@@ -84,7 +66,7 @@ export default function ReviewsModerationPanel({
         navigate("/auth");
         return;
       }
-      message.error(e instanceof Error ? e.message : "Ошибка при отклонении отзыва");
+      message.error(e instanceof Error ? e.message : "Ошибка при удалении отзыва");
     }
   };
 
@@ -99,7 +81,7 @@ export default function ReviewsModerationPanel({
 
       <div style={{ marginTop: 16 }}>
         {(reviews?.length ?? 0) === 0 ? (
-          <Text type="secondary">Нет отзывов на модерации</Text>
+          <Text type="secondary">Нет отзывов</Text>
         ) : (
           <Space direction="vertical" style={{ width: "100%" }} size="middle">
             {reviews!.map((review) => (
@@ -132,11 +114,8 @@ export default function ReviewsModerationPanel({
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                  <Button type="primary" onClick={() => handleApproveReview(review.id)}>
-                    Подтвердить
-                  </Button>
                   <Button danger onClick={() => handleDeleteReview(review.id)}>
-                    Отклонить
+                    Удалить
                   </Button>
                 </div>
               </div>

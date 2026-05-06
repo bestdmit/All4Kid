@@ -52,6 +52,23 @@ export const reviewsApi = {
     return response.json();
   },
 
+  fetchAll: async (): Promise<ReviewsResponse> => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    const response = await fetch(`/api/admin/reviews/all`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP при получении отзывов: ${response.status}`);
+    }
+    return response.json();
+  },
+
   createForSpecialist: async (specialistId: number, dto: CreateReviewDto): Promise<CreateReviewResponse> => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {

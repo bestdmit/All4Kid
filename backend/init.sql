@@ -123,9 +123,13 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 INSERT INTO users (email, password_hash, full_name, phone, role) VALUES
 ('parent@example.com', '$2b$10$I69n4xm1.cDbbDhjpFMFmuMFQ3A9pMEfSPNECIHEWeWR2nrGT8Lb.', 'Анна Иванова', '+79001234567', 'user'),
 ('parent2@example.com', '$2b$10$hWDv/GLS8Eyb92LUf052/.y9bNmG7hXJVPullNrOexcGeuLslhBGW', 'Ольга Смирнова', '+79001234568', 'user'),
-('admin@example.com', '$2b$10$rXbq58SRC7qx6f35M/LJW.6sZWzk20kn3hfVb9xTTVrrg6NF8X3Rq', 'Администратор', '+79007654321', 'admin'),
+('admin@example.com', '$2b$10$2MSs9NcCiysGo8Kho3pns.Cuh9G/yYN2AL/Q.fzFKpK9cNOgLsB6.', 'Администратор', '+79007654321', 'admin'),
 ('specialist@example.com', '$2a$10$X8zVzLwLpOFpWq5g5h5J3e8TkQ2mZ9X8zVzLwLpOFpWq5g5h5J3e', 'Иван Петров', '+79001112233', 'specialist')
 ON CONFLICT (email) DO NOTHING;
+
+UPDATE users
+SET password_hash = '$2b$10$2MSs9NcCiysGo8Kho3pns.Cuh9G/yYN2AL/Q.fzFKpK9cNOgLsB6.'
+WHERE email = 'admin@example.com';
 
 UPDATE specialists s
 SET user_id = (SELECT id FROM users WHERE email = 'specialist@example.com')

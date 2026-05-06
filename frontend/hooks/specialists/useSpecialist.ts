@@ -1,12 +1,16 @@
 import {useEffect, useState} from "react";
 import {type Specialist, specialistApi} from "../../src/api/specialists";
 
-export const useSpecialist = (id: number) => {
+type UseSpecialistOptions = {
+    adminPreview?: boolean;
+};
+
+export const useSpecialist = (id: number, options?: UseSpecialistOptions) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [specialist, setSpecialist] = useState<Specialist | null>(null);
 
-    const { fetchByID } = specialistApi;
+    const { fetchByID, fetchByIdForAdminModeration } = specialistApi;
 
     useEffect(() => {
         if (!id) {
@@ -21,7 +25,9 @@ export const useSpecialist = (id: number) => {
             setError(null);
 
             try {
-                const result = await fetchByID(id);
+                const result = options?.adminPreview
+                    ? await fetchByIdForAdminModeration(id)
+                    : await fetchByID(id);
 
                 setSpecialist(result);
                 setLoading(false);
@@ -41,7 +47,7 @@ export const useSpecialist = (id: number) => {
         };
 
         loadData();
-    }, [id,]);
+    }, [id, options?.adminPreview]);
 
     const clearError = () => {
         setError(null)

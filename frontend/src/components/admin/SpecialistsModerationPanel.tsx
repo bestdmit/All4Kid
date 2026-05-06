@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Avatar, Button, Card, Empty, message, Space, Tag, Typography } from "antd";
+import { Avatar, Button, Card, Empty, Input, message, Modal, Space, Tag, Typography } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { specialistApi, type Specialist } from "../../api/specialists";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -17,6 +18,8 @@ export default function SpecialistsModerationPanel({
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [loading, setLoading] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const total = useMemo(() => specialists.length, [specialists]);
 
@@ -49,6 +52,47 @@ export default function SpecialistsModerationPanel({
     } finally {
       setApprovingId(null);
     }
+  };
+
+  const handleDelete = (spec: Specialist) => {
+    let reason = "";
+
+    Modal.confirm({
+      title: `Удалить объявление "${spec.name}"?`,
+      okText: "Удалить",
+      cancelText: "Отмена",
+      okButtonProps: { danger: true },
+      content: (
+        <Input.TextArea
+          rows={4}
+          placeholder="Укажите причину удаления (минимум 5 символов)"
+          onChange={(e) => {
+            reason = e.target.value;
+          }}
+        />
+      ),
+      onOk: async () => {
+        if (reason.trim().length < 5) {
+          message.error("Укажите причину удаления (минимум 5 символов)");
+          return Promise.reject(new Error("INVALID_REASON"));
+        }
+
+        try {
+          setDeletingId(spec.id);
+          await specialistApi.adminDeleteSpecialist(spec.id, reason.trim());
+          setSpecialists((prev) => prev.filter((item) => item.id !== spec.id));
+          message.success("Объявление удалено");
+        } catch (error: unknown) {
+          const err = error instanceof Error ? error : null;
+          message.error(err?.message || "Не удалось удалить объявление");
+          return Promise.reject(error);
+        } finally {
+          setDeletingId(null);
+        }
+
+        return undefined;
+      },
+    });
   };
 
   return (
@@ -96,13 +140,21 @@ export default function SpecialistsModerationPanel({
                     </div>
                   </Space>
 
-                  <Button
-                    type="primary"
-                    loading={approvingId === spec.id}
-                    onClick={() => handleApprove(spec.id)}
-                  >
-                    Одобрить
-                  </Button>
+                  <Space>
+                    <Button onClick={() => navigate(`/specialists/${spec.id}?adminPreview=1`)}>
+                      Просмотреть
+                    </Button>
+                    <Button danger loading={deletingId === spec.id} onClick={() => handleDelete(spec)}>
+                      Удалить
+                    </Button>
+                    <Button
+                      type="primary"
+                      loading={approvingId === spec.id}
+                      onClick={() => handleApprove(spec.id)}
+                    >
+                      Одобрить
+                    </Button>
+                  </Space>
                 </Space>
 
                 <Paragraph style={{ marginTop: 12, marginBottom: 0 }} ellipsis={{ rows: 3, expandable: true }}>
@@ -113,6 +165,7 @@ export default function SpecialistsModerationPanel({
           </Space>
         )}
       </div>
+
     </Card>
   );
 }

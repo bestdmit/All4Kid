@@ -1,6 +1,6 @@
 import {Layout, Row, Col} from "antd";
 import AppHeader from "../src/Header/AppHeader";
-import {useParams} from "react-router-dom";
+import {useParams, useSearchParams} from "react-router-dom";
 import {SpecialistMainInfoCard} from "../src/components/specialist/SpecialistMainInfoCard.tsx";
 import {SpecialistDescription} from "../src/components/specialist/SpecialistDescription.tsx";
 import {SpecialistBooking} from "../src/components/specialist/SpecialistBooking.tsx";
@@ -13,7 +13,9 @@ const { Content } = Layout;
 
 const SpecialistPage = () => {
     const { id } = useParams();
-    const { specialist, loading, error } = useSpecialist(Number(id));
+    const [searchParams] = useSearchParams();
+    const isAdminPreview = searchParams.get("adminPreview") === "1";
+    const { specialist, loading, error } = useSpecialist(Number(id), { adminPreview: isAdminPreview });
 
     if (loading) {
         return <div style={{ color: 'black', textAlign: 'center', padding: '40px' }}>Загрузка...</div>;

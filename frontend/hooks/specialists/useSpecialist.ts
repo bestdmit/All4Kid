@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {type Specialist, specialistApi} from "../../src/api/specialists";
 
 type UseSpecialistOptions = {
@@ -12,7 +12,7 @@ export const useSpecialist = (id: number, options?: UseSpecialistOptions) => {
 
     const { fetchByID, fetchByIdForAdminModeration } = specialistApi;
 
-    useEffect(() => {
+    const fetch = useCallback(async () => {
         if (!id) {
             setSpecialist(null);
             setLoading(false);
@@ -20,34 +20,41 @@ export const useSpecialist = (id: number, options?: UseSpecialistOptions) => {
             return;
         }
 
-        const loadData = async () => {
-            setLoading(true);
-            setError(null);
+        setLoading(true);
+        setError(null);
 
-            try {
-                const result = options?.adminPreview
-                    ? await fetchByIdForAdminModeration(id)
-                    : await fetchByID(id);
+        try {
+            const result = options?.adminPreview
+                ? await fetchByIdForAdminModeration(id)
+                : await fetchByID(id);
 
-                setSpecialist(result);
-                setLoading(false);
-            } catch (err: any) {
-                let errorMessage = "Произошла ошибка при загрузке";
-                if (err instanceof Error) {
-                    errorMessage = err.message;
-                }
-                // If specialist was deleted by admin, show appropriate message
-                if (errorMessage.includes('410')) {
-                    errorMessage = 'Это объявление было удалено администратором';
-                }
-
-                setError(errorMessage);
-                setLoading(false);
+            setSpecialist(result);
+            setLoading(false);
+        } catch (err: any) {
+            let errorMessage = "Произошла ошибка при загрузке";
+            if (err instanceof Error) {
+                errorMessage = err.message;
             }
-        };
+            // If specialist was deleted by admin, show appropriate message
+            if (errorMessage.includes('410')) {
+                errorMessage = 'Это объявление было удалено администратором';
+            }
 
-        loadData();
+            setError(errorMessage);
+            setLoading(false);
+        }
     }, [id, options?.adminPreview]);
+
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+
+    return {
+        loading,
+        error,
+        specialist,
+        refetch: fetch,
+    };
 
     const clearError = () => {
         setError(null)

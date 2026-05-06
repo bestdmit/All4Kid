@@ -15,7 +15,7 @@ const SpecialistPage = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const isAdminPreview = searchParams.get("adminPreview") === "1";
-    const { specialist, loading, error } = useSpecialist(Number(id), { adminPreview: isAdminPreview });
+    const { specialist, loading, error, refetch: refetchSpecialist } = useSpecialist(Number(id), { adminPreview: isAdminPreview });
 
     if (loading) {
         return <div style={{ color: 'black', textAlign: 'center', padding: '40px' }}>Загрузка...</div>;
@@ -64,7 +64,7 @@ const SpecialistPage = () => {
                     </Col>
 
                     <Col xs={24}>
-                        <SpecialistReviews specialist={specialist}/>
+                        <SpecialistReviews specialist={specialist} onReviewAdded={refetchSpecialist}/>
                     </Col>
                 </Row>
             </Content>

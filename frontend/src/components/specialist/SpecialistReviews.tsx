@@ -8,10 +8,10 @@ import { useNavigate } from "react-router-dom";
 
 const { Title, Text, Paragraph } = Typography;
 
-const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
+const SpecialistReviews = ({specialist, onReviewAdded} : {specialist: Specialist, onReviewAdded?: () => void}) => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuthStore();
-    const { reviews, total, error } = useSpecialistReviews(specialist.id);
+    const { reviews, total, error, refetch } = useSpecialistReviews(specialist.id);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [form] = Form.useForm();
@@ -45,7 +45,8 @@ const SpecialistReviews = ({specialist} : {specialist: Specialist}) => {
 
             message.success("Отзыв отправлен");
             closeModal();
-            // await refetch(); // Don't refetch immediately, it should be approved first
+            await refetch(); // Refetch reviews immediately since they are approved now
+            onReviewAdded?.(); // Refetch specialist data to update rating
         } catch (e: any) {
             if (e?.message === "UNAUTHORIZED") {
                 message.error("Сессия истекла. Войдите заново");

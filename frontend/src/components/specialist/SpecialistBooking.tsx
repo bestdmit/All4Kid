@@ -91,7 +91,7 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
     const { isAuthenticated, user, updateProfile } = useAuthStore();
     const { touchAppointments } = useBookingEventsStore();
 
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -102,6 +102,7 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
     const childMode = Form.useWatch('childMode', form) as 'existing' | 'new' | undefined;
 
     const slots = useMemo(() => {
+        if (!selectedDate) return [];
         const selectedKey = toDateKey(selectedDate);
         return allFutureSlots.filter(
             (slot) => toDateKey(new Date(slot.starts_at)) === selectedKey
@@ -155,17 +156,16 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
 
     useEffect(() => {
         if (!availableDateKeys.length) {
+            setSelectedDate(null);
             setSelectedSlotId(null);
             return;
         }
 
-        const currentKey = toDateKey(selectedDate);
-        if (availableDateSet.has(currentKey)) {
+        if (selectedDate && availableDateSet.has(toDateKey(selectedDate))) {
             return;
         }
 
-        const firstAvailable = availableDateKeys[0].split('-').map(Number);
-        setSelectedDate(new Date(firstAvailable[0], firstAvailable[1] - 1, firstAvailable[2]));
+        setSelectedDate(new Date(`${availableDateKeys[0]}T00:00:00`));
         setSelectedSlotId(null);
     }, [availableDateKeys, availableDateSet, selectedDate]);
 
@@ -339,8 +339,8 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
                             const dateKey = getDateKeyFromValue(current);
                             const currentDate = toDateValue(current);
                             const isAvailable = availableDateSet.has(dateKey);
-                            const selectedKey = toDateKey(selectedDate);
-                            const isSelected = dateKey === selectedKey;
+                            const selectedKey = selectedDate ? toDateKey(selectedDate) : '';
+                            const isSelected = selectedDate && dateKey === selectedKey;
                             const isDisabled = isPastDate(currentDate) || (!calendarLoading && !isAvailable);
 
                             const dayNumber = typeof current?.date === 'function' ? current.date() : currentDate.getDate();

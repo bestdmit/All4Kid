@@ -14,6 +14,88 @@ import ImageUpload from "../src/components/ImageUpload";
 
 const { Title, Text } = Typography;
 
+const toTitleCaseProfileName = (value: string) =>
+  value.replace(/(^|[\s-])([а-яё])([а-яё]*)/gi, (_, separator: string, first: string, rest: string) =>
+    `${separator}${first.toUpperCase()}${rest.toLowerCase()}`
+  );
+
+const normalizeProfileName = (value: string) => toTitleCaseProfileName(value.trim().replace(/\s{2,}/g, ' '));
+const normalizeProfilePhone = (value?: string) => String(value || '').trim();
+
+const getProfilePhoneError = (value: string) => {
+  if (!/^\+?[\d\s\-()]+$/.test(value)) {
+    return 'Введите корректный номер телефона';
+  }
+
+  if ((value.match(/\+/g) || []).length > 1 || (value.includes('+') && !value.startsWith('+'))) {
+    return 'Плюс можно указывать только в начале номера';
+  }
+
+  const digits = value.replace(/\D/g, '');
+
+  if (digits.length < 10 || digits.length > 15) {
+    return 'Укажите телефон с 10-15 цифрами';
+  }
+
+  if (/^(\d)\1+$/.test(digits)) {
+    return 'Введите действительный номер телефона';
+  }
+
+  if ('0123456789'.includes(digits) || '1234567890'.includes(digits) || '9876543210'.includes(digits)) {
+    return 'Введите действительный номер телефона';
+  }
+
+  return null;
+};
+
+const validateProfileName = (_: unknown, value?: string) => {
+  const normalized = normalizeProfileName(String(value || ''));
+
+  if (!normalized) {
+    return Promise.reject(new Error('Введите имя'));
+  }
+
+  if (!/^[а-яА-ЯёЁ\- ]+$/.test(normalized)) {
+    return Promise.reject(new Error('Допустима только кириллица, пробел и дефис'));
+  }
+
+  if (normalized.length < 2) {
+    return Promise.reject(new Error('Минимум 2 символа'));
+  }
+
+  if (normalized.length > 50) {
+    return Promise.reject(new Error('Максимум 50 символов'));
+  }
+
+  if (!/[а-яА-ЯёЁ]/.test(normalized)) {
+    return Promise.reject(new Error('Имя должно содержать буквы'));
+  }
+
+  if (String(value || '').trim().replace(/\s{2,}/g, ' ') !== normalized) {
+    return Promise.reject(new Error('Имя должно начинаться с большой буквы'));
+  }
+
+  return Promise.resolve();
+};
+
+const validateProfilePhone = (_: unknown, value?: string) => {
+  const raw = String(value || '');
+  const normalized = normalizeProfilePhone(value);
+
+  if (!normalized) {
+    return raw.length > 0
+      ? Promise.reject(new Error('Телефон не должен состоять только из пробелов'))
+      : Promise.resolve();
+  }
+
+  const phoneError = getProfilePhoneError(normalized);
+  if (phoneError) {
+    return Promise.reject(new Error(phoneError));
+  }
+
+  return Promise.resolve();
+};
+
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout, updateProfile, clearError, uploadAvatar, deleteAvatar } = useAuth();
   const { updateNameForCreator, removeSpecialistById, fetchSpecialists } = useSpecialistStore();
@@ -360,6 +442,9 @@ export default function ProfilePage() {
                   <Text type="secondary" style={{ marginTop: 2 }}>
                     {roleLabel}
                   </Text>
+                  <Text type="secondary" style={{ marginTop: 2 }}>
+                    {user.phone?.trim() || 'Номер телефона отсутствует'}
+                  </Text>
                 </div>
 
                 <div className="profile-fields">
@@ -398,13 +483,19 @@ export default function ProfilePage() {
             form={form}
             layout="vertical"
             onFinish={async (values) => {
+              const normalizedValues = {
+                ...values,
+                fullName: normalizeProfileName(values.fullName || ''),
+                phone: normalizeProfilePhone(values.phone),
+              };
+
               try {
                 setSaving(true);
                 clearError();
-                const success = await updateProfile(values);
+                const success = await updateProfile(normalizedValues);
 
                 if (success) {
-                  updateNameForCreator(user.id, values.fullName);
+                  updateNameForCreator(user.id, normalizedValues.fullName);
                   if (avatarFile) {
                     await uploadAvatar(avatarFile);
                   }
@@ -450,13 +541,7 @@ export default function ProfilePage() {
               name="fullName"
               label="Имя"
               rules={[
-                { required: true, message: 'Введите имя' },
-                {
-                  pattern: /^[а-яА-ЯёЁ\- ]+$/,
-                  message: 'Допустима только кириллица, пробел и дефис',
-                },
-                { min: 2, message: 'Минимум 2 символа' },
-                { max: 50, message: 'Максимум 50 символов' },
+                { validator: validateProfileName },
               ]}
             >
               <Input placeholder="Ваше имя" />
@@ -466,10 +551,7 @@ export default function ProfilePage() {
               name="phone"
               label="Телефон"
               rules={[
-                {
-                  pattern: /^[\d\s\-+()]{10,15}$/,
-                  message: 'Укажите телефон в формате 10-15 символов',
-                },
+                { validator: validateProfilePhone },
               ]}
             >
               <Input placeholder="Например, +7 999 123-45-67" />

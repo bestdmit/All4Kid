@@ -30,6 +30,40 @@ function formatValidationErrors(req: Request) {
   });
 }
 
+const toTitleCaseProfileName = (value: string) =>
+  value.replace(/(^|[\s-])([а-яё])([а-яё]*)/gi, (_match, separator: string, first: string, rest: string) =>
+    `${separator}${first.toUpperCase()}${rest.toLowerCase()}`
+  );
+
+const normalizeProfileName = (value: string) =>
+  toTitleCaseProfileName(value.trim().replace(/\s{2,}/g, ' '));
+
+const getProfilePhoneError = (value: string) => {
+  if (!/^\+?[\d\s\-()]+$/.test(value)) {
+    return 'Неверный формат телефона';
+  }
+
+  if ((value.match(/\+/g) || []).length > 1 || (value.includes('+') && !value.startsWith('+'))) {
+    return 'Плюс можно указывать только в начале номера';
+  }
+
+  const digits = value.replace(/\D/g, '');
+
+  if (digits.length < 10 || digits.length > 15) {
+    return 'Телефон должен содержать 10-15 цифр';
+  }
+
+  if (/^(\d)\1+$/.test(digits)) {
+    return 'Введите действительный номер телефона';
+  }
+
+  if ('0123456789'.includes(digits) || '1234567890'.includes(digits) || '9876543210'.includes(digits)) {
+    return 'Введите действительный номер телефона';
+  }
+
+  return null;
+};
+
 /**
  * Helper: генерация access + refresh токенов
  */
@@ -110,12 +144,22 @@ export const validateRegistration = [
     // Только кириллица, дефисы и пробелы
     .matches(/^[а-яА-ЯёЁ\- ]+$/).withMessage('Имя должно содержать только кириллицу, пробелы и дефисы')
     .isLength({ min: 2 }).withMessage('Имя должно быть не менее 2 символов')
-    .isLength({ max: 50 }).withMessage('Имя не должно превышать 50 символов'),
+    .isLength({ max: 50 }).withMessage('Имя не должно превышать 50 символов')
+    .custom((value: string) => {
+      if (value !== normalizeProfileName(value)) {
+        throw new Error('Имя должно начинаться с большой буквы');
+      }
+      return true;
+    }),
 
   body('phone')
     .optional({ checkFalsy: true })
     .trim()
-    .matches(/^[\d\s\-+()]{10,15}$/).withMessage('Неверный формат телефона')
+    .custom((value: string) => {
+      const error = getProfilePhoneError(value);
+      if (error) throw new Error(error);
+      return true;
+    })
 ];
 
 export const validateLogin = [
@@ -140,14 +184,25 @@ export const validateProfileUpdate = [
   body('fullName')
     .optional({ checkFalsy: true })
     .trim()
+    .notEmpty().withMessage('Полное имя не должно быть пустым')
     .matches(/^[а-яА-ЯёЁ\- ]+$/).withMessage('Имя должно содержать только кириллицу, пробелы и дефисы')
     .isLength({ min: 2 }).withMessage('Имя должно быть не менее 2 символов')
-    .isLength({ max: 50 }).withMessage('Имя не должно превышать 50 символов'),
+    .isLength({ max: 50 }).withMessage('Имя не должно превышать 50 символов')
+    .custom((value: string) => {
+      if (value !== normalizeProfileName(value)) {
+        throw new Error('Имя должно начинаться с большой буквы');
+      }
+      return true;
+    }),
 
   body('phone')
     .optional({ checkFalsy: true })
     .trim()
-    .matches(/^[\d\s\-+()]{10,15}$/).withMessage('Неверный формат телефона')
+    .custom((value: string) => {
+      const error = getProfilePhoneError(value);
+      if (error) throw new Error(error);
+      return true;
+    })
 ];
 
 /**
@@ -179,7 +234,7 @@ export const register = async (req: Request, res: Response) => {
     // }
 
     // Нормализация fullName: trim + collapse multiple spaces -> single
-    const normalizedFullName = (fullName ?? '').trim().replace(/\s{2,}/g, ' ');
+    const normalizedFullName = normalizeProfileName(fullName ?? '');
 
     // Проверяем, существует ли пользователь
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -455,9 +510,10 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     let normalizedName: string | undefined;
 
     if (typeof fullName !== 'undefined') {
-      normalizedName = (fullName ?? '')
-        .trim()
-        .replace(/\s{2,}/g, ' ');
+      normalizedName = normalizeProfileName(fullName ?? '');
+      if (!normalizedName) {
+        return res.status(400).json({ success: false, message: 'Полное имя не должно быть пустым' });
+      }
       updates.push(`full_name = $${updates.length + 1}`);
       values.push(normalizedName);
     }

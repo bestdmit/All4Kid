@@ -17,6 +17,39 @@ type RegisterFormProps = {
   onTabChange?: () => void;
 };
 
+const toTitleCaseProfileName = (value: string) =>
+  value.replace(/(^|[\s-])([а-яё])([а-яё]*)/gi, (_, separator: string, first: string, rest: string) =>
+    `${separator}${first.toUpperCase()}${rest.toLowerCase()}`
+  );
+
+const normalizeProfileName = (value: string) => toTitleCaseProfileName(value.trim().replace(/\s{2,}/g, ' '));
+
+const getProfilePhoneError = (value: string) => {
+  if (!/^\+?[\d\s\-()]+$/.test(value)) {
+    return 'Введите корректный номер телефона';
+  }
+
+  if ((value.match(/\+/g) || []).length > 1 || (value.includes('+') && !value.startsWith('+'))) {
+    return 'Плюс можно указывать только в начале номера';
+  }
+
+  const digits = value.replace(/\D/g, '');
+
+  if (digits.length < 10 || digits.length > 15) {
+    return 'Укажите телефон с 10-15 цифрами';
+  }
+
+  if (/^(\d)\1+$/.test(digits)) {
+    return 'Введите действительный номер телефона';
+  }
+
+  if ('0123456789'.includes(digits) || '1234567890'.includes(digits) || '9876543210'.includes(digits)) {
+    return 'Введите действительный номер телефона';
+  }
+
+  return null;
+};
+
 const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) => {
   const [form] = Form.useForm();
   const { isAuthenticated, register } = useAuth();
@@ -25,7 +58,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     if (values.fullName) {
-      values.fullName = values.fullName.trim().replace(/\s{2,}/g, ' ');
+      values.fullName = normalizeProfileName(values.fullName);
     }
     try {
       if (values.password !== values.confirmPassword) {
@@ -37,7 +70,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         email: values.email!,
         password: values.password!,
         fullName: values.fullName!,
-        phone: values.phone,
+        phone: values.phone?.trim(),
       }, avatarFile || undefined);
       if (isAuthenticated) message.success("Регистрация успешна! Добро пожаловать!");
     } catch (err) {
@@ -56,9 +89,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
   // Регулярное выражение для проверки кириллицы
   const cyrillicRegex = /^[\sа-яА-ЯёЁ\-]+$/;
   
-  // Регулярное выражение для телефона (более строгое)
-  const phoneRegex = /^[\d\s\-+()]{10,15}$/;
-
   return (
     <Form
       form={form}
@@ -100,6 +130,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
               if (/\s{2,}/.test(value)) {
                 return Promise.reject(new Error("Не используйте несколько пробелов подряд!"));
               }
+
+              if (value.trim().replace(/\s{2,}/g, ' ') !== normalizeProfileName(value)) {
+                return Promise.reject(new Error("Имя должно начинаться с большой буквы!"));
+              }
               
               return Promise.resolve();
             },
@@ -124,7 +158,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         label="Телефон"
         name="phone"
         rules={[
-          { pattern: phoneRegex, message: "Введите корректный номер телефона" },
+          {
+            validator: (_, value) => {
+              const raw = String(value || '');
+              const normalized = raw.trim();
+
+              if (!normalized) {
+                return raw.length > 0
+                  ? Promise.reject(new Error('Телефон не должен состоять только из пробелов'))
+                  : Promise.resolve();
+              }
+
+              const error = getProfilePhoneError(normalized);
+              return error ? Promise.reject(new Error(error)) : Promise.resolve();
+            },
+          },
         ]}
       >
         <Input />

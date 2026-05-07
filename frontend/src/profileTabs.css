@@ -12,6 +12,28 @@
   flex: 0 0 auto;
 }
 
+.profile-child-card {
+  min-height: 132px;
+}
+
+.profile-child-summary {
+  min-width: 0;
+}
+
+.profile-child-name {
+  display: -webkit-box;
+  overflow: hidden;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.profile-child-date {
+  margin-top: 12px;
+  color: #666;
+  word-break: break-word;
+}
+
 @media (max-width: 520px) {
   .profile-tabs-tab {
     font-size: 13px !important;

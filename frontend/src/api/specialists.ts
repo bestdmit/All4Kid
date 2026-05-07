@@ -4,6 +4,7 @@ const API_BASE_URL = "";
 export interface Specialist {
   id: number;
   name: string;
+  category?: string;
   specialty: string;
   experience: number;
   rating: number;

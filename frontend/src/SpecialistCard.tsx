@@ -50,11 +50,6 @@ const ratingBadgeStyle: React.CSSProperties = {
   gap: "6px",
 };
 
-const deleteButtonStyle: React.CSSProperties = {
-  marginTop: "12px",
-  width: "100%",
-};
-
 const favoriteButtonStyle: React.CSSProperties = {
   position: "absolute",
   top: "8px",

@@ -15,6 +15,10 @@ import "./profileTabs.css";
 const { Text } = Typography;
 const { Option } = Select;
 
+const CHILD_NAME_MIN_LEN = 2;
+const CHILD_NAME_MAX_LEN = 35;
+const CHILD_MAX_AGE_YEARS = 18;
+
 interface ProfileTabsProps {
   user: User;
   updateProfile: (data: any) => Promise<boolean>;
@@ -92,11 +96,57 @@ const isFutureDateValue = (value: string): boolean => {
   return selectedDate.getTime() > today.getTime();
 };
 
+const isTooOldChildBirthDateValue = (value: string): boolean => {
+  if (!value) return false;
+
+  const selectedDate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const minAllowedDate = new Date(today);
+  minAllowedDate.setFullYear(minAllowedDate.getFullYear() - CHILD_MAX_AGE_YEARS);
+
+  return selectedDate.getTime() < minAllowedDate.getTime();
+};
+
+const validateChildInput = (name: string, birthDate: string): boolean => {
+  const trimmedName = name.trim();
+
+  if (!trimmedName) {
+    message.error("Введите имя ребенка");
+    return false;
+  }
+
+  if (trimmedName.length < CHILD_NAME_MIN_LEN) {
+    message.error(`Имя ребенка должно быть не короче ${CHILD_NAME_MIN_LEN} символов`);
+    return false;
+  }
+
+  if (trimmedName.length > CHILD_NAME_MAX_LEN) {
+    message.error(`Имя ребенка должно быть не длиннее ${CHILD_NAME_MAX_LEN} символов`);
+    return false;
+  }
+
+  if (birthDate && isFutureDateValue(birthDate)) {
+    message.error('Дата рождения не может быть в будущем');
+    return false;
+  }
+
+  if (birthDate && isTooOldChildBirthDateValue(birthDate)) {
+    message.error(`Возраст ребенка не может быть больше ${CHILD_MAX_AGE_YEARS} лет`);
+    return false;
+  }
+
+  return true;
+};
+
 export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   const navigate = useNavigate();
   const [active, setActive] = useState<string>("children");
   const { appointmentsVersion } = useBookingEventsStore();
   const maxBirthDate = toInputDateValue(new Date());
+  const minBirthDate = toInputDateValue(new Date(new Date().setFullYear(new Date().getFullYear() - CHILD_MAX_AGE_YEARS)));
 
   const [childName, setChildName] = useState("");
   const [childBirth, setChildBirth] = useState("");
@@ -218,13 +268,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
   };
 
   const handleAddChild = async () => {
-    if (!childName.trim()) {
-      message.error("Введите имя ребенка");
-      return;
-    }
-
-    if (childBirth && isFutureDateValue(childBirth)) {
-      message.error('Дата рождения не может быть в будущем');
+    if (!validateChildInput(childName, childBirth)) {
       return;
     }
 
@@ -299,13 +343,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
     if (editingChildIndex === null) return;
 
     const trimmedName = editChildName.trim();
-    if (!trimmedName) {
-      message.error('Введите имя ребенка');
-      return;
-    }
-
-    if (editChildBirth && isFutureDateValue(editChildBirth)) {
-      message.error('Дата рождения не может быть в будущем');
+    if (!validateChildInput(editChildName, editChildBirth)) {
       return;
     }
 
@@ -378,14 +416,14 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
 
             return (
               <Col key={idx} xs={24} sm={12} md={8} lg={6}>
-                <Card size="small">
+                <Card size="small" className="profile-child-card">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <Avatar style={{ backgroundColor: '#87d068', marginRight: 12 }}>
                         {c.name ? String(c.name).charAt(0).toUpperCase() : 'Д'}
                       </Avatar>
-                      <div>
-                        <Text strong>{c.name}</Text>
+                      <div className="profile-child-summary">
+                        <Text strong className="profile-child-name">{c.name}</Text>
                         <div style={{ color: '#888' }}>{ageText}</div>
                       </div>
                     </div>
@@ -400,7 +438,7 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
                     </div>
                   </div>
                   {dateText && (
-                    <div style={{ marginTop: 12, color: '#666' }}>Дата рождения: {dateText}</div>
+                    <div className="profile-child-date">Дата рождения: {dateText}</div>
                   )}
                 </Card>
               </Col>
@@ -415,8 +453,20 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
           footer={null}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Input placeholder="Имя ребёнка" value={childName} onChange={e => setChildName(e.target.value)} />
-            <Input type="date" max={maxBirthDate} value={childBirth} onChange={e => setChildBirth(e.target.value)} />
+            <Input
+              placeholder="Имя ребёнка"
+              value={childName}
+              maxLength={CHILD_NAME_MAX_LEN}
+              showCount
+              onChange={e => setChildName(e.target.value)}
+            />
+            <Input
+              type="date"
+              min={minBirthDate}
+              max={maxBirthDate}
+              value={childBirth}
+              onChange={e => setChildBirth(e.target.value)}
+            />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Button onClick={() => setAddModalVisible(false)}>Отмена</Button>
               <Button type="primary" onClick={handleAddChild} loading={adding}>Добавить</Button>
@@ -436,8 +486,20 @@ export default function ProfileTabs({ user, updateProfile }: ProfileTabsProps) {
           footer={null}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Input placeholder="Имя ребёнка" value={editChildName} onChange={e => setEditChildName(e.target.value)} />
-            <Input type="date" max={maxBirthDate} value={editChildBirth} onChange={e => setEditChildBirth(e.target.value)} />
+            <Input
+              placeholder="Имя ребёнка"
+              value={editChildName}
+              maxLength={CHILD_NAME_MAX_LEN}
+              showCount
+              onChange={e => setEditChildName(e.target.value)}
+            />
+            <Input
+              type="date"
+              min={minBirthDate}
+              max={maxBirthDate}
+              value={editChildBirth}
+              onChange={e => setEditChildBirth(e.target.value)}
+            />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Button onClick={() => {
                 setEditModalVisible(false);

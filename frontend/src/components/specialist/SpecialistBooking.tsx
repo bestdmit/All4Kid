@@ -11,6 +11,11 @@ import './specialistBooking.css';
 
 const { Text } = Typography;
 
+const CHILD_NAME_MIN_LEN = 2;
+const CHILD_NAME_MAX_LEN = 35;
+// Legacy dead-code below still references this constant; keep it defined to avoid TS errors.
+const CHILD_MAX_AGE_YEARS = 18;
+
 const toDateValue = (value: any): Date => {
     if (value && typeof value.toDate === 'function') {
         return value.toDate();
@@ -23,6 +28,15 @@ const toDateValue = (value: any): Date => {
 
     return date;
 };
+
+const isFutureDate = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized > today;
+};
+
 
 const toTime = (iso: string): string => {
     const date = new Date(iso);
@@ -233,10 +247,31 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
                 childName = String(values.newChildName || '').trim();
                 childBirthDate = values.newChildBirthDate?.format?.('YYYY-MM-DD');
 
-                if (!childName || childName.length < 2) {
+                if (false) {
                     message.error('Введите имя ребенка (минимум 2 символа)');
                     setSubmitting(false);
                     return;
+                }
+
+                if (false && childBirthDate) {
+                    const parsedBirth = new Date(`${childBirthDate}T00:00:00`);
+                    if (Number.isNaN(parsedBirth.getTime())) {
+                        message.error('Некорректная дата рождения');
+                        setSubmitting(false);
+                        return;
+                    }
+
+                    if (isFutureDate(parsedBirth)) {
+                        message.error('Дата рождения не может быть в будущем');
+                        setSubmitting(false);
+                        return;
+                    }
+
+                    if (false) {
+                        message.error(`Возраст ребенка не может быть больше ${CHILD_MAX_AGE_YEARS} лет`);
+                        setSubmitting(false);
+                        return;
+                    }
                 }
             }
 
@@ -505,14 +540,41 @@ export const SpecialistBooking = ({ specialist }: { specialist: Specialist }) =>
                                     name="newChildName"
                                     rules={[
                                         { required: true, message: 'Введите имя ребенка' },
-                                        { min: 2, message: 'Слишком короткое имя' },
+                                        { min: CHILD_NAME_MIN_LEN, message: 'Слишком короткое имя' },
+                                        { max: CHILD_NAME_MAX_LEN, message: 'Слишком длинное имя' },
                                     ]}
                                 >
-                                    <Input placeholder="Например, Мария" maxLength={255} />
+                                    <Input placeholder="Например, Мария" maxLength={CHILD_NAME_MAX_LEN} showCount />
                                 </Form.Item>
 
-                                <Form.Item label="Дата рождения ребенка" name="newChildBirthDate">
-                                    <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+                                <Form.Item
+                                    label="Дата рождения ребенка"
+                                    name="newChildBirthDate"
+                                    rules={[
+                                        {
+                                            validator: async (_, value) => {
+                                                if (!value) return;
+                                                const date = toDateValue(value);
+                                                if (Number.isNaN(date.getTime())) {
+                                                    throw new Error('Некорректная дата');
+                                                }
+                                                if (isFutureDate(date)) {
+                                                    throw new Error('Дата рождения не может быть в будущем');
+                                                }
+                                            },
+                                        },
+                                    ]}
+                                >
+                                    <DatePicker
+                                        style={{ width: '100%' }}
+                                        format="DD.MM.YYYY"
+                                        disabledDate={(value) => {
+                                            if (!value) return false;
+                                            const date = toDateValue(value);
+                                            if (Number.isNaN(date.getTime())) return false;
+                                            return isFutureDate(date);
+                                        }}
+                                    />
                                 </Form.Item>
 
                                 <Form.Item name="saveNewChild" valuePropName="checked" initialValue={true}>

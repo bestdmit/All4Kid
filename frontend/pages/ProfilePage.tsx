@@ -38,6 +38,7 @@ export default function ProfilePage() {
     location: string;
     price_per_hour: number;
     description?: string;
+    education: string;
   }>();
   const { updateSpecialistInStore } = useSpecialistStore();
 
@@ -94,6 +95,7 @@ export default function ProfilePage() {
       location: spec.location,
       price_per_hour: spec.price_per_hour,
       description: spec.description,
+      education: spec.education,
     });
     setEditSpecModalVisible(true);
   };
@@ -150,6 +152,7 @@ export default function ProfilePage() {
     location: string;
     price_per_hour: number;
     description?: string;
+    education: string;
   }) => {
     if (!editingSpecialist) return;
 
@@ -169,6 +172,7 @@ export default function ProfilePage() {
       formData.append("experience", String(values.experience));
       formData.append("location", values.location);
       formData.append("price_per_hour", String(values.price_per_hour));
+      formData.append("education", values.education);
       if (values.description) {
         formData.append("description", values.description);
       }
@@ -556,32 +560,55 @@ export default function ProfilePage() {
                 )}
               </Flex>
 
-              <Form.Item name="name" label="ФИО специалиста" rules={[{ required: true }]}>
-                <Input placeholder="Например: Иванов Иван Иванович" />
+              <Form.Item name="name" label="ФИО специалиста" rules={[
+                { required: true, message: 'Введите имя' },
+                { min: 2, message: 'Минимум 2 символа' },
+                { max: 100, message: 'Максимум 100 символов' },
+              ]}>
+                <Input placeholder="Например: Иванов Иван Иванович" maxLength={100} />
               </Form.Item>
 
-              <Form.Item name="specialty" label="Специальность" rules={[{ required: true }]}>
-                <Input placeholder="Например: Логопед-дефектолог" />
+              <Form.Item name="specialty" label="Специальность" rules={[
+                { required: true, message: 'Введите специальность' },
+                { min: 2, message: 'Минимум 2 символа' },
+                { max: 100, message: 'Максимум 100 символов' },
+              ]}>
+                <Input placeholder="Например: Логопед-дефектолог" maxLength={100} />
               </Form.Item>
 
               <Form.Item name="category" label="Категория" rules={[{ required: true }]}>
-                <Input placeholder="Например: Врачи" />
+                <Input placeholder="Например: Врачи" maxLength={100} />
               </Form.Item>
 
               <Form.Item name="experience" label="Опыт работы (лет)" rules={[{ required: true }]}>
-                <Input type="number" min={0} />
+                <Input type="number" min={0} max={50} />
               </Form.Item>
 
-              <Form.Item name="location" label="Место приема" rules={[{ required: true }]}>
-                <Input placeholder="Адрес кабинета или 'Онлайн'" />
+              <Form.Item name="location" label="Место приема" rules={[
+                { required: true, message: 'Укажите местоположение' },
+                { min: 2, message: 'Минимум 2 символа' },
+                { max: 100, message: 'Максимум 100 символов' },
+              ]}>
+                <Input placeholder="Адрес кабинета или 'Онлайн'" maxLength={100} />
               </Form.Item>
 
               <Form.Item name="price_per_hour" label="Стоимость занятия (₽/час)" rules={[{ required: true }]}>
-                <Input type="number" min={0} />
+                <Input type="number" min={0} max={1000000} />
               </Form.Item>
 
-              <Form.Item name="description" label="О себе">
-                <Input.TextArea rows={4} placeholder="Опишите свои навыки и методы работы..." />
+              <Form.Item name="description" label="О себе" rules={[
+                { min: 10, message: 'Минимум 10 символов' },
+                { max: 2000, message: 'Максимум 2000 символов' },
+              ]}>
+                <Input.TextArea rows={4} placeholder="Опишите свои навыки и методы работы..." maxLength={2000} showCount />
+              </Form.Item>
+
+              <Form.Item name="education" label="Образование" rules={[
+                { required: true, message: 'Укажите образование' },
+                { min: 5, message: 'Минимум 5 символов' },
+                { max: 1000, message: 'Максимум 1000 символов' },
+              ]}>
+                <Input.TextArea rows={3} placeholder="Например: МПГУ, педагогическое образование, 2018" maxLength={1000} showCount />
               </Form.Item>
 
               <Form.Item>

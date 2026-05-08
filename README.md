@@ -34,7 +34,7 @@ All4Kid — это удобный и современный агрегатор, 
 - **База данных:** PostgreSQL
 
 ## Администрирование:
-- **Логин:** admin@example.com **Пароль:** gdsta_3231
+- **Логин:** admin@example.com **Пароль:** Admin123!
 - **Логин:** admin1@example.com **Пароль:** ghwer1hg
 - **Логин:** admin2@example.com **Пароль:** ghwer2hg
 - **Логин:** admin3@example.com **Пароль:** ghwer3hg

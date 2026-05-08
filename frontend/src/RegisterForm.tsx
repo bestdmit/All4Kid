@@ -3,6 +3,7 @@ import type { FormProps } from "antd";
 import { Button, Form, Input, message, Upload, Avatar } from "antd";
 import { UploadOutlined } from '@ant-design/icons';
 import { useAuth } from "../hooks/useAuth";
+import { isValidRussianPhone, formatPhoneForInput, normalizeRussianPhone } from "../services/phoneNormalization";
 
 type FieldType = {
   email?: string;
@@ -24,37 +25,12 @@ const toTitleCaseProfileName = (value: string) =>
 
 const normalizeProfileName = (value: string) => toTitleCaseProfileName(value.trim().replace(/\s{2,}/g, ' '));
 
-const getProfilePhoneError = (value: string) => {
-  if (!/^\+?[\d\s\-()]+$/.test(value)) {
-    return 'Введите корректный номер телефона';
-  }
-
-  if ((value.match(/\+/g) || []).length > 1 || (value.includes('+') && !value.startsWith('+'))) {
-    return 'Плюс можно указывать только в начале номера';
-  }
-
-  const digits = value.replace(/\D/g, '');
-
-  if (digits.length < 10 || digits.length > 15) {
-    return 'Укажите телефон с 10-15 цифрами';
-  }
-
-  if (/^(\d)\1+$/.test(digits)) {
-    return 'Введите действительный номер телефона';
-  }
-
-  if ('0123456789'.includes(digits) || '1234567890'.includes(digits) || '9876543210'.includes(digits)) {
-    return 'Введите действительный номер телефона';
-  }
-
-  return null;
-};
-
 const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) => {
   const [form] = Form.useForm();
   const { isAuthenticated, register } = useAuth();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [phoneValue, setPhoneValue] = useState<string>('');
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     if (values.fullName) {
@@ -66,11 +42,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         return;
       }
 
+      // Normalize phone number before sending
+      let normalizedPhone: string | undefined;
+      if (values.phone && values.phone.trim()) {
+        normalizedPhone = normalizeRussianPhone(values.phone.trim()) || undefined;
+      }
+
       await register({
         email: values.email!,
         password: values.password!,
         fullName: values.fullName!,
-        phone: values.phone?.trim(),
+        phone: normalizedPhone,
       }, avatarFile || undefined);
       if (isAuthenticated) message.success("Регистрация успешна! Добро пожаловать!");
     } catch (err) {
@@ -160,22 +142,32 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ isLoading, onTabChange }) =
         rules={[
           {
             validator: (_, value) => {
-              const raw = String(value || '');
-              const normalized = raw.trim();
+              const raw = String(value || '').trim();
 
-              if (!normalized) {
-                return raw.length > 0
-                  ? Promise.reject(new Error('Телефон не должен состоять только из пробелов'))
-                  : Promise.resolve();
+              if (!raw) {
+                // Phone is optional
+                return Promise.resolve();
               }
 
-              const error = getProfilePhoneError(normalized);
-              return error ? Promise.reject(new Error(error)) : Promise.resolve();
+              if (!isValidRussianPhone(raw)) {
+                return Promise.reject(new Error('Укажите корректный российский номер телефона (10-11 цифр)'));
+              }
+
+              return Promise.resolve();
             },
           },
         ]}
       >
-        <Input />
+        <Input
+          placeholder="Начните вводить номер: 7, 8 или +7..."
+          value={phoneValue}
+          onChange={(e) => {
+            const formatted = formatPhoneForInput(e.target.value);
+            setPhoneValue(formatted);
+            form.setFieldValue('phone', formatted);
+          }}
+          maxLength={18}
+        />
       </Form.Item>
 
       <Form.Item label="Фото профиля">

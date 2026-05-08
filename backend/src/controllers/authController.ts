@@ -12,6 +12,7 @@ import {
 import { AuthRequest } from '../middleware/auth';
 import { body, validationResult } from 'express-validator';
 import { verifyEmailDeliverability } from '../services/emailValidation';
+import { isValidRussianPhone, normalizeRussianPhone } from '../services/phoneNormalization';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -38,27 +39,13 @@ const toTitleCaseProfileName = (value: string) =>
 const normalizeProfileName = (value: string) =>
   toTitleCaseProfileName(value.trim().replace(/\s{2,}/g, ' '));
 
-const getProfilePhoneError = (value: string) => {
-  if (!/^\+?[\d\s\-()]+$/.test(value)) {
-    return 'Неверный формат телефона';
+const getProfilePhoneError = (value: string): string | null => {
+  if (!value || !value.trim()) {
+    return null; // Phone is optional
   }
 
-  if ((value.match(/\+/g) || []).length > 1 || (value.includes('+') && !value.startsWith('+'))) {
-    return 'Плюс можно указывать только в начале номера';
-  }
-
-  const digits = value.replace(/\D/g, '');
-
-  if (digits.length < 10 || digits.length > 15) {
-    return 'Телефон должен содержать 10-15 цифр';
-  }
-
-  if (/^(\d)\1+$/.test(digits)) {
-    return 'Введите действительный номер телефона';
-  }
-
-  if ('0123456789'.includes(digits) || '1234567890'.includes(digits) || '9876543210'.includes(digits)) {
-    return 'Введите действительный номер телефона';
+  if (!isValidRussianPhone(value)) {
+    return 'Укажите корректный российский номер телефона (10-11 цифр)';
   }
 
   return null;
@@ -248,6 +235,12 @@ export const register = async (req: Request, res: Response) => {
     // Хешируем пароль
     const passwordHash = await bcrypt.hash(password, config.bcryptRounds);
 
+    // Нормализируем номер телефона
+    let normalizedPhone: string | null = null;
+    if (phone && phone.trim()) {
+      normalizedPhone = normalizeRussianPhone(phone.trim());
+    }
+
     // Получаем путь к аватару (если загружен)
     let avatarUrl = null;
     if (file) {
@@ -259,7 +252,7 @@ export const register = async (req: Request, res: Response) => {
       `INSERT INTO users (email, password_hash, full_name, phone, avatar_url) 
        VALUES ($1, $2, $3, $4, $5) 
        RETURNING id, email, full_name, phone, avatar_url, role, children`,
-      [email, passwordHash, normalizedFullName, phone ? phone.trim() : null, avatarUrl]
+      [email, passwordHash, normalizedFullName, normalizedPhone, avatarUrl]
     );
 
     const user = result.rows[0];
@@ -519,8 +512,12 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     }
 
     if (typeof phone !== 'undefined') {
+      let normalizedPhone: string | null = null;
+      if (phone && phone.trim()) {
+        normalizedPhone = normalizeRussianPhone(phone.trim());
+      }
       updates.push(`phone = $${updates.length + 1}`);
-      values.push(phone ? phone.trim() : null);
+      values.push(normalizedPhone);
     }
 
     if (typeof children !== 'undefined') {

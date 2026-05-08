@@ -91,7 +91,22 @@ export const reviewsApi = {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(text || `Ошибка HTTP при создании отзыва: ${response.status}`);
+      let errorMessage = `Ошибка HTTP при создании отзыва: ${response.status}`;
+      
+      try {
+        const errorData = JSON.parse(text);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (jsonError) {
+        // If JSON parse fails, try to extract message using regex
+        const messageMatch = text.match(/"message"\s*:\s*"([^"]+)"/);
+        if (messageMatch && messageMatch[1]) {
+          errorMessage = messageMatch[1];
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -119,7 +134,22 @@ export const reviewsApi = {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(text || `Ошибка HTTP при подтверждении отзыва: ${response.status}`);
+      let errorMessage = `Ошибка HTTP при подтверждении отзыва: ${response.status}`;
+      
+      try {
+        const errorData = JSON.parse(text);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (jsonError) {
+        // If JSON parse fails, try to extract message using regex
+        const messageMatch = text.match(/"message"\s*:\s*"([^"]+)"/);
+        if (messageMatch && messageMatch[1]) {
+          errorMessage = messageMatch[1];
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -147,7 +177,22 @@ export const reviewsApi = {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(text || `Ошибка HTTP при удалении отзыва: ${response.status}`);
+      let errorMessage = `Ошибка HTTP при удалении отзыва: ${response.status}`;
+      
+      try {
+        const errorData = JSON.parse(text);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (jsonError) {
+        // If JSON parse fails, try to extract message using regex
+        const messageMatch = text.match(/"message"\s*:\s*"([^"]+)"/);
+        if (messageMatch && messageMatch[1]) {
+          errorMessage = messageMatch[1];
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();

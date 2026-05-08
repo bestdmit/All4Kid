@@ -48,6 +48,8 @@ const SpecialistReviews = ({specialist, onReviewAdded} : {specialist: Specialist
             await refetch(); // Refetch reviews immediately since they are approved now
             onReviewAdded?.(); // Refetch specialist data to update rating
         } catch (e: any) {
+            // console.log('Caught error:', e);
+            // console.log('Error message:', e?.message);
             if (e?.message === "UNAUTHORIZED") {
                 message.error("Сессия истекла. Войдите заново");
                 navigate("/auth");
